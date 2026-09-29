@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f2ea" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16181d" media="(prefers-color-scheme: dark)">
+  <title>Cartable</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="i18n.js"></script>
+  <script defer src="admin.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+</head>
+<body>
+<div class="app has-bar" x-data="admin">
+
+  <header class="appbar">
+    <a class="brand" href="./">
+      <span class="back">←</span>
+      <img src="icon.svg" alt="" width="32" height="32">
+      <span x-text="$t('admin.title')"></span>
+    </a>
+  </header>
+
+  <div class="toast" x-cloak x-show="error" x-transition.opacity role="alert">
+    <span x-text="error"></span>
+    <button @click="error = ''" :aria-label="$t('common.close')">✕</button>
+  </div>
+  <div class="toast ok" x-cloak x-show="notice" x-transition.opacity role="status">
+    <span x-text="notice"></span>
+    <button @click="notice = ''" :aria-label="$t('common.close')">✕</button>
+  </div>
+
+  <main>
+    <!-- First visit: create the admin password -->
+    <!-- Anki add-on, opened from a phone: settings only open on the computer -->
+    <section class="panel" x-cloak x-show="status && !status.allowed">
+      <h2>🖥️ <span x-text="$t('admin.title')"></span></h2>
+      <p class="hint" x-text="$t('errors.admin.local_only')"></p>
+    </section>
+
+    <section class="panel" x-cloak x-show="status?.allowed && status.password_needed && !status.password_set">
+      <h2 x-text="$t('admin.create.title')"></h2>
+      <p class="hint" x-text="$t('admin.create.hint')"></p>
+      <form @submit.prevent="createPassword()">
+        <label class="field"><span x-text="$t('admin.password')"></span>
+          <input type="password" x-model="pw.new" autocomplete="new-password" minlength="4" required></label>
+        <label class="field"><span x-text="$t('admin.confirm')"></span>
+          <input type="password" x-model="pw.confirm" autocomplete="new-password" required></label>
+        <button class="btn primary wide" x-text="$t('admin.create.button')"></button>
+      </form>
+    </section>
+
+    <!-- Locked -->
+    <section class="panel" x-cloak x-show="status?.allowed && status.password_needed && status.password_set && !unlocked">
+      <h2 x-text="$t('admin.locked.title')"></h2>
+      <form @submit.prevent="unlock()">
+        <label class="field"><span x-text="$t('admin.locked.password')"></span>
+          <input type="password" x-model="pw.login" x-ref="login" autocomplete="current-password" required></label>
+        <button class="btn primary wide" x-text="$t('admin.locked.button')"></button>
+      </form>
+    </section>
+
+    <template x-if="unlocked && form">
+      <div>
+        <!-- Provider -->
+        <section class="panel">
+          <h2><span class="step">1</span> <span x-text="$t('admin.provider.title')"></span></h2>
+          <div class="options">
+            <template x-for="p in providers" :key="p.id">
+              <label class="option" :class="{ active: form.llm === p.id }">
+                <input type="radio" name="llm" :value="p.id" x-model="form.llm" @change="providerChanged()">
+                <strong x-text="$t(`admin.provider.${p.id}.name`)"></strong>
+                <small x-text="$t(`admin.provider.${p.id}.description`)"></small>
+              </label>
+            </template>
+          </div>
+
+          <template x-if="form.llm !== 'fake'">
+            <div>
+              <!-- OpenAI-compatible: which service (fills the address and a model) -->
+              <div class="field" x-show="form.llm === 'openai'">
+                <span class="field-label" x-text="$t('admin.service.title')"></span>
+                <div class="chips">
+                  <template x-for="s in services" :key="s.id">
+                    <button type="button" class="chip" :class="{ active: service()?.id === s.id }"
+                            @click="chooseService(s)" x-text="s.name"></button>
+                  </template>
+                  <button type="button" class="chip" :class="{ active: !service() }"
+                          @click="chooseService(null)" x-text="$t('admin.service.other')"></button>
+                </div>
+              </div>
+
+              <label class="field">
+                <span x-text="$t('admin.provider.model')"></span>
+                <input x-model="form.model" list="model-suggestions"
+                       :placeholder="saved.default_models[form.llm] ? $t('admin.provider.default', { model: saved.default_models[form.llm] }) : ''">
+                <datalist id="model-suggestions">
+                  <template x-for="m in modelSuggestions()" :key="m">
+                    <option :value="m"></option>
+                  </template>
+                </datalist>
+                <small x-show="form.llm !== 'openai'" x-text="$t('admin.provider.modelHint')"></small>
+                <small x-show="form.llm === 'openai'" x-text="$t('admin.service.vision')"></small>
+              </label>
+              <div class="field" x-show="form.llm === 'openai'">
+                <button type="button" class="btn soft" @click="loadModels()" :disabled="loadingModels"
+                        x-text="loadingModels ? $t('admin.service.loading') : $t('admin.service.loadModels')"></button>
+                <p class="hint" x-show="modelsInfo" x-text="modelsInfo"></p>
+              </div>
+              <label class="field" x-show="form.llm === 'gemini'">
+                <span x-text="$t('admin.provider.fallbacks')"></span>
+                <input x-model="form.fallback_models" placeholder="gemini-3.5-flash-lite">
+                <small x-text="$t('admin.provider.fallbacksHint')"></small>
+              </label>
+            </div>
+          </template>
+        </section>
+
+        <!-- Keys -->
+        <section class="panel" x-show="form.llm !== 'fake'">
+          <h2><span class="step">2</span> <span x-text="$t('admin.access.title')"></span></h2>
+
+          <template x-for="k in keysForProvider()" :key="k.field">
+            <div class="field">
+              <label :for="k.field"><span x-text="$t(k.label)"></span></label>
+              <div class="with-action">
+                <input type="password" :id="k.field" x-model="keys[k.field]" autocomplete="off"
+                       :placeholder="savedKey(k.field) ? $t('admin.access.keySaved', { masked: savedKey(k.field) }) : $t('admin.access.pasteKey')">
+                <button type="button" class="icon-btn muted" x-show="savedKey(k.field)"
+                        @click="clearKey(k.field)" :aria-label="$t('admin.access.clear', { label: $t(k.label) })">🗑</button>
+              </div>
+              <small x-show="savedKey(k.field)" x-text="$t('admin.access.replaceHint')"></small>
+              <small x-show="k.help" x-html="k.help && $t(k.help)"></small>
+              <template x-if="form.llm === 'openai'">
+                <small>
+                  <span x-show="service()?.keyUrl"><span x-text="$t('admin.service.keyAt')"></span>
+                    <a :href="service()?.keyUrl" target="_blank" rel="noopener" x-text="service()?.keyUrl?.replace('https://', '')"></a>.</span>
+                </small>
+              </template>
+              <small class="warn" x-show="keys[k.field] === null" x-text="$t('admin.access.willBeCleared')"></small>
+            </div>
+          </template>
+
+          <label class="field" x-show="form.llm === 'openai'">
+            <span x-text="$t('admin.access.apiAddress')"></span>
+            <input x-model="form.openai_base_url" placeholder="http://localhost:11434/v1">
+            <small x-html="$t('admin.access.ollamaHint')"></small>
+          </label>
+
+          <button type="button" class="btn soft wide" @click="test()" :disabled="testing">
+            <span x-text="testing ? $t('admin.testing') : $t('admin.access.test')"></span>
+          </button>
+          <p class="test-result" x-show="testResult" :class="testResult?.ok ? 'ok' : 'ko'" x-text="testResult?.text"></p>
+        </section>
+
+        <!-- Voice -->
+        <section class="panel">
+          <h2><span class="step" x-text="form.llm === 'fake' ? 2 : 3"></span> <span x-text="$t('admin.voice.title')"></span></h2>
+          <label class="field">
+            <span x-text="$t('admin.voice.rate')"></span>
+            <select x-model="form.tts_rate">
+              <option value="-25%" x-text="$t('admin.voice.slow')"></option>
+              <option value="-10%" x-text="$t('admin.voice.slower')"></option>
+              <option value="+0%" x-text="$t('admin.voice.normal')"></option>
+            </select>
+            <small x-text="$t('admin.voice.hint')"></small>
+          </label>
+        </section>
+
+        <!-- Anki -->
+        <section class="panel">
+          <h2 x-text="$t('admin.anki.title')"></h2>
+          <p class="hint" x-show="saved.embedded" x-html="$t('admin.anki.embedded')"></p>
+          <div x-show="!saved.embedded">
+            <p class="hint" x-html="$t('admin.anki.howTo')"></p>
+            <label class="field">
+              <span x-text="$t('admin.anki.address')"></span>
+              <input x-model="form.ankiconnect_url" placeholder="http://localhost:8765">
+              <small x-html="$t('admin.anki.addressHint')"></small>
+            </label>
+            <div class="field">
+              <label for="ankiconnect_key"><span><span x-text="$t('admin.anki.key')"></span>
+                <small class="muted" x-text="$t('common.optional')"></small></span></label>
+              <div class="with-action">
+                <input type="password" id="ankiconnect_key" x-model="keys.ankiconnect_key" autocomplete="off"
+                       :placeholder="saved.ankiconnect_key ? $t('admin.access.keySaved', { masked: saved.ankiconnect_key }) : $t('admin.anki.keyPlaceholder')">
+                <button type="button" class="icon-btn muted" x-show="saved.ankiconnect_key"
+                        @click="clearKey('ankiconnect_key')" :aria-label="$t('admin.anki.clearKey')">🗑</button>
+              </div>
+            </div>
+          </div>
+          <label class="switch field">
+            <input type="checkbox" x-model="form.anki_sync">
+            <span class="track"><span class="knob"></span></span>
+            <span><span x-text="$t('admin.anki.sync')"></span> <small x-text="$t('admin.anki.syncHint')"></small></span>
+          </label>
+          <label class="switch field">
+            <input type="checkbox" x-model="form.all_profiles_view">
+            <span class="track"><span class="knob"></span></span>
+            <span><span x-text="$t('admin.anki.allProfilesView')"></span> <small x-text="$t('admin.anki.allProfilesViewHint')"></small></span>
+          </label>
+          <button type="button" class="btn soft wide" @click="testAnki()" :disabled="testingAnki">
+            <span x-text="testingAnki ? $t('admin.testing') : $t('admin.anki.test')"></span>
+          </button>
+          <p class="test-result" x-show="ankiResult" :class="ankiResult?.ok ? 'ok' : 'ko'" x-text="ankiResult?.text"></p>
+        </section>
+
+        <!-- Password -->
+        <section class="panel" x-show="status.password_needed">
+          <h2 x-text="$t('admin.passwordSection.title')"></h2>
+          <form @submit.prevent="changePassword()">
+            <label class="field"><span x-text="$t('admin.passwordSection.new')"></span>
+              <input type="password" x-model="pw.new" autocomplete="new-password" minlength="4"></label>
+            <label class="field"><span x-text="$t('admin.confirm')"></span>
+              <input type="password" x-model="pw.confirm" autocomplete="new-password"></label>
+            <button class="btn soft" :disabled="!pw.new" x-text="$t('admin.passwordSection.button')"></button>
+          </form>
+        </section>
+      </div>
+    </template>
+
+    <!-- Language: automatic (Anki's or the browser's) or picked here, for this device -->
+    <footer class="page-footer">
+      <label class="lang-select">
+        <span aria-hidden="true">🌐</span>
+        <select :aria-label="$t('common.language')" :value="$store.i18n.choice"
+                @change="setLanguage($event.target.value)">
+          <option value="" :selected="!$store.i18n.choice"
+                  x-text="$t('common.languageAuto', { name: $store.i18n.names[$store.i18n.auto] || $store.i18n.auto })"></option>
+          <template x-for="code in $store.i18n.available" :key="code">
+            <option :value="code" :selected="$store.i18n.choice === code" x-text="$store.i18n.names[code] || code"></option>
+          </template>
+        </select>
+      </label>
+    </footer>
+  </main>
+
+  <div class="bottom-bar" x-cloak x-show="unlocked && form">
+    <button class="btn primary wide" @click="save()" :disabled="saving || !dirty()">
+      <span x-text="saving ? $t('admin.saving') : (dirty() ? $t('common.save') : $t('admin.savedButton'))"></span>
+    </button>
+  </div>
+</div>
+</body>
+</html>

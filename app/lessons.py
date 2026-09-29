@@ -1,0 +1,122 @@
+"""Saved lessons: one folder per lesson under data/lessons/.
+
+    <yyyy-mm-dd-deck-slug>/
+      lesson.json     deck, cards, prompt text, voice, dates
+      page-1.jpg …    the photos, in order
+      audio/          mp3 of the card backs, embedded in exported packages
+"""
+
+import re
+import shutil
+from datetime import date
+from pathlib import Path
+
+from . import storage
+from .models import Lesson, LessonIn, LessonSummary
+
+ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")  # folder names we create; blocks "../"
+
+
+def _root() -> Path:
+    return storage.data_dir() / "lessons"
+
+
+def folder(id: str) -> Path | None:
+    """Folder of an existing lesson, or None (unknown or malformed id)."""
+    if not ID_PATTERN.match(id):
+        return None
+    path = _root() / id
+    return path if (path / "lesson.json").is_file() else None
+
+
+def photo_path(id: str, n: int) -> Path | None:
+    path = folder(id)
+    return path / f"page-{n}.jpg" if path else None
+
+
+def audio_dir(id: str) -> Path | None:
+    path = folder(id)
+    return path / "audio" if path else None
+
+
+def _count_photos(path: Path) -> int:
+    return len(list(path.glob("page-*.jpg")))
+
+
+def _read(path: Path) -> Lesson:
+    data = storage.read_json(path / "lesson.json")
+    return Lesson(id=path.name, photo_count=_count_photos(path), **data)
+
+
+def _write(path: Path, lesson: Lesson) -> None:
+    storage.write_json(path / "lesson.json", lesson.model_dump(exclude={"id", "photo_count"}))
+
+
+def _new_folder(deck: str) -> Path:
+    base = f"{date.today().isoformat()}-{storage.slugify(deck) or 'lesson'}"
+    path, n = _root() / base, 2
+    while path.exists():
+        path, n = _root() / f"{base}-{n}", n + 1
+    return path
+
+
+def create(lesson: LessonIn, prompt: str, photos: list[bytes], owner: str = "") -> Lesson:
+    with storage.lock:
+        path = _new_folder(lesson.deck)
+        tmp = path.with_name(f".{path.name}.tmp")
+        tmp.mkdir(parents=True)
+        try:
+            for n, data in enumerate(photos, start=1):
+                (tmp / f"page-{n}.jpg").write_bytes(data)
+            now = storage.now()
+            _write(tmp, Lesson(**{**lesson.model_dump(), "owner": owner, "shared": False},
+                               id=path.name, prompt=prompt, photo_count=len(photos),
+                               created_at=now, updated_at=now))
+            tmp.rename(path)  # the lesson appears complete, or not at all
+        except BaseException:
+            shutil.rmtree(tmp, ignore_errors=True)
+            raise
+    return _read(path)
+
+
+def get(id: str) -> Lesson | None:
+    path = folder(id)
+    return _read(path) if path else None
+
+
+def list_all() -> list[LessonSummary]:
+    root = _root()
+    if not root.is_dir():
+        return []
+    summaries = [
+        LessonSummary(card_count=len(lesson.cards), **lesson.model_dump(exclude={"cards"}))
+        for lesson in (_read(p) for p in root.iterdir() if (p / "lesson.json").is_file())
+    ]
+    return sorted(summaries, key=lambda s: (s.updated_at, s.id), reverse=True)
+
+
+def update(id: str, changes: LessonIn, exported: bool = False, share: bool | None = None) -> Lesson | None:
+    """Save the lesson's content. Sharing only changes through `share`, after the
+    caller checked it's the owner's profile (content updates never touch it)."""
+    with storage.lock:
+        path = folder(id)
+        if not path:
+            return None
+        now = storage.now()
+        lesson = _read(path).model_copy(update={
+            **changes.model_dump(include=set(LessonIn.model_fields) - {"shared"}, exclude_none=True),
+            **({"shared": share} if share is not None else {}),
+            "updated_at": now,
+            **({"exported_at": now} if exported else {}),
+        })
+        _write(path, lesson)
+    return lesson
+
+
+def delete(id: str) -> bool:
+    with storage.lock:
+        path = folder(id)
+        if not path:
+            return False
+        shutil.rmtree(path)
+    return True

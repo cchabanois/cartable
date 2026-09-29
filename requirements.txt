@@ -1,0 +1,11 @@
+fastapi>=0.141
+uvicorn[standard]>=0.54
+python-multipart>=0.0.20
+python-dotenv>=1.0
+genanki>=0.13
+httpx>=0.28
+segno>=1.6
+google-genai>=2.25
+anthropic>=1.9
+openai>=3.20
+edge-tts>=7.2

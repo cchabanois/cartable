@@ -1,0 +1,399 @@
+{
+  "meta": {
+    "name": "Français",
+    "englishName": "French"
+  },
+  "common": {
+    "close": "Fermer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "optional": "(facultatif)",
+    "failed": "Échec : {message}",
+    "language": "Langue",
+    "languageAuto": "Automatique ({name})",
+    "count": {
+      "cards": {
+        "one": "{count} carte",
+        "other": "{count} cartes"
+      }
+    }
+  },
+  "app": {
+    "tagline": "Une leçon en photo, un paquet Anki.",
+    "profile": {
+      "open": "Profil Anki ouvert",
+      "none": "Aucun profil ouvert dans Anki",
+      "noneShort": "aucun",
+      "switched": "👤 Profil Anki : {profile}. Ses leçons sont dans 📚."
+    },
+    "lessonsButton": "📚 Leçons",
+    "newLesson": "Nouvelle leçon",
+    "settings": "Réglages",
+    "photos": {
+      "title": "Photos de la leçon",
+      "page": "Page {n}",
+      "remove": "Retirer cette page",
+      "takePhoto": "Prendre une photo",
+      "nextPage": "Page suivante",
+      "gallery": "Galerie",
+      "unreadable": "Impossible de lire « {name} »."
+    },
+    "prompt": {
+      "title": "Consigne",
+      "all": "Toutes",
+      "new": "＋ Nouvelle",
+      "text": "Texte de la consigne",
+      "modified": "✏️ Modifiée pour cette fois seulement.",
+      "edit": "✏️ Modifier la consigne",
+      "saveAsNew": "💾 Enregistrer comme nouvelle consigne",
+      "regenerate": "✨ Générer à nouveau",
+      "regenerateHint": "(nouvelle leçon)",
+      "unavailable": "Consignes indisponibles : {message}"
+    },
+    "review": {
+      "title": "Relecture",
+      "saved": "✓ Enregistrée",
+      "saving": "Enregistrement…",
+      "notSaved": "⚠ Non enregistrée",
+      "deck": "Paquet",
+      "otherProfileOpen": "— mais « {profile} » est ouvert dans Anki",
+      "front": "Recto",
+      "back": "Verso",
+      "info": "+ info (genre, pluriel…)",
+      "infoLabel": "Info",
+      "subdeck": "sous-paquet",
+      "subdeckLabel": "Sous-paquet",
+      "listen": "Écouter le verso",
+      "removeCard": "Supprimer la carte",
+      "addCard": "＋ Ajouter une carte",
+      "reverse": "Ajouter la carte inverse",
+      "reverseHint": "(verso → recto)",
+      "voiceIncluded": "🔊 Voix <code>{voice}</code>, incluse dans le paquet.",
+      "voiceDevice": "🔊 Lu par l'appareil en <code>{voice}</code>.",
+      "badgeNew": "nouvelle",
+      "badgeModified": "modifiée",
+      "noCards": "Aucune carte trouvée : vérifie les photos ou la consigne.",
+      "owner": "👤 Leçon de <strong>{owner}</strong>",
+      "sharedSwitch": "Partagée avec les autres profils"
+    },
+    "revise": {
+      "label": "Corriger les cartes avec l'IA",
+      "placeholder": "✨ Corriger avec l'IA : « supprime la carte sur le père », « tu as oublié les couleurs »…",
+      "button": "Corriger",
+      "undo": "↩ Annuler",
+      "undone": "Correction annulée.",
+      "added": {
+        "one": "+{count} nouvelle",
+        "other": "+{count} nouvelles"
+      },
+      "modified": {
+        "one": "{count} modifiée",
+        "other": "{count} modifiées"
+      },
+      "removed": {
+        "one": "−{count} supprimée",
+        "other": "−{count} supprimées"
+      },
+      "noChange": "aucun changement"
+    },
+    "actions": {
+      "generate": "✨ Générer les cartes",
+      "startWithPhoto": "📷 Commence par photographier la leçon",
+      "downloadApkg": "Télécharger le fichier .apkg",
+      "addToAnki": "📥 Ajouter à Anki",
+      "sending": "Envoi dans Anki…",
+      "exportApkg": "⬇️ Exporter vers Anki (.apkg)",
+      "exporting": "Préparation du paquet…"
+    },
+    "loading": {
+      "reading": "Lecture de la leçon…",
+      "revising": "Correction des cartes…",
+      "duration": "Ça prend en général 10 à 30 secondes."
+    },
+    "send": {
+      "added": {
+        "one": "{count} carte ajoutée",
+        "other": "{count} cartes ajoutées"
+      },
+      "updated": {
+        "one": "{count} mise à jour",
+        "other": "{count} mises à jour"
+      },
+      "nothing": "rien à changer",
+      "done": "✓ Dans Anki : {parts}.",
+      "synced": "Synchronisé avec AnkiWeb.",
+      "butWarning": "Cartes envoyées, mais : {warnings}.",
+      "noSync": "pas de synchro AnkiWeb ({reason})",
+      "noSound": {
+        "one": "{count} carte sans son",
+        "other": "{count} cartes sans son"
+      },
+      "confirmOtherProfile": "Cette leçon est pour « {lesson_profile} », mais c'est le profil « {active_profile} » qui est ouvert dans Anki.\n\nChange de profil dans Anki, ou touche OK pour envoyer quand même dans « {active_profile} »."
+    },
+    "export": {
+      "noSound": "Paquet exporté, mais {count} carte(s) sans son (synthèse vocale indisponible)."
+    },
+    "audio": {
+      "failed": "Lecture impossible : voix inconnue ou synthèse indisponible.",
+      "blocked": "Le navigateur a bloqué la lecture du son."
+    },
+    "lessons": {
+      "title": "Mes leçons",
+      "ankiProfile": "👤 Profil Anki : <strong>{profile}</strong>",
+      "allProfiles": "Tous les profils",
+      "none": "Aucune leçon pour ce profil.",
+      "exported": "exportée",
+      "delete": "Supprimer la leçon",
+      "confirmDelete": "Supprimer « {deck} » et ses photos ?",
+      "openFailed": "Impossible d'ouvrir la leçon : {message}",
+      "sharedBadge": "partagée"
+    },
+    "picker": {
+      "title": "Consignes",
+      "label": "Toutes les consignes",
+      "search": "🔍 Rechercher (anglais, verbes…)",
+      "none": "Aucune consigne ne correspond."
+    },
+    "editor": {
+      "new": "Nouvelle consigne",
+      "edit": "Modifier la consigne",
+      "name": "Nom",
+      "namePlaceholder": "Ex. : Vocabulaire FR → Anglais",
+      "text": "Consigne",
+      "textPlaceholder": "Ex. : Crée des cartes Anki français → anglais avec le vocabulaire de la leçon…",
+      "deck": "Nom de paquet proposé",
+      "deckPlaceholder": "Anglais::Leçon {n}",
+      "deckHint": "Les parties entre accolades sont remplies d'après la leçon.",
+      "voice": "Voix du verso",
+      "voiceHint": "Tape le début de la langue (« en-GB », « es-ES »…) pour voir les voix. Vide = pas de son.",
+      "listenVoice": "Écouter la voix",
+      "female": "femme",
+      "male": "homme",
+      "create": "Créer la consigne",
+      "required": "Il faut au moins un nom et un texte.",
+      "confirmDelete": "Supprimer la consigne « {name} » ?"
+    }
+  },
+  "admin": {
+    "title": "Réglages",
+    "create": {
+      "title": "🔐 Créer le mot de passe",
+      "hint": "Cette page contient les clés d'API. Choisis un mot de passe pour la protéger : les autres utilisateurs de l'appli n'y auront pas accès.",
+      "button": "Créer et continuer"
+    },
+    "locked": {
+      "title": "🔒 Réglages protégés",
+      "password": "Mot de passe administrateur",
+      "button": "Déverrouiller"
+    },
+    "password": "Mot de passe",
+    "confirm": "Confirmation",
+    "mismatch": "Les deux mots de passe ne correspondent pas.",
+    "changed": "Mot de passe changé.",
+    "saved": "Réglages enregistrés.",
+    "savedButton": "✓ Enregistré",
+    "saving": "Enregistrement…",
+    "testing": "Test en cours…",
+    "provider": {
+      "title": "Modèle d'IA",
+      "gemini": {
+        "name": "Gemini (Google)",
+        "description": "Rapide et peu cher. Offre gratuite possible, mais parfois surchargée."
+      },
+      "anthropic": {
+        "name": "Claude (Anthropic)",
+        "description": "Très bonne lecture, y compris manuscrite. Payant, quelques centimes par leçon."
+      },
+      "openai": {
+        "name": "Compatible OpenAI (OpenAI, OpenRouter…)",
+        "description": "OpenAI, ou OpenRouter : une seule clé pour GPT, Claude, Gemini, Mistral… « Autre » accepte tout service compatible (Ollama, LM Studio…)."
+      },
+      "fake": {
+        "name": "Démo",
+        "description": "Cartes factices, pour essayer l'appli sans clé."
+      },
+      "model": "Modèle",
+      "default": "{model} (par défaut)",
+      "modelHint": "Laisse vide pour le modèle par défaut.",
+      "fallbacks": "Modèles de secours",
+      "fallbacksHint": "Essayés dans l'ordre si le modèle principal est surchargé (séparés par des virgules)."
+    },
+    "access": {
+      "title": "Accès",
+      "geminiKey": "Clé API Gemini",
+      "geminiHelp": "À créer sur <a href=\"https://aistudio.google.com/apikey\" target=\"_blank\" rel=\"noopener\">aistudio.google.com/apikey</a>.",
+      "anthropicKey": "Clé API Anthropic",
+      "anthropicHelp": "À créer sur <a href=\"https://console.anthropic.com/settings/keys\" target=\"_blank\" rel=\"noopener\">console.anthropic.com</a>.",
+      "openaiKey": "Clé API du service (inutile pour un service local)",
+      "keySaved": "{masked} (enregistrée)",
+      "pasteKey": "Colle la clé ici",
+      "replaceHint": "Pour la remplacer, colle la nouvelle clé.",
+      "willBeCleared": "Sera effacée à l'enregistrement.",
+      "clear": "Effacer {label}",
+      "apiAddress": "Adresse de l'API",
+      "ollamaHint": "Service compatible OpenAI : son adresse se termine en général par <code>/v1</code> (Ollama en local : <code>http://localhost:11434/v1</code>).",
+      "test": "🔌 Enregistrer et tester (lecture d'image + JSON)",
+      "testOk": "✓ {model} lit les images et répond au bon format ({seconds} s).",
+      "testNoVision": "⚠ {model} répond, mais ne semble pas voir l'image (il a répondu « {answer} » pour un carré rouge). Choisis un modèle qui accepte les images.",
+      "testNoJson": "⚠ {model} ne répond pas au format JSON demandé : choisis un autre modèle.",
+      "testRefused": "⚠ {model} n'accepte pas les images (« {refused} »). Choisis un modèle vision."
+    },
+    "voice": {
+      "title": "Voix des cartes",
+      "rate": "Débit de la voix",
+      "slow": "Lent (−25 %)",
+      "slower": "Un peu ralenti (−10 %)",
+      "normal": "Normal",
+      "hint": "La voix elle-même se choisit dans chaque consigne."
+    },
+    "anki": {
+      "title": "📥 Envoi direct dans Anki",
+      "embedded": "✓ Cartable tourne dans le <strong>greffon Anki</strong> : « Ajouter à Anki » écrit directement dans le profil ouvert, sans AnkiConnect.",
+      "howTo": "Pour ajouter les cartes sans passer par un fichier <code>.apkg</code> : dans Anki sur l'ordinateur, <em>Outils → Modules → Obtenir des modules</em>, code <code>2055492159</code> (AnkiConnect), puis redémarre Anki. Anki doit être ouvert pendant l'envoi. Autre possibilité : installer le greffon Cartable, qui fait tourner Cartable dans Anki.",
+      "address": "Adresse d'AnkiConnect",
+      "addressHint": "Anki sur le même ordinateur que Cartable : <code>http://localhost:8765</code>.",
+      "key": "Clé AnkiConnect",
+      "keyPlaceholder": "Seulement si « apiKey » est réglée dans AnkiConnect",
+      "clearKey": "Effacer la clé AnkiConnect",
+      "sync": "Synchroniser avec AnkiWeb après l'envoi",
+      "syncHint": "(pour retrouver les cartes sur le téléphone)",
+      "test": "🔌 Enregistrer et tester Anki",
+      "testOk": "✓ Anki répond (AnkiConnect version {version}).",
+      "allProfilesView": "Permettre de voir les leçons des autres profils",
+      "allProfilesViewHint": "(interrupteur « Tous les profils » dans 📚 ; décoché, chaque profil ne voit que ses leçons et les leçons partagées)"
+    },
+    "passwordSection": {
+      "title": "🔐 Mot de passe administrateur",
+      "new": "Nouveau mot de passe",
+      "button": "Changer le mot de passe"
+    },
+    "service": {
+      "title": "Service",
+      "other": "Autre",
+      "keyAt": "Clé à créer sur",
+      "vision": "Choisis un modèle qui accepte les images (vision).",
+      "loadModels": "📋 Charger les modèles du service",
+      "loading": "Chargement…",
+      "noModels": "Le service n'a renvoyé aucun modèle.",
+      "modelsVision": {
+        "one": "{count} modèle qui accepte les images, proposé dans la liste.",
+        "other": "{count} modèles qui acceptent les images, proposés dans la liste."
+      },
+      "modelsAll": {
+        "one": "{count} modèle proposé : le service ne dit pas s'il accepte les images, vérifie avec « Tester ».",
+        "other": "{count} modèles proposés : le service ne dit pas lesquels acceptent les images, vérifie avec « Tester »."
+      },
+      "noVisionModels": "Aucun modèle de ce service n'accepte les images : il en faut un pour lire les photos des leçons."
+    }
+  },
+  "errors": {
+    "unknown": "Erreur inattendue ({code}).",
+    "invalid": "Valeur invalide.",
+    "unreachable": "Serveur injoignable.",
+    "prompt": {
+      "not_found": "Consigne introuvable."
+    },
+    "lesson": {
+      "not_found": "Leçon introuvable.",
+      "not_owner": "Seul le profil « {owner} » peut changer le partage de cette leçon."
+    },
+    "photo": {
+      "not_found": "Photo introuvable."
+    },
+    "extract": {
+      "no_photo": "Ajoute au moins une photo.",
+      "too_many": "{max} photos maximum.",
+      "bad_format": "Format non pris en charge : {format}"
+    },
+    "export": {
+      "no_cards": "Aucune carte complète à exporter."
+    },
+    "llm": {
+      "missing_model": "Aucun modèle choisi : indique-en un dans les réglages (⚙️).",
+      "unknown_provider": "Fournisseur d'IA inconnu : {provider}.",
+      "missing_key": "Aucune clé {provider} : ajoute-la dans les réglages (⚙️).",
+      "invalid_key": "Clé {provider} invalide : vérifie-la dans les réglages (⚙️).",
+      "quota": "Quota {provider} atteint, réessaie dans un instant.",
+      "overloaded": "{provider} est surchargé en ce moment ({status}), réessaie dans une minute.",
+      "api_error": "Erreur de l'API {provider} ({status}) : {detail}",
+      "unreachable": "Impossible de joindre l'API {provider}.",
+      "empty_answer": "{provider} n'a rien renvoyé (images refusées ou illisibles ?).",
+      "invalid_answer": "Le modèle n'a pas renvoyé de cartes valides, réessaie.",
+      "truncated": "Réponse tronquée : trop de cartes d'un coup, essaie avec moins de pages.",
+      "refused": "Le modèle a refusé de traiter ces images.",
+      "missing_url": "Indique l'adresse du service dans les réglages (⚙️)."
+    },
+    "anki": {
+      "unreachable": "Anki est injoignable : lance Anki sur l'ordinateur.",
+      "bad_response": "Réponse inattendue : est-ce bien AnkiConnect à cette adresse ?",
+      "error": "Anki ({action}) : {detail}",
+      "no_profile": "Aucun profil ouvert dans Anki : ouvre un profil puis réessaie.",
+      "sync_not_logged_in": "Anki n'est pas connecté à AnkiWeb : clique une fois sur « Synchroniser » dans Anki pour te connecter",
+      "profile_mismatch": "Cette leçon est pour « {lesson_profile} », mais c'est le profil « {active_profile} » qui est ouvert dans Anki."
+    },
+    "tts": {
+      "voices_unavailable": "Liste des voix indisponible : {detail}",
+      "no_preview_for_anki_locale": "Une locale Anki (es_ES) n'a pas d'aperçu : c'est l'appareil qui lit.",
+      "failed": "Synthèse vocale impossible : {detail}"
+    },
+    "admin": {
+      "password_required": "Mot de passe administrateur requis.",
+      "wrong_password": "Mot de passe incorrect.",
+      "local_only": "Les réglages s'ouvrent depuis Anki, sur l'ordinateur : Outils → Cartable → Réglages."
+    },
+    "addon": {
+      "source_not_found": "Code du serveur Cartable introuvable.",
+      "uv_missing": "uv est introuvable : installe-le (https://docs.astral.sh/uv/) ou utilise une version officielle d'Anki, qui l'inclut.",
+      "install_failed": "Installation des dépendances de Cartable impossible (voir le journal)."
+    }
+  },
+  "demo": {
+    "removed": "Dernière carte supprimée (démo).",
+    "added": "Une carte ajoutée (démo).",
+    "addedFront": "(ajout démo)"
+  },
+  "addon": {
+    "menuOpen": "Ouvrir Cartable",
+    "menuAddress": "État du serveur…",
+    "menuRestart": "Redémarrer le serveur",
+    "menuLog": "Journal du serveur",
+    "startFailed": "Cartable n'a pas pu démarrer :",
+    "stoppedAtStart": "Le serveur Cartable s'est arrêté au démarrage.",
+    "ready": "Cartable est prêt : {url}",
+    "running": "en marche",
+    "stopped": "arrêté",
+    "address": "Serveur Cartable : {state}.\n\nSur le téléphone (même Wi-Fi) : {lan}\nSur cet ordinateur : {local}",
+    "where": "Code : {source}\nDonnées : {data}",
+    "dev": " (développement)",
+    "restarting": "Cartable redémarre…",
+    "emptyLog": "(journal vide)",
+    "logTitle": "Cartable — journal",
+    "menuPhone": "Ouvrir sur le téléphone…",
+    "menuSettings": "Réglages",
+    "phoneTitle": "Ouvrir Cartable sur le téléphone",
+    "phoneSteps": "1. Connecte le téléphone au même Wi-Fi que cet ordinateur.\n2. Scanne ce QR code avec l'appareil photo du téléphone.\n3. Dans le navigateur : menu → « Ajouter à l'écran d'accueil », pour l'avoir comme une appli.\n\nLes réglages (clés d'IA…) s'ouvrent ici, sur l'ordinateur : Outils → Cartable → Réglages.",
+    "localOnly": "⚠ Le serveur n'écoute que sur cet ordinateur (réglage « host » à 127.0.0.1) : mets « 0.0.0.0 » dans la config du greffon pour y accéder depuis le téléphone.",
+    "notRunningYet": "Cartable démarre : réessaie dans quelques secondes."
+  },
+  "defaultPrompts": [
+    {
+      "name": "Vocabulaire FR → ES",
+      "text": "Crée des cartes Anki français → espagnol avec le vocabulaire de la leçon. Un mot ou une expression par carte. Recto en français, verso en espagnol avec l'article pour les noms (el/la). Dans « info », indique le genre, le pluriel s'il est irrégulier, et un court exemple si la leçon en donne un.",
+      "deck": "Espagnol::Leçon {n}",
+      "voice": "es-ES-ElviraNeural"
+    },
+    {
+      "name": "Phrases FR → ES",
+      "text": "Crée des cartes Anki français → espagnol avec les phrases complètes de la leçon. Recto : la phrase en français. Verso : la phrase en espagnol.",
+      "deck": "Espagnol::Leçon {n}::Phrases",
+      "voice": "es-ES-ElviraNeural"
+    },
+    {
+      "name": "Questions / réponses",
+      "text": "Crée des cartes question → réponse pour réviser le contenu de la leçon (dates, définitions, notions clés). Questions courtes et précises, réponses brèves, en français.",
+      "deck": "{matière}::{titre de la leçon}",
+      "voice": ""
+    }
+  ]
+}

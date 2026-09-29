@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Tile, so the icon works as a favicon and as a home screen app icon -->
+  <rect width="512" height="512" rx="112" fill="#DDF3EC"/>
+  <!-- School bag with an Anki card, drawn on a 600×660 canvas, centered here -->
+  <g transform="translate(46 30) scale(0.7)">
+    <defs>
+        <filter id="drop-shadow" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#082A34" flood-opacity="0.15"/>
+        </filter>
+      </defs>
+      <g filter="url(#drop-shadow)">
+        <!-- Top handle -->
+        <path d="M 235 120 C 235 50, 365 50, 365 120" fill="none" stroke="#D97706" stroke-width="26" stroke-linecap="round"/>
+        <path d="M 235 120 C 235 55, 365 55, 365 120" fill="none" stroke="#F59E0B" stroke-width="18" stroke-linecap="round"/>
+        <!-- Outline / outer shadow -->
+        <path d="M 140 120 H 460 C 490 120, 520 145, 520 185 V 530 C 520 575, 480 600, 430 600 H 170 C 120 600, 80 575, 80 530 V 185 C 80 145, 110 120, 140 120 Z" fill="#082B35"/>
+        <!-- Side pockets -->
+        <path d="M 90 350 C 70 350, 70 540, 110 550 Z" fill="#0A3C4A" stroke="#082B35" stroke-width="10" stroke-linejoin="round"/>
+        <path d="M 510 350 C 530 350, 530 540, 490 550 Z" fill="#0A3C4A" stroke="#082B35" stroke-width="10" stroke-linejoin="round"/>
+        <!-- Main body -->
+        <rect x="100" y="130" width="400" height="450" rx="45" fill="#0F4C5C"/>
+        <!-- Body highlight -->
+        <path d="M 145 140 C 120 140, 110 155, 110 180 V 500 C 110 535, 130 550, 160 555 C 130 540, 120 510, 120 480 V 180 C 120 155, 130 145, 145 140 Z" fill="#1B6B7F" opacity="0.6"/>
+        <!-- Top flap -->
+        <path d="M 100 185 C 100 150, 125 130, 160 130 H 440 C 475 130, 500 150, 500 185 V 360 C 500 375, 485 385, 465 385 H 135 C 115 385, 100 375, 100 360 Z" fill="#156A7F"/>
+        <path d="M 185 130 H 415 V 360 C 415 375, 400 385, 380 385 H 220 C 200 385, 185 375, 185 360 Z" fill="#0F4C5C"/>
+        <!-- Anki flashcard -->
+        <g id="anki-card">
+          <rect x="200" y="170" width="200" height="225" rx="20" fill="#FFFFFF" stroke="#082B35" stroke-width="8"/>
+          <!-- Text lines -->
+          <rect x="230" y="210" width="140" height="12" rx="6" fill="#0F4C5C"/>
+          <rect x="230" y="235" width="140" height="12" rx="6" fill="#0F4C5C"/>
+          <rect x="230" y="260" width="100" height="12" rx="6" fill="#0F4C5C"/>
+          <!-- "Good" button -->
+          <circle cx="260" cy="320" r="28" fill="#22C55E"/>
+          <path d="M 248 320 L 256 328 L 272 312" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- "Again" button -->
+          <circle cx="340" cy="320" r="28" fill="#EF4444"/>
+          <path d="M 328 308 L 352 332 M 352 308 L 328 332" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+        </g>
+        <!-- Green horizontal strap -->
+        <path d="M 90 400 C 90 390, 100 385, 115 385 H 485 C 500 385, 510 390, 510 400 V 470 C 510 495, 480 500, 450 495 L 150 495 C 120 500, 90 495, 90 470 Z" fill="#133D4D"/>
+        <path d="M 100 395 C 100 390, 110 385, 125 385 H 475 C 490 385, 500 390, 500 395 V 455 C 500 480, 475 485, 440 480 H 160 C 125 485, 100 480, 100 455 Z" fill="#4ADE80" stroke="#082B35" stroke-width="8" stroke-linejoin="round"/>
+        <path d="M 105 400 H 495 V 425 H 105 Z" fill="#86EFAC" opacity="0.4"/>
+        <!-- Metal buckle and tab -->
+        <path d="M 270 480 H 330 V 535 C 330 555, 300 565, 300 565 C 300 565, 270 555, 270 535 Z" fill="#22C55E" stroke="#082B35" stroke-width="8" stroke-linejoin="round"/>
+        <rect x="255" y="425" width="90" height="80" rx="18" fill="#CBD5E1" stroke="#082B35" stroke-width="8"/>
+        <rect x="275" y="442" width="50" height="46" rx="10" fill="#0F4C5C" stroke="#082B35" stroke-width="6"/>
+        <path d="M 300 430 V 465" stroke="#082B35" stroke-width="8" stroke-linecap="round"/>
+      </g>
+  </g>
+</svg>

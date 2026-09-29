@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f2ea" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16181d" media="(prefers-color-scheme: dark)">
+  <title>Cartable</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="i18n.js"></script>
+  <script defer src="app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+</head>
+<body>
+<div class="app" x-data="cartable" :class="{ 'has-bar': bottomBar() }">
+
+  <!-- App bar -->
+  <header class="appbar">
+    <div class="brand">
+      <img src="icon.svg" alt="" width="32" height="32">
+      <span class="brand-text">
+        <span>Cartable</span>
+        <!-- Anki profile the lessons and cards go to -->
+        <small class="brand-profile" x-cloak x-show="anki.available"
+               :title="anki.profile ? $t('app.profile.open') : $t('app.profile.none')"
+               x-text="'👤 ' + (anki.profile || $t('app.profile.noneShort'))"
+               :class="{ none: !anki.profile }"></small>
+      </span>
+    </div>
+    <div class="appbar-actions">
+      <button class="chip-btn" @click="lessonsOpen = true" x-show="lessons.length">
+        <span x-text="$t('app.lessonsButton')"></span> <span class="count" x-text="visibleLessons().length"></span>
+      </button>
+      <button class="chip-btn icon-only" x-show="lessonId" @click="newLesson()"
+              :aria-label="$t('app.newLesson')" :title="$t('app.newLesson')">＋</button>
+      <a class="chip-btn icon-only" href="admin.html" x-show="settingsHere"
+         :aria-label="$t('app.settings')" :title="$t('app.settings')">⚙️</a>
+    </div>
+  </header>
+
+  <!-- Toasts -->
+  <div class="toast" x-cloak x-show="error" x-transition.opacity role="alert">
+    <span x-text="error"></span>
+    <button @click="error = ''" :aria-label="$t('common.close')">✕</button>
+  </div>
+  <div class="toast ok" x-cloak x-show="success && !error" x-transition.opacity role="status">
+    <span x-text="success"></span>
+    <button @click="success = ''" :aria-label="$t('common.close')">✕</button>
+  </div>
+
+  <main>
+    <p class="tagline" x-show="!lessonId && !photos.length" x-text="$t('app.tagline')"></p>
+
+    <!-- 1. Photos -->
+    <section class="panel">
+      <h2><span class="step">1</span> <span x-text="$t('app.photos.title')"></span></h2>
+      <div class="strip">
+        <template x-for="(p, i) in photos" :key="p.url">
+          <figure class="thumb">
+            <img :src="p.url" :alt="$t('app.photos.page', { n: i + 1 })">
+            <figcaption x-text="i + 1"></figcaption>
+            <button class="thumb-remove" @click="removePhoto(i)" :aria-label="$t('app.photos.remove')">✕</button>
+          </figure>
+        </template>
+        <div class="add-stack">
+          <label class="add-tile primary">
+            <span class="add-icon">📷</span>
+            <span x-text="photos.length ? $t('app.photos.nextPage') : $t('app.photos.takePhoto')"></span>
+            <input type="file" accept="image/*" capture="environment" hidden @change="addPhotos($event)">
+          </label>
+          <label class="add-tile">
+            <span class="add-icon">🖼️</span>
+            <span x-text="$t('app.photos.gallery')"></span>
+            <input type="file" accept="image/*" multiple hidden @change="addPhotos($event)">
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Prompt -->
+    <section class="panel">
+      <h2><span class="step">2</span> <span x-text="$t('app.prompt.title')"></span></h2>
+      <div class="chips" role="radiogroup" :aria-label="$t('app.prompt.title')">
+        <template x-for="c in recentPrompts()" :key="c.id">
+          <button class="chip" role="radio" :aria-checked="c.id === selectedId"
+                  :class="{ active: c.id === selectedId }"
+                  @click="choose(c.id)" x-text="c.name"></button>
+        </template>
+        <button class="chip more" x-show="prompts.length > recentPrompts().length" @click="openPicker()">
+          <span x-text="$t('app.prompt.all')"></span> <span class="count" x-text="prompts.length"></span>
+        </button>
+        <button class="chip add" @click="openEditor('new')" x-text="$t('app.prompt.new')"></button>
+      </div>
+      <textarea x-model="form.text" rows="4" :aria-label="$t('app.prompt.text')"></textarea>
+      <p class="hint" x-show="isModified()" x-text="$t('app.prompt.modified')"></p>
+
+      <div class="prompt-actions">
+        <button class="link-btn" x-show="selectedId" @click="openEditor('edit')" x-text="$t('app.prompt.edit')"></button>
+        <button class="link-btn strong" x-show="isModified()" @click="openEditor('copy')"
+                x-text="$t('app.prompt.saveAsNew')"></button>
+      </div>
+
+      <button class="btn soft wide" x-show="cards.length" @click="extract()" :disabled="!canGenerate()">
+        <span x-text="$t('app.prompt.regenerate')"></span> <small x-text="$t('app.prompt.regenerateHint')"></small>
+      </button>
+    </section>
+
+    <!-- 3. Review -->
+    <section class="panel review" x-cloak x-show="cards.length" x-ref="review">
+      <div class="review-head">
+        <h2><span class="step">3</span> <span x-text="$t('app.review.title')"></span></h2>
+        <span class="save-pill" :class="saveState">
+          <span x-show="saveState === 'saved'" x-text="$t('app.review.saved')"></span>
+          <span x-show="saveState === 'pending' || saveState === 'saving'" x-text="$t('app.review.saving')"></span>
+          <span x-show="saveState === 'error'" x-text="$t('app.review.notSaved')"></span>
+        </span>
+      </div>
+
+      <label class="field deck">
+        <span x-text="$t('app.review.deck')"></span>
+        <input x-model="deck">
+      </label>
+      <!-- The Anki profile that created the lesson, and whether it shares it -->
+      <div class="lesson-owner" x-show="lessonOwner">
+        <span class="owner-name" x-html="$th('app.review.owner', { owner: lessonOwner })"></span>
+        <label class="switch" :class="{ disabled: !canShare() }">
+          <input type="checkbox" x-model="lessonShared" :disabled="!canShare()">
+          <span class="track"><span class="knob"></span></span>
+          <span x-text="$t('app.review.sharedSwitch')"></span>
+        </label>
+        <p class="warn" x-show="!lessonShared && anki.profile && anki.profile !== lessonOwner"
+           x-text="$t('app.review.otherProfileOpen', { profile: anki.profile })"></p>
+      </div>
+      <p class="count-line" x-text="$t('common.count.cards', { count: cards.length })"></p>
+
+      <form class="revise" @submit.prevent="revise()">
+        <textarea x-model="revision.text" rows="2" :aria-label="$t('app.revise.label')"
+                  :placeholder="$t('app.revise.placeholder')"
+                  @keydown.ctrl.enter.prevent="revise()" @keydown.meta.enter.prevent="revise()"></textarea>
+        <button class="btn primary" :disabled="!revision.text.trim() || revision.busy" x-text="$t('app.revise.button')"></button>
+      </form>
+      <div class="revision-result" x-cloak x-show="revision.summary" x-transition.opacity>
+        <div>
+          <strong x-text="revision.summary"></strong>
+          <small x-text="revision.stats"></small>
+        </div>
+        <button class="btn soft" x-show="revision.undo" @click="undoRevision()" x-text="$t('app.revise.undo')"></button>
+        <button class="icon-btn muted" @click="clearRevision()" :aria-label="$t('common.close')">✕</button>
+      </div>
+
+      <div class="cards">
+        <template x-for="card in cards" :key="card.key">
+          <article class="flash" :class="{ changed: card._state }">
+            <div class="flash-body">
+              <span class="flash-badge" x-show="card._state"
+                    x-text="card._state === 'new' ? $t('app.review.badgeNew') : $t('app.review.badgeModified')"></span>
+              <input class="front" x-model="card.front" :placeholder="$t('app.review.front')" :aria-label="$t('app.review.front')">
+              <input class="back" x-model="card.back" :placeholder="$t('app.review.back')" :aria-label="$t('app.review.back')">
+              <div class="meta">
+                <input class="info" x-model="card.info" :placeholder="$t('app.review.info')" :aria-label="$t('app.review.infoLabel')">
+                <input class="subdeck" x-model="card.subdeck" :placeholder="$t('app.review.subdeck')"
+                       :aria-label="$t('app.review.subdeckLabel')"
+                       list="subdecks" :size="Math.max(card.subdeck.length, 10)">
+              </div>
+            </div>
+            <div class="flash-actions">
+              <button class="icon-btn" x-show="hasAudio()" @click="play(card.back)" :aria-label="$t('app.review.listen')">🔊</button>
+              <button class="icon-btn muted" @click="removeCard(card)" :aria-label="$t('app.review.removeCard')">✕</button>
+            </div>
+          </article>
+        </template>
+      </div>
+      <datalist id="subdecks">
+        <template x-for="s in subdecks()" :key="s"><option :value="s"></option></template>
+      </datalist>
+
+      <button class="btn dashed wide" @click="addCard()" x-text="$t('app.review.addCard')"></button>
+
+      <div class="export-options">
+        <label class="switch">
+          <input type="checkbox" x-model="reverse">
+          <span class="track"><span class="knob"></span></span>
+          <span><span x-text="$t('app.review.reverse')"></span> <small x-text="$t('app.review.reverseHint')"></small></span>
+        </label>
+        <p class="hint" x-show="form.voice">
+          <span x-show="hasAudio()" x-html="$th('app.review.voiceIncluded', { voice: form.voice })"></span>
+          <span x-show="!hasAudio()" x-html="$th('app.review.voiceDevice', { voice: form.voice })"></span>
+        </p>
+      </div>
+    </section>
+
+    <!-- Language: automatic (Anki's or the browser's) or picked here, for this device -->
+    <footer class="page-footer">
+      <label class="lang-select">
+        <span aria-hidden="true">🌐</span>
+        <select :aria-label="$t('common.language')" :value="$store.i18n.choice"
+                @change="setLanguage($event.target.value)">
+          <option value="" :selected="!$store.i18n.choice"
+                  x-text="$t('common.languageAuto', { name: $store.i18n.names[$store.i18n.auto] || $store.i18n.auto })"></option>
+          <template x-for="code in $store.i18n.available" :key="code">
+            <option :value="code" :selected="$store.i18n.choice === code" x-text="$store.i18n.names[code] || code"></option>
+          </template>
+        </select>
+      </label>
+    </footer>
+  </main>
+
+  <!-- Bottom action bar -->
+  <div class="bottom-bar" x-show="bottomBar()">
+    <button class="btn primary wide" x-show="!cards.length" @click="extract()" :disabled="!canGenerate()"
+            x-text="photos.length ? $t('app.actions.generate') : $t('app.actions.startWithPhoto')"></button>
+    <div class="bar-row" x-show="cards.length">
+      <!-- Anki reachable: send directly, keep the file as a secondary option -->
+      <button class="btn soft" x-show="anki.available" @click="exportApkg()" :disabled="exporting || sending"
+              :aria-label="$t('app.actions.downloadApkg')">⬇️ .apkg</button>
+      <button class="btn primary wide" x-show="anki.available" @click="sendToAnki()" :disabled="sending || exporting">
+        <span x-text="sending ? $t('app.actions.sending') : $t('app.actions.addToAnki')"></span>
+      </button>
+      <button class="btn primary wide" x-show="!anki.available" @click="exportApkg()" :disabled="exporting">
+        <span x-text="exporting ? $t('app.actions.exporting') : $t('app.actions.exportApkg')"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div class="overlay" x-cloak x-show="loading || revision.busy" x-transition.opacity>
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <strong x-text="revision.busy ? $t('app.loading.revising') : $t('app.loading.reading')"></strong>
+      <small x-text="$t('app.loading.duration')"></small>
+    </div>
+  </div>
+
+  <!-- Lessons sheet -->
+  <div class="sheet-backdrop" x-cloak x-show="lessonsOpen" x-transition.opacity @click="lessonsOpen = false"></div>
+  <aside class="sheet" x-cloak x-show="lessonsOpen" x-transition:enter="sheet-anim" x-transition:enter-start="sheet-down"
+         x-transition:leave="sheet-anim" x-transition:leave-end="sheet-down"
+         @keydown.escape.window="lessonsOpen = false" :aria-label="$t('app.lessons.title')">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <h2 x-text="$t('app.lessons.title')"></h2>
+      <button class="icon-btn" @click="lessonsOpen = false" :aria-label="$t('common.close')">✕</button>
+    </div>
+    <div class="profile-filter" x-show="anki.profile">
+      <span x-html="$th('app.lessons.ankiProfile', { profile: anki.profile })"></span>
+      <label class="switch" x-show="allProfilesAllowed && otherProfiles()">
+        <input type="checkbox" x-model="allProfiles">
+        <span class="track"><span class="knob"></span></span>
+        <span x-text="$t('app.lessons.allProfiles')"></span>
+      </label>
+    </div>
+    <ul class="lesson-list">
+      <li class="empty" x-show="!visibleLessons().length" x-text="$t('app.lessons.none')"></li>
+      <template x-for="l in visibleLessons()" :key="l.id">
+        <li :class="{ current: l.id === lessonId }">
+          <button class="lesson" @click="openLesson(l.id); lessonsOpen = false">
+            <strong x-text="l.deck"></strong>
+            <small>
+              <span x-text="formatDate(l.updated_at)"></span> ·
+              <span x-text="$t('common.count.cards', { count: l.card_count })"></span>
+              <span x-show="l.owner && (allProfiles || !anki.profile || l.owner !== anki.profile)" x-text="' · 👤 ' + l.owner"></span>
+            </small>
+          </button>
+          <span class="badge shared" x-show="l.shared" x-text="$t('app.lessons.sharedBadge')"></span>
+          <span class="badge" x-show="l.exported_at" x-text="$t('app.lessons.exported')"></span>
+          <button class="icon-btn muted" @click="deleteLesson(l)" :aria-label="$t('app.lessons.delete')">🗑</button>
+        </li>
+      </template>
+    </ul>
+  </aside>
+
+  <!-- Prompt picker sheet -->
+  <div class="sheet-backdrop" x-cloak x-show="picker.open" x-transition.opacity @click="picker.open = false"></div>
+  <aside class="sheet" x-cloak x-show="picker.open"
+         x-transition:enter="sheet-anim" x-transition:enter-start="sheet-down"
+         x-transition:leave="sheet-anim" x-transition:leave-end="sheet-down"
+         @keydown.escape.window="picker.open = false" :aria-label="$t('app.picker.label')">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <h2><span x-text="$t('app.picker.title')"></span> <small class="muted" x-text="'(' + prompts.length + ')'"></small></h2>
+      <button class="icon-btn" @click="picker.open = false" :aria-label="$t('common.close')">✕</button>
+    </div>
+    <div class="picker-tools">
+      <input type="search" x-model="picker.query" x-ref="pickerSearch" :placeholder="$t('app.picker.search')"
+             @keydown.enter.prevent="filteredPrompts().length === 1 && choose(filteredPrompts()[0].id)">
+      <button class="btn soft" @click="picker.open = false; openEditor('new')" x-text="$t('app.prompt.new')"></button>
+    </div>
+    <ul class="picker-list">
+      <template x-for="c in filteredPrompts()" :key="c.id">
+        <li>
+          <button class="picker-item" :class="{ current: c.id === selectedId }" @click="choose(c.id)">
+            <strong x-text="c.name"></strong>
+            <small x-text="c.text"></small>
+          </button>
+        </li>
+      </template>
+      <li class="empty" x-show="!filteredPrompts().length" x-text="$t('app.picker.none')"></li>
+    </ul>
+  </aside>
+
+  <!-- Prompt editor sheet -->
+  <div class="sheet-backdrop" x-cloak x-show="editor.open" x-transition.opacity @click="editor.open = false"></div>
+  <aside class="sheet" x-cloak x-show="editor.open"
+         x-transition:enter="sheet-anim" x-transition:enter-start="sheet-down"
+         x-transition:leave="sheet-anim" x-transition:leave-end="sheet-down"
+         @keydown.escape.window="editor.open = false" :aria-label="$t('app.prompt.title')">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <h2 x-text="editor.id ? $t('app.editor.edit') : $t('app.editor.new')"></h2>
+      <button class="icon-btn" @click="editor.open = false" :aria-label="$t('common.close')">✕</button>
+    </div>
+    <form class="sheet-body" @submit.prevent="saveEditor()">
+      <label class="field">
+        <span x-text="$t('app.editor.name')"></span>
+        <input x-model="editor.name" x-ref="editorName" :placeholder="$t('app.editor.namePlaceholder')" required>
+      </label>
+      <label class="field">
+        <span x-text="$t('app.editor.text')"></span>
+        <textarea x-model="editor.text" rows="5" required :placeholder="$t('app.editor.textPlaceholder')"></textarea>
+      </label>
+      <label class="field">
+        <span><span x-text="$t('app.editor.deck')"></span> <small class="muted" x-text="$t('common.optional')"></small></span>
+        <input x-model="editor.deck" :placeholder="$t('app.editor.deckPlaceholder')">
+        <small x-text="$t('app.editor.deckHint')"></small>
+      </label>
+      <label class="field">
+        <span><span x-text="$t('app.editor.voice')"></span> <small class="muted" x-text="$t('common.optional')"></small></span>
+        <div class="with-action">
+          <input x-model="editor.voice" placeholder="en-GB-SoniaNeural" list="voices">
+          <button type="button" class="icon-btn" x-show="isVoice(editor.voice)"
+                  @click="play(sampleText(editor.voice), editor.voice)" :aria-label="$t('app.editor.listenVoice')">▶</button>
+        </div>
+        <small x-text="$t('app.editor.voiceHint')"></small>
+      </label>
+      <datalist id="voices">
+        <template x-for="v in voices" :key="v.voice">
+          <option :value="v.voice"
+                  x-text="v.locale + ' · ' + (v.gender === 'Female' ? $t('app.editor.female') : $t('app.editor.male'))"></option>
+        </template>
+      </datalist>
+      <p class="hint error-text" x-show="editor.error" x-text="editor.error"></p>
+      <div class="sheet-actions">
+        <button type="button" class="btn danger-soft" x-show="editor.id" @click="deletePrompt()"
+                x-text="$t('common.delete')"></button>
+        <button type="submit" class="btn primary" x-text="editor.id ? $t('common.save') : $t('app.editor.create')"></button>
+      </div>
+    </form>
+  </aside>
+
+</div>
+</body>
+</html>

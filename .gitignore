@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+data/
+.env
+.idea/
+anki_addon/user_files/
+dist/
+anki_addon/meta.json

@@ -29,10 +29,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest, python: "3.13" }  # the Docker image and the add-on's Python
+          # 3.13: what users run (the add-on installs it with uv; the Docker image)
+          - { os: ubuntu-latest, python: "3.13" }
+          - { os: windows-latest, python: "3.13" }
+          - { os: macos-latest, python: "3.13" }
+          # the next version, to see breakages early
           - { os: ubuntu-latest, python: "3.14" }
-          - { os: windows-latest, python: "3.14" }
-          - { os: macos-latest, python: "3.14" }
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7

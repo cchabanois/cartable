@@ -22,11 +22,17 @@ jobs:
       - run: ruff format --check .
 
   tests:
-    runs-on: ubuntu-latest
+    name: tests (${{ matrix.os }}, ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
+      fail-fast: false
       matrix:
-        python: ["3.13", "3.14"]  # 3.13: the Docker image; 3.14: current
+        include:
+          - { os: ubuntu-latest, python: "3.13" }  # the Docker image and the add-on's Python
+          - { os: ubuntu-latest, python: "3.14" }
+          - { os: windows-latest, python: "3.14" }
+          - { os: macos-latest, python: "3.14" }
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -37,7 +43,25 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: pytest -q
       - name: Check the page scripts parse
+        shell: bash
         run: for f in static/*.js; do node --check "$f"; done
+
+  addon-install:
+    # The packaged add-on, unpacked as Anki would: downloads uv, installs Python
+    # and the dependencies, starts the server (see tools/check_addon_install.py).
+    name: addon install (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-latest, macos-15-intel]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"  # stands for Anki's Python, which runs the launcher
+      - run: python tools/check_addon_install.py
 
   addon:
     runs-on: ubuntu-latest

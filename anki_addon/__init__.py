@@ -21,10 +21,10 @@ import webbrowser
 import anki.lang
 from aqt import gui_hooks, mw
 from aqt.qt import QAction, QApplication, QDialog, QDialogButtonBox, QLabel, QMenu, QPixmap, Qt, QVBoxLayout
-from aqt.utils import showInfo, showText, showWarning, tooltip
+from aqt.utils import askUser, showInfo, showText, showWarning, tooltip
 
 from .bridge import Bridge
-from .launcher import LaunchError, Server, layout
+from .launcher import LaunchError, Server, install_needed, layout
 
 server = Server()
 bridge: Bridge | None = None
@@ -74,6 +74,15 @@ def urls() -> tuple[str, str]:
 def start() -> None:
     global bridge
     if server.running():
+        return
+    try:
+        needs_install = install_needed(config())
+    except LaunchError as e:
+        showWarning(f"{t('addon.startFailed')}\n{t(str(e))}", title="Cartable")
+        return
+    # Downloads uv, Python and libraries (~300 MB on disk): only with the user's consent.
+    if needs_install and not askUser(t("addon.installConfirm"), title="Cartable"):
+        tooltip(t("addon.installDeclined"), period=6000)
         return
     stop()
     bridge = Bridge()

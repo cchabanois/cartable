@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- The review shows the prompt a lesson was generated with ("📝 Prompt used for this lesson"), and reopening a lesson puts that prompt back, so "Generate again" starts from it.
+
 - A 🗑 button on each prompt in the list of all prompts, to delete it without opening it.
 
 - Lessons from the prompt alone, without a photo ("Generate from the prompt alone"): the words to learn written in the prompt, or a topic for the AI to cover. Photos stay the main way.

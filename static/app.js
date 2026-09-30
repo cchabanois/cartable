@@ -78,7 +78,8 @@ document.addEventListener("alpine:init", () => {
     allProfiles: false,          // "My lessons": show every Anki profile's lessons
     allProfilesAllowed: true,    // that switch can be disabled in the settings
     lessonOwner: "",              // Anki profile that created the open lesson ("" = nobody: shared)
-    lessonShared: false,          // visible from every profile (only the owner's profile can change it)
+    lessonShared: false,
+    lessonPrompt: "",            // prompt text the open lesson was generated with          // visible from every profile (only the owner's profile can change it)
     sending: false,
 
     async init() {
@@ -181,6 +182,13 @@ document.addEventListener("alpine:init", () => {
         ? { name: c.name, text: c.text, deck: c.deck, voice: c.voice }
         : { name: "", text: "", deck: "", voice: "" };
       if (c) storage("set", c.id);
+    },
+
+    // Text differing from the selected saved prompt (or no prompt selected, e.g. a
+    // reopened lesson's own prompt): it can become a new saved prompt.
+    canSaveAsNew() {
+      const c = this.current();
+      return this.form.text.trim() !== "" && (!c || c.text !== this.form.text);
     },
 
     isModified() {
@@ -306,6 +314,7 @@ document.addEventListener("alpine:init", () => {
       this.lessonId = lesson.id;
       this.lessonOwner = lesson.owner ?? "";
       this.lessonShared = lesson.shared ?? false;
+      this.lessonPrompt = lesson.prompt ?? "";
       this.deck = lesson.deck;
       this.cards = lesson.cards.map(withKey);
       this.reverse = lesson.reverse;
@@ -328,9 +337,21 @@ document.addEventListener("alpine:init", () => {
           this.photos.push({ blob, url: URL.createObjectURL(blob) });
         }
         this.show(lesson);
+        this.usePromptOf(lesson);
       } catch (e) {
         this.error = t("app.lessons.openFailed", { message: e.message });
       }
+    },
+
+    // A reopened lesson brings back the prompt it was generated with, so "Generate
+    // again" starts from it; the saved prompt with that exact text is selected, if any.
+    usePromptOf(lesson) {
+      if (!lesson.prompt) return;
+      const saved = this.prompts.find((c) => c.text === lesson.prompt);
+      this.selectedId = saved?.id ?? null;
+      this.form = saved
+        ? { name: saved.name, text: saved.text, deck: saved.deck, voice: lesson.voice }
+        : { name: "", text: lesson.prompt, deck: "", voice: lesson.voice };
     },
 
     async newLesson() {
@@ -343,7 +364,10 @@ document.addEventListener("alpine:init", () => {
       this.cards = [];
       this.reverse = false;
       this.saveState = "";
-      this.selectPrompt();  // restores the selected prompt's voice
+      this.lessonPrompt = "";
+      // Back to the saved prompt picked last (a reopened lesson may have left its own text)
+      if (!this.current()) this.selectedId = (this.prompts.find((c) => c.id === Number(storage("get"))) ?? this.prompts[0])?.id ?? null;
+      this.selectPrompt();  // restores the selected prompt's text and voice
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
 

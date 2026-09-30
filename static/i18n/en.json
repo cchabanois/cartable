@@ -78,6 +78,7 @@
       "noCards": "No cards found: check the photos or the instructions.",
       "owner": "👤 <strong>{owner}</strong>'s lesson",
       "sharedSwitch": "Shared with the other profiles",
+      "promptUsed": "📝 Instructions used for this lesson",
       "readOnly": "🔒 Read only: only {owner}'s profile can change it. You can still add it to your Anki."
     },
     "revise": {

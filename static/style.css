@@ -538,6 +538,8 @@ h2 {
 .picker-tools { display: flex; gap: .5rem; padding-top: .75rem; }
 .picker-tools .btn { flex: 0 0 auto; min-height: 0; }
 .picker-list { list-style: none; margin: .5rem 0 0; padding: 0; overflow-y: auto; }
+.picker-list li { display: flex; align-items: center; gap: .3rem; }
+.picker-list .picker-item { flex: 1; min-width: 0; }
 .picker-item {
   display: flex;
   flex-direction: column;

@@ -425,4 +425,15 @@ def qr(text: str) -> Response:
     return Response(out.getvalue(), media_type="image/png")
 
 
-app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+class PageFiles(StaticFiles):
+    """The page's files, revalidated on every load (ETag: a cheap 304 when unchanged).
+    Without it, browsers keep old copies after an update: new HTML with old
+    translations or styles."""
+
+    def file_response(self, *args, **kwargs) -> Response:
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
+app.mount("/", PageFiles(directory=STATIC_DIR, html=True), name="static")

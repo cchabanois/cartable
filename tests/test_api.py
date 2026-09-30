@@ -1114,3 +1114,11 @@ def test_admin_lessons_without_anki(admin):
     listing = admin.get("/api/admin/lessons", headers=ADMIN).json()
     assert listing["profiles"] is None  # Anki closed: the page says so
     assert len(listing["lessons"]) == 1
+
+
+def test_page_files_revalidated(client):
+    for path in ("/", "/admin.html", "/app.js", "/style.css", "/i18n/fr.json"):
+        res = client.get(path)
+        assert res.status_code == 200 and res.headers["cache-control"] == "no-cache", path
+    etag = client.get("/style.css").headers["etag"]
+    assert client.get("/style.css", headers={"If-None-Match": etag}).status_code == 304  # unchanged: nothing re-sent

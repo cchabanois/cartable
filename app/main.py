@@ -123,11 +123,14 @@ async def extract(
             raise AppError("extract.bad_format", format=img.content_type)
 
     data = [Image(await img.read(), img.content_type) for img in images]
-    cards = await extract_cards(data, prompt, deck)
+    extraction = await extract_cards(data, prompt, deck)
     if prompt_id is not None:
         prompts.mark_used(prompt_id)
+    # Photos taken sideways are saved upright (the masks turn with them)
+    photos = diagrams.straighten([i.data for i in data], extraction.cards, extraction.rotations)
     profile = await ankiconnect.active_profile() or ""  # the lesson belongs to this Anki profile
-    return lessons.create(LessonIn(**cards.model_dump(), voice=voice), prompt, [i.data for i in data], profile)
+    lesson = LessonIn(**extraction.model_dump(exclude={"rotations"}), voice=voice)
+    return lessons.create(lesson, prompt, photos, profile)
 
 
 def _filename(deck: str) -> str:

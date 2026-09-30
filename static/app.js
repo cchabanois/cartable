@@ -260,6 +260,7 @@ document.addEventListener("alpine:init", () => {
         const lesson = await (await api("/api/extract", { method: "POST", body })).json();
         const used = this.current();
         if (used) used.used_at = new Date().toISOString();  // moves it to the front of the chips
+        await this.loadPhotos(lesson);  // as saved: the server turns sideways photos upright
         this.show(lesson);
         this.loadLessons();
         if (!this.cards.length) this.error = t("app.review.noCards");
@@ -333,12 +334,7 @@ document.addEventListener("alpine:init", () => {
       if (this.saveTimer) await this.saveNow();
       try {
         const lesson = await (await api(`/api/lessons/${id}`)).json();
-        this.clearPhotos();
-        // Photos come back as blobs, so a generation can be run again.
-        for (let n = 1; n <= lesson.photo_count; n++) {
-          const blob = await (await api(`/api/lessons/${id}/photos/${n}`)).blob();
-          this.photos.push({ blob, url: URL.createObjectURL(blob) });
-        }
+        await this.loadPhotos(lesson);
         this.show(lesson);
         this.usePromptOf(lesson);
       } catch (e) {
@@ -355,6 +351,17 @@ document.addEventListener("alpine:init", () => {
       this.form = saved
         ? { name: saved.name, text: saved.text, deck: saved.deck, voice: lesson.voice }
         : { name: "", text: lesson.prompt, deck: "", voice: lesson.voice };
+    },
+
+    // The lesson's photos from the server, as blobs, so a generation can be run again.
+    async loadPhotos(lesson) {
+      const photos = [];
+      for (let n = 1; n <= lesson.photo_count; n++) {
+        const blob = await (await api(`/api/lessons/${lesson.id}/photos/${n}`)).blob();
+        photos.push({ blob, url: URL.createObjectURL(blob) });
+      }
+      this.clearPhotos();
+      this.photos = photos;
     },
 
     async newLesson() {

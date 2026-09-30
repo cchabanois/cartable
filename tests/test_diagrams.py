@@ -139,3 +139,51 @@ def test_diagram_lesson_exported(client, tmp_path):
     notes2, _, media2 = export(cards)
     assert [g for g, _ in notes2] == [g for g, _ in notes]
     assert media2 != media
+
+
+@pytest.mark.parametrize("degrees", [90, 180, 270])
+def test_photos_turned_upright_with_their_masks(degrees):
+    """A red spot under a mask stays under it once the photo is turned."""
+    image = Image.new("RGB", (1000, 500), "white")
+    box = [0.1, 0.2, 0.3, 0.4]  # x0, y0, x1, y1
+    image.paste((255, 0, 0), (100, 100, 300, 200))
+    out = io.BytesIO()
+    image.save(out, "PNG")
+    cards = [Card(front="What is (1)?", back="spot", mask=Mask(page=1, n=1, box=box)), Card(front="a", back="b")]
+
+    (turned,) = diagrams.straighten([out.getvalue()], cards, [degrees])
+    result = Image.open(io.BytesIO(turned))
+    assert result.size == ((500, 1000) if degrees in (90, 270) else (1000, 500))
+    x0, y0, x1, y1 = cards[0].mask.box
+    center = (int((x0 + x1) / 2 * result.width), int((y0 + y1) / 2 * result.height))
+    r, g, b = result.getpixel(center)
+    assert r > 200 and g < 60 and b < 60
+    # Turning back the other way gives the first box again
+    assert diagrams.rotate_box(cards[0].mask.box, 360 - degrees if degrees != 180 else 180) == pytest.approx(box)
+
+
+def test_rotation_ignored_when_unknown_or_unreadable():
+    cards = [Card(front="a", back="b", mask=Mask(page=1, n=1, box=[0.1, 0.2, 0.3, 0.4]))]
+    assert diagrams.straighten([photo()], cards, [45]) == [photo()]  # not a right angle
+    assert diagrams.straighten([b"not an image"], cards, [90]) == [b"not an image"]
+    assert diagrams.straighten([photo()], cards, []) == [photo()]  # no answer for that photo
+    assert cards[0].mask.box == [0.1, 0.2, 0.3, 0.4]
+
+
+def test_sideways_photo_saved_upright(client, monkeypatch):
+    from app import main
+    from app.models import Extraction
+
+    async def sideways(images, prompt, deck=""):
+        mask = Mask(page=1, n=1, box=[0.1, 0.2, 0.3, 0.4])
+        return Extraction(deck="D", cards=[Card(front="What is (1)?", back="x", mask=mask)], rotations=[90])
+
+    monkeypatch.setattr(main, "extract_cards", sideways)
+    res = client.post(
+        "/api/extract", files=[("images", ("p.jpg", photo(1000, 500), "image/jpeg"))], data={"prompt": "p"}
+    )
+    lesson = res.json()
+    assert "rotations" not in lesson
+    assert lesson["cards"][0]["mask"]["box"] == pytest.approx([0.6, 0.1, 0.8, 0.3])
+    saved = Image.open(io.BytesIO(client.get(f"/api/lessons/{lesson['id']}/photos/1").content))
+    assert saved.size == (500, 1000)

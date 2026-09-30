@@ -166,16 +166,12 @@ Stack:
 
 The version lives in one place, `pyproject.toml` ([semantic versioning](https://semver.org/)). The server reads it (shown at the bottom of ⚙️), and the add-on build writes it into Anki's add-on list.
 
-1. Every pull request adds a line under **Unreleased** in [CHANGELOG.md](CHANGELOG.md).
-2. To release, open a pull request that sets the new version in `pyproject.toml` and renames **Unreleased** to `[x.y.z] - yyyy-mm-dd` (keep an empty **Unreleased** above it, and update the links at the bottom).
-3. Once it is merged, tag `main` and push the tag:
+`pyproject.toml` holds the version being prepared. After every merge on `main`, the *Draft release* workflow keeps a draft GitHub release `vX.Y.Z` up to date: the add-on built from `main`, and the **Unreleased** section of [CHANGELOG.md](CHANGELOG.md) as notes.
 
-   ```sh
-   git switch main && git pull
-   git tag vX.Y.Z && git push origin vX.Y.Z
-   ```
-
-   The Release workflow checks the tag matches `pyproject.toml`, builds the add-on and publishes a GitHub release with the changelog section as notes.
+1. Every pull request adds a line under **Unreleased**.
+2. To release, open a pull request that renames **Unreleased** to `[X.Y.Z] - yyyy-mm-dd` (keep an empty **Unreleased** above it, and update the links at the bottom). Once merged, the draft shows these notes.
+3. Review the draft on GitHub (*Releases*) and click *Publish release*: GitHub creates the tag `vX.Y.Z` on that commit.
+4. In the next pull request, set the next version in `pyproject.toml` (until then, the draft isn't updated).
 
 ## License
 

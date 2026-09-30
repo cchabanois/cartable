@@ -55,7 +55,8 @@ def test_download_uv_checks_the_sha256(monkeypatch, tmp_path):
     _serve(monkeypatch, data, archive)
     path = launcher.download_uv(io.StringIO(), archive, tmp_path)
     assert path == tmp_path / "uv" and path.read_bytes() == b"#!/bin/sh\necho uv\n"
-    assert path.stat().st_mode & 0o111  # executable
+    if sys.platform != "win32":  # no executable bit on Windows
+        assert path.stat().st_mode & 0o111
 
     # A download that doesn't match the pinned checksum is refused
     (tmp_path / "uv").unlink()

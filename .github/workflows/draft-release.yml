@@ -46,7 +46,7 @@ jobs:
         run: |
           # A single draft: remove drafts left for other versions
           gh release list --json tagName,isDraft -q '.[] | select(.isDraft) | .tagName' | while read -r other; do
-            [ "$other" != "$TAG" ] && gh release delete "$other" --yes
+            if [ "$other" != "$TAG" ]; then gh release delete "$other" --yes; fi
           done
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release edit "$TAG" --draft --target "$GITHUB_SHA" --title "Cartable $VERSION" --notes-file notes.md

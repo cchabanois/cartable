@@ -82,6 +82,7 @@
       "promptUsed": "📝 Consigne utilisée pour cette leçon",
       "diagramHint": "Schéma : fais glisser un masque rouge pour le déplacer, et son coin rond pour l'agrandir, afin qu'il cache tout le nom.",
       "diagramWarning": "Avec ce modèle d'IA (Claude), les masques sont parfois trop petits sur l'écriture manuscrite : vérifie qu'ils cachent bien tout le nom.",
+      "cropFrame": "Ce qu'Anki montre de la photo",
       "readOnly": "🔒 Lecture seule : seul le profil de {owner} peut la modifier. Tu peux quand même l'ajouter à ton Anki."
     },
     "revise": {

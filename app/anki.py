@@ -125,10 +125,10 @@ class Note:
 def notes(
     req: ExportRequest,
     audio: dict[str, Path] | None = None,
-    images: dict[int, Path] | None = None,
+    images: dict[int, tuple[Path, list[float] | None]] | None = None,
 ) -> list[Note]:
     """The notes to send, in both output formats. `audio` maps a card back to its mp3;
-    `images` maps the index of a diagram card to its diagram's image."""
+    `images` maps the index of a diagram card to its diagram's image and crop."""
     audio, images = audio or {}, images or {}
     text_nt, diagram_nt = note_type(req.voice, req.reverse), diagram_note_type(req.voice)
     result = []
@@ -145,11 +145,12 @@ def notes(
             media += [mp3] if mp3 else []
         if i in images:
             page = [c.mask for c in req.cards if c.mask and c.mask.page == card.mask.page]
-            values["Image"] = f'<img src="{images[i].name}">'
-            values["Masks"] = diagrams.masks_html(page, card.mask.n, reveal=False)
-            values["AnswerMasks"] = diagrams.masks_html(page, card.mask.n, reveal=True)
+            image, box = images[i]
+            values["Image"] = f'<img src="{image.name}">'
+            values["Masks"] = diagrams.masks_html(page, card.mask.n, reveal=False, box=box)
+            values["AnswerMasks"] = diagrams.masks_html(page, card.mask.n, reveal=True, box=box)
             values["Id"] = f"{req.lesson_id or ''}:{card.mask.page}:{card.mask.n}"
-            media.append(images[i])
+            media.append(image)
         result.append(
             Note(
                 nt=nt,
@@ -186,7 +187,7 @@ def _tag(t: str) -> str:
 def build_apkg(
     req: ExportRequest,
     audio: dict[str, Path] | None = None,
-    images: dict[int, Path] | None = None,
+    images: dict[int, tuple[Path, list[float] | None]] | None = None,
 ) -> str:
     """Write the package to a temporary file and return its path.
 

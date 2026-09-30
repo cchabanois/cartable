@@ -94,7 +94,8 @@ document.addEventListener("alpine:init", () => {
     diagramWarning: false,       // the AI model places diagram masks loosely: say so
     lessonOwner: "",              // Anki profile that created the open lesson ("" = nobody: shared)
     lessonShared: false,
-    lessonPrompt: "",            // prompt text the open lesson was generated with          // visible from every profile (only the owner's profile can change it)
+    lessonPrompt: "",            // prompt text the open lesson was generated with
+    frames: [],                  // diagram frames of the open lesson: what Anki shows of each photo          // visible from every profile (only the owner's profile can change it)
     sending: false,
 
     async init() {
@@ -157,6 +158,7 @@ document.addEventListener("alpine:init", () => {
         const lesson = await (await api(`/api/lessons/${this.lessonId}/photos/${i + 1}/rotate`, { method: "POST" })).json();
         await this.loadPhotos(lesson);
         lesson.cards.forEach((card, n) => { if (this.cards[n]) this.cards[n].mask = card.mask; });
+        this.frames = lesson.frames ?? [];
         this.lastSaved = this.snapshot();  // already saved by the server
       } catch (e) {
         this.error = e.message;
@@ -354,6 +356,7 @@ document.addEventListener("alpine:init", () => {
       this.lessonOwner = lesson.owner ?? "";
       this.lessonShared = lesson.shared ?? false;
       this.lessonPrompt = lesson.prompt ?? "";
+      this.frames = lesson.frames ?? [];
       this.deck = lesson.deck;
       this.cards = lesson.cards.map(withKey);
       this.reverse = lesson.reverse;
@@ -410,6 +413,7 @@ document.addEventListener("alpine:init", () => {
       this.reverse = false;
       this.saveState = "";
       this.lessonPrompt = "";
+      this.frames = [];
       // Back to the saved prompt picked last (a reopened lesson may have left its own text)
       if (!this.current()) this.selectedId = (this.prompts.find((c) => c.id === Number(storage("get"))) ?? this.prompts[0])?.id ?? null;
       this.selectPrompt();  // restores the selected prompt's text and voice
@@ -574,6 +578,22 @@ document.addEventListener("alpine:init", () => {
     // Every mask on the same photo: all of them are hidden on the card's image.
     masksOnPage(card) {
       return this.cards.filter((c) => c.mask && c.mask.page === card.mask.page);
+    },
+
+    // What Anki shows of the photo: the diagram's frame stretched to hold every mask,
+    // with a margin (same as diagrams.crop on the server). No frame: the whole photo.
+    cropFor(card) {
+      const frame = this.frames.find((f) => f.page === card.mask.page);
+      if (!frame) return null;
+      const boxes = [frame.box, ...this.masksOnPage(card).map((c) => c.mask.box)];
+      const margin = 0.03;
+      const clamp = (v) => Math.min(1, Math.max(0, v));
+      return {
+        box: [
+          clamp(Math.min(...boxes.map((b) => b[0])) - margin), clamp(Math.min(...boxes.map((b) => b[1])) - margin),
+          clamp(Math.max(...boxes.map((b) => b[2])) + margin), clamp(Math.max(...boxes.map((b) => b[3])) + margin),
+        ],
+      };
     },
 
     maskStyle(mask) {

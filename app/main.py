@@ -123,14 +123,14 @@ async def extract(
             raise AppError("extract.bad_format", format=img.content_type)
 
     data = [Image(await img.read(), img.content_type) for img in images]
-    result, turns = await extract_cards(data, prompt, deck)
+    found = await extract_cards(data, prompt, deck)
     if prompt_id is not None:
         prompts.mark_used(prompt_id)
-    # Photos taken sideways are saved upright (the masks turn with them)
-    photos = diagrams.straighten([i.data for i in data], result.cards, turns)
+    # Photos taken sideways are saved upright (masks and diagram frames turn with them)
+    photos = diagrams.straighten([i.data for i in data], found.deck.cards, found.turns, found.frames)
     profile = await ankiconnect.active_profile() or ""  # the lesson belongs to this Anki profile
-    lesson = LessonIn(**result.model_dump(), voice=voice)
-    return lessons.create(lesson, prompt, photos, profile)
+    lesson = LessonIn(**found.deck.model_dump(), voice=voice)
+    return lessons.create(lesson, prompt, photos, profile, found.frames)
 
 
 def _filename(deck: str) -> str:
@@ -153,18 +153,21 @@ async def _card_audio(req: ExportRequest, background: BackgroundTasks) -> tuple[
     return audio, failures
 
 
-def _diagram_images(req: ExportRequest, lesson: Lesson | None) -> dict[int, Path]:
-    """The diagram image of each diagram card (index in req.cards → path), from the
-    saved lesson's photos. Without a saved lesson, there is no photo to show."""
+def _diagram_images(req: ExportRequest, lesson: Lesson | None) -> dict[int, tuple[Path, list[float] | None]]:
+    """The diagram image of each diagram card (index in req.cards → path and crop),
+    from the saved lesson's photos. Without a saved lesson, there is no photo to show."""
     folder = lessons.folder(lesson.id) if lesson else None
     if folder is None:
         return {}
+    frames = {f.page: f.box for f in lesson.frames}
     images, used = {}, set()
     for i, card in enumerate(req.cards):
         photo = lessons.photo_path(lesson.id, card.mask.page) if card.mask else None
         if photo and photo.is_file():
-            images[i] = diagrams.page_image(folder / "images", photo)
-            used.add(images[i])
+            page = card.mask.page
+            box = diagrams.crop(frames.get(page), [c.mask for c in req.cards if c.mask and c.mask.page == page])
+            images[i] = (diagrams.page_image(folder / "images", photo, box), box)
+            used.add(images[i][0])
     diagrams.prune(folder / "images", used)
     return images
 
@@ -304,8 +307,10 @@ async def rotate_photo(id: str, n: int) -> Lesson:
     if path is None or not path.is_file():
         raise AppError("photo.not_found", 404)
     cards = [card.model_copy(deep=True) for card in lesson.cards]
-    path.write_bytes(diagrams.turn(path.read_bytes(), [c.mask for c in cards if c.mask and c.mask.page == n], 90))
-    return lessons.update(id, LessonIn(**{**lesson.model_dump(include=set(LessonIn.model_fields)), "cards": cards}))
+    frames = [frame.model_copy(deep=True) for frame in lesson.frames]
+    path.write_bytes(diagrams.turn(path.read_bytes(), diagrams.boxes_on(n, cards, frames), 90))
+    content = LessonIn(**{**lesson.model_dump(include=set(LessonIn.model_fields)), "cards": cards})
+    return lessons.update(id, content, frames=frames)
 
 
 @app.get("/api/lessons/{id}/photos/{n}")

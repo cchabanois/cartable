@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Diagram cards are cropped to the diagram: the AI gives its frame, stretched to hold every mask, so the diagram shows bigger on a phone. The review shows the frame as a dashed line.
+
 - Photos taken sideways or upside down are saved upright, diagram masks turning with them. The turn comes from the reading direction of a line of text (where the AI places its first and last words), which is more reliable than asking the model for the page's orientation. A ↻ button on each photo turns it by hand.
 
 - Diagrams: with a prompt like "one card per label, the diagram without the names", the AI finds each label of a diagram and hides it behind a number. Each card shows the diagram with every label hidden and asks "What is (2)?"; the back shows that label again. Masks can be moved and resized in the review. In Anki, the cards of a diagram share one light image, with the masks in HTML over it (direct send and .apkg); a corrected lesson updates its notes instead of duplicating them.

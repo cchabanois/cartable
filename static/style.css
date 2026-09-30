@@ -644,6 +644,7 @@ h2 {
 .diagram .mask.target { background: #ff7a59; border-color: #b3261e; color: #fff; z-index: 1; }
 .diagram .mask.editable { cursor: move; touch-action: none; }
 .diagram .mask.target { overflow: visible; }
+.diagram .crop-frame { position: absolute; border: 2px dashed #0e6377; box-shadow: 0 0 0 999px rgb(0 0 0 / .18); pointer-events: none; }
 .diagram .handle {
   /* Outside the corner: a small mask keeps its number visible */
   position: absolute; right: -9px; bottom: -9px; width: 14px; height: 14px; cursor: nwse-resize; touch-action: none;

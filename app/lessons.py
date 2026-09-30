@@ -12,7 +12,7 @@ from datetime import date
 from pathlib import Path
 
 from . import storage
-from .models import Lesson, LessonIn, LessonSummary
+from .models import Frame, Lesson, LessonIn, LessonSummary
 
 ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")  # folder names we create; blocks "../"
 
@@ -60,7 +60,7 @@ def _new_folder(deck: str) -> Path:
     return path
 
 
-def create(lesson: LessonIn, prompt: str, photos: list[bytes], owner: str = "") -> Lesson:
+def create(lesson: LessonIn, prompt: str, photos: list[bytes], owner: str = "", frames: list[Frame] = ()) -> Lesson:
     with storage.lock:
         path = _new_folder(lesson.deck)
         tmp = path.with_name(f".{path.name}.tmp")
@@ -76,6 +76,7 @@ def create(lesson: LessonIn, prompt: str, photos: list[bytes], owner: str = "") 
                     id=path.name,
                     prompt=prompt,
                     photo_count=len(photos),
+                    frames=list(frames),
                     created_at=now,
                     updated_at=now,
                 ),
@@ -103,9 +104,16 @@ def list_all() -> list[LessonSummary]:
     return sorted(summaries, key=lambda s: (s.updated_at, s.id), reverse=True)
 
 
-def update(id: str, changes: LessonIn, exported: bool = False, share: bool | None = None) -> Lesson | None:
+def update(
+    id: str,
+    changes: LessonIn,
+    exported: bool = False,
+    share: bool | None = None,
+    frames: list[Frame] | None = None,
+) -> Lesson | None:
     """Save the lesson's content. Sharing only changes through `share`, after the
-    caller checked it's the owner's profile (content updates never touch it)."""
+    caller checked it's the owner's profile (content updates never touch it).
+    `frames`: diagram frames turned with a photo."""
     with storage.lock:
         path = folder(id)
         if not path:
@@ -115,6 +123,7 @@ def update(id: str, changes: LessonIn, exported: bool = False, share: bool | Non
             update={
                 **changes.model_dump(include=set(LessonIn.model_fields) - {"shared"}, exclude_none=True),
                 **({"shared": share} if share is not None else {}),
+                **({"frames": frames} if frames is not None else {}),
                 "updated_at": now,
                 **({"exported_at": now} if exported else {}),
             }

@@ -84,6 +84,44 @@ def normalize(cards: list[Card], sizes: list[tuple[int, int] | None], fmt: str) 
         card.mask = Mask(page=mask.page, n=mask.n, box=_clamp([x0 - pad_x, y0 - pad_y, x1 + pad_x, y1 + pad_y]))
 
 
+ROTATIONS = {90: Image.Transpose.ROTATE_270, 180: Image.Transpose.ROTATE_180, 270: Image.Transpose.ROTATE_90}
+
+
+def rotate_box(box: list[float], degrees: int) -> list[float]:
+    """A box (fractions of the photo) once the photo is turned `degrees` clockwise."""
+    x0, y0, x1, y1 = box
+    if degrees == 90:
+        return _clamp([1 - y1, x0, 1 - y0, x1])
+    if degrees == 180:
+        return _clamp([1 - x1, 1 - y1, 1 - x0, 1 - y0])
+    if degrees == 270:
+        return _clamp([y0, 1 - x1, y1, 1 - x0])
+    return box
+
+
+def straighten(photos: list[bytes], cards: list[Card], rotations: list[int]) -> list[bytes]:
+    """Turn the photos the AI found sideways or upside down, and their masks with them.
+    Unknown rotations count as 0; an unreadable photo stays as it is."""
+    result = []
+    for page, data in enumerate(photos, start=1):
+        degrees = rotations[page - 1] if page <= len(rotations) else 0
+        if degrees not in ROTATIONS:
+            result.append(data)
+            continue
+        try:
+            image = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
+        except (OSError, ValueError):
+            result.append(data)
+            continue
+        out = io.BytesIO()
+        image.transpose(ROTATIONS[degrees]).save(out, "JPEG", quality=90)
+        result.append(out.getvalue())
+        for card in cards:
+            if card.mask and card.mask.page == page:
+                card.mask.box = rotate_box(card.mask.box, degrees)
+    return result
+
+
 def _clamp(box: list[float]) -> list[float]:
     return [round(min(1.0, max(0.0, v)), 4) for v in box]
 

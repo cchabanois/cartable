@@ -30,6 +30,16 @@ class Deck(BaseModel):
     cards: list[Card]
 
 
+class Extraction(Deck):
+    """Cards read from the photos, and how to turn each photo so its text is upright."""
+
+    rotations: list[int] = Field(
+        default_factory=list,
+        description="For each photo, in order: the clockwise rotation in degrees (0, 90, 180 or 270) "
+        "that makes its text upright; 0 when it already is.",
+    )
+
+
 class Revision(Deck):
     """Cards after a natural-language correction, with what changed."""
 

@@ -48,6 +48,8 @@
       "edit": "✏️ Modifier la consigne",
       "saveAsNew": "💾 Enregistrer comme nouvelle consigne",
       "regenerate": "✨ Générer à nouveau",
+      "fromPrompt": "✨ Générer à partir de la consigne seule",
+      "fromPromptHint": "Pas de photo ? L'IA crée les cartes à partir de ta consigne : mets-y les mots, ou demande un thème. Vérifie bien les cartes.",
       "regenerateHint": "(nouvelle leçon)",
       "unavailable": "Consignes indisponibles : {message}"
     },
@@ -109,6 +111,7 @@
     },
     "loading": {
       "reading": "Lecture de la leçon…",
+      "writing": "Création des cartes…",
       "revising": "Correction des cartes…",
       "duration": "Ça prend en général 10 à 30 secondes."
     },
@@ -316,7 +319,7 @@
       "not_found": "Photo introuvable."
     },
     "extract": {
-      "no_photo": "Ajoute au moins une photo.",
+      "no_input": "Ajoute une photo, ou écris une consigne.",
       "too_many": "{max} photos maximum.",
       "bad_format": "Format non pris en charge : {format}"
     },

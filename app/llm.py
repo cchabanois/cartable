@@ -28,13 +28,17 @@ log = logging.getLogger("cartable")
 
 
 SYSTEM_PROMPT = """\
-You create Anki flashcards from photos of a lesson (usually a pupil's notebook or \
-textbook page, sometimes handwritten, sometimes photographed at an angle).
+You create Anki flashcards for a pupil, usually from photos of a lesson (a notebook or \
+textbook page, sometimes handwritten, sometimes photographed at an angle), sometimes \
+from the user's instructions alone.
 
 Rules:
 - Follow the user's instructions to know what to extract, in which direction and in \
 which languages.
-- Only use what is in the lesson; do not invent content.
+- With photos, only use what is in the lesson; do not invent content.
+- Without photos, the instructions are the lesson: when they give the content (a list \
+of words, sentences…), use exactly that content; when they ask you to provide it (a \
+topic, "the most common irregular verbs"…), make it accurate and suited to a pupil.
 - Fix obvious spelling mistakes from the lesson (missing accents or letters).
 - One idea per card; keep front and back short.
 - The "info" field is optional: leave it empty when there is nothing useful to add.
@@ -58,10 +62,12 @@ class ExtractionError(AppError):
     status = 502
 
 
-def _user_text(prompt: str, deck: str) -> str:
+def _user_text(prompt: str, deck: str, photos: int) -> str:
     text = f"Instructions: {prompt.strip()}"
     if deck.strip():
         text += f"\nDeck name template: {deck.strip()}"
+    if not photos:
+        text += "\nThere is no photo: create the cards from these instructions alone."
     return text
 
 
@@ -69,13 +75,15 @@ async def extract_cards(images: list[Image], prompt: str, deck: str = "") -> Dec
     s = settings.current()
     if s.llm == "fake":
         return _fake(images, prompt, deck)
-    return await _generate(s, images, _user_text(prompt, deck), Deck)
+    return await _generate(s, images, _user_text(prompt, deck, len(images)), Deck)
 
 
-def _revision_text(prompt: str, deck: Deck, instruction: str, lang: str) -> str:
+def _revision_text(prompt: str, deck: Deck, instruction: str, lang: str, photos: int) -> str:
     current = json.dumps(deck.model_dump(), ensure_ascii=False, indent=1)
+    source = "these photos with these instructions" if photos else "these instructions (no photo)"
+    add = "To add cards, use the photos." if photos else "To add cards, follow the instructions."
     return f"""\
-The cards below were made from these photos with these instructions:
+The cards below were made from {source}:
 {prompt.strip()}
 
 Current cards (JSON):
@@ -85,8 +93,8 @@ Requested correction: {instruction.strip()}
 
 Apply this request and return the complete deck (every card, not only the ones that \
 change). Only change what the request is about; keep the other cards exactly as they \
-are, in the same order. To add cards, use the photos. In "summary", describe in one \
-short sentence, in {i18n.language_name(lang)}, what you changed."""
+are, in the same order. {add} In "summary", describe in one short sentence, in \
+{i18n.language_name(lang)}, what you changed."""
 
 
 async def revise_cards(
@@ -98,7 +106,7 @@ async def revise_cards(
     s = settings.current()
     if s.llm == "fake":
         return _fake_revision(deck, instruction, lang)
-    return await _generate(s, images, _revision_text(prompt, deck, instruction, lang), Revision)
+    return await _generate(s, images, _revision_text(prompt, deck, instruction, lang, len(images)), Revision)
 
 
 async def _generate[T: BaseModel](s: Settings, images: list[Image], text: str, schema: type[T]) -> T:

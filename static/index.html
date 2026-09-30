@@ -109,6 +109,12 @@
       <button class="btn soft wide" x-show="cards.length" @click="extract()" :disabled="!canGenerate()">
         <span x-text="$t('app.prompt.regenerate')"></span> <small x-text="$t('app.prompt.regenerateHint')"></small>
       </button>
+
+      <!-- No photo: the prompt alone (a word list, a topic…). Photos stay the main way. -->
+      <div class="from-prompt" x-show="!cards.length && !photos.length">
+        <button class="btn soft wide" @click="extract()" :disabled="!canGenerate()" x-text="$t('app.prompt.fromPrompt')"></button>
+        <p class="hint" x-text="$t('app.prompt.fromPromptHint')"></p>
+      </div>
     </section>
 
     <!-- 3. Review -->
@@ -214,7 +220,7 @@
 
   <!-- Bottom action bar -->
   <div class="bottom-bar" x-show="bottomBar()">
-    <button class="btn primary wide" x-show="!cards.length" @click="extract()" :disabled="!canGenerate()"
+    <button class="btn primary wide" x-show="!cards.length" @click="extract()" :disabled="!photos.length || !canGenerate()"
             x-text="photos.length ? $t('app.actions.generate') : $t('app.actions.startWithPhoto')"></button>
     <div class="bar-row" x-show="cards.length">
       <!-- Anki reachable: send directly, keep the file as a secondary option -->
@@ -233,7 +239,7 @@
   <div class="overlay" x-cloak x-show="loading || revision.busy" x-transition.opacity>
     <div class="loading-card">
       <div class="spinner"></div>
-      <strong x-text="revision.busy ? $t('app.loading.revising') : $t('app.loading.reading')"></strong>
+      <strong x-text="revision.busy ? $t('app.loading.revising') : photos.length ? $t('app.loading.reading') : $t('app.loading.writing')"></strong>
       <small x-text="$t('app.loading.duration')"></small>
     </div>
   </div>

@@ -476,8 +476,9 @@ document.addEventListener("alpine:init", () => {
     },
 
     // --- Review ---------------------------------------------------------
+    // Photos + prompt, or the prompt alone (see "Generate from the prompt alone")
     canGenerate() {
-      return this.photos.length > 0 && this.form.text.trim() !== "" && !this.loading;
+      return this.form.text.trim() !== "" && !this.loading;
     },
 
     bottomBar() {

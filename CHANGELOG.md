@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Lessons from the prompt alone, without a photo ("Generate from the prompt alone"): the words to learn written in the prompt, or a topic for the AI to cover. Photos stay the main way.
+
 - Settings page (⚙️), "Lessons" section: every lesson with its owner; give a lesson to another Anki profile or to nobody, share it or not, delete it. Lessons whose owner no longer exists in Anki are flagged.
 
 ### Changed

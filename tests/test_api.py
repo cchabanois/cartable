@@ -981,32 +981,53 @@ def test_model_without_vision_refuses_image(admin, monkeypatch):
 # --- Lesson owner / shared -------------------------------------------------------
 
 
-def test_only_the_owner_shares(anki, client):
+def test_only_the_owner_changes_a_lesson(anki, client):
     lesson = _extract(client)  # created in Léa's profile: hers, private
     assert (lesson["owner"], lesson["shared"]) == ("Léa", False)
     url = f"/api/lessons/{lesson['id']}"
-    share = {"deck": lesson["deck"], "cards": lesson["cards"], "shared": True}
+    cards = lesson["cards"]
+    read_only = {"code": "lesson.read_only", "params": {"owner": "Léa"}}
 
-    # From Paul's profile: can't share Léa's lesson, nor send it without a warning
-    anki.profile = "Paul"
-    r = client.put(url, json=share)
-    assert r.status_code == 403 and r.json()["detail"] == {"code": "lesson.not_owner", "params": {"owner": "Léa"}}
-    body = {**SEND, "lesson_id": lesson["id"]}
-    assert client.post("/api/anki/send", json=body).status_code == 409
-    # ...but may still edit its content when the page shows it
-    assert client.put(url, json={"deck": "D", "cards": lesson["cards"], "shared": False}).status_code == 200
-
-    # From Léa's profile: shared; the owner never changes, even if a page sends one
-    anki.profile = "Léa"
-    shared = client.put(url, json={**share, "owner": "Paul"}).json()
+    # Léa shares it; the owner never changes, even if a page sends one
+    shared = client.put(url, json={"deck": lesson["deck"], "cards": cards, "shared": True, "owner": "Paul"}).json()
     assert (shared["owner"], shared["shared"]) == ("Léa", True)
-    anki.profile = "Paul"
-    assert client.post("/api/anki/send", json=body).status_code == 200  # shared: no warning
 
-    # Updates that don't mention sharing (autosave, export) leave it alone
-    client.put(url, json={"deck": "D", "cards": []})
-    client.post("/api/export", json={"deck": "D", "cards": lesson["cards"], "lesson_id": lesson["id"]})
-    assert client.get(url).json()["shared"] is True
+    # From Paul's profile: read-only
+    anki.profile = "Paul"
+    for method, path, body in [
+        ("PUT", url, {"deck": "Changed", "cards": []}),
+        ("PUT", url, {"deck": lesson["deck"], "cards": cards, "shared": False}),
+        ("POST", f"{url}/revise", {"deck": "D", "cards": cards, "instruction": "remove the last card"}),
+        ("DELETE", url, None),
+    ]:
+        r = client.request(method, path, json=body)
+        assert (r.status_code, r.json()["detail"]) == (403, read_only), (method, path)
+
+    # ...but Paul can still read it, send it to his own Anki and export it, without changing it
+    assert client.get(url).status_code == 200
+    changed = {"deck": "Paul's copy", "cards": cards[:1], "lesson_id": lesson["id"]}
+    assert client.post("/api/anki/send", json={**SEND, **changed}).status_code == 200
+    assert client.post("/api/export", json=changed).status_code == 200
+    kept = client.get(url).json()
+    assert (kept["deck"], len(kept["cards"]), kept["shared"], kept["exported_at"]) == (
+        lesson["deck"],
+        len(cards),
+        True,
+        None,
+    )
+
+    # Back in Léa's profile: hers to change; updates that don't mention sharing leave it alone
+    anki.profile = "Léa"
+    assert client.put(url, json={"deck": "D", "cards": []}).json()["shared"] is True
+    assert client.delete(url).status_code == 204
+
+
+def test_lesson_without_owner_is_everyones(client):
+    lesson = _extract(client)  # Anki closed: no owner
+    assert lesson["owner"] == ""
+    url = f"/api/lessons/{lesson['id']}"
+    assert client.put(url, json={"deck": "D", "cards": []}).status_code == 200
+    assert client.delete(url).status_code == 204
 
 
 def test_private_lessons_hidden_when_option_off(anki, admin):

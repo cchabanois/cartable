@@ -124,7 +124,7 @@
 
       <label class="field deck">
         <span x-text="$t('app.review.deck')"></span>
-        <input x-model="deck">
+        <input x-model="deck" :readonly="readOnly()">
       </label>
       <!-- The Anki profile that created the lesson, and whether it shares it -->
       <div class="lesson-owner" x-show="lessonOwner">
@@ -134,12 +134,13 @@
           <span class="track"><span class="knob"></span></span>
           <span x-text="$t('app.review.sharedSwitch')"></span>
         </label>
+        <p class="hint" x-show="readOnly()" x-text="$t('app.review.readOnly', { owner: lessonOwner })"></p>
         <p class="warn" x-show="!lessonShared && anki.profile && anki.profile !== lessonOwner"
            x-text="$t('app.review.otherProfileOpen', { profile: anki.profile })"></p>
       </div>
       <p class="count-line" x-text="$t('common.count.cards', { count: cards.length })"></p>
 
-      <form class="revise" @submit.prevent="revise()">
+      <form class="revise" x-show="!readOnly()" @submit.prevent="revise()">
         <textarea x-model="revision.text" rows="2" :aria-label="$t('app.revise.label')"
                   :placeholder="$t('app.revise.placeholder')"
                   @keydown.ctrl.enter.prevent="revise()" @keydown.meta.enter.prevent="revise()"></textarea>
@@ -160,18 +161,18 @@
             <div class="flash-body">
               <span class="flash-badge" x-show="card._state"
                     x-text="card._state === 'new' ? $t('app.review.badgeNew') : $t('app.review.badgeModified')"></span>
-              <input class="front" x-model="card.front" :placeholder="$t('app.review.front')" :aria-label="$t('app.review.front')">
-              <input class="back" x-model="card.back" :placeholder="$t('app.review.back')" :aria-label="$t('app.review.back')">
+              <input class="front" x-model="card.front" :readonly="readOnly()" :placeholder="$t('app.review.front')" :aria-label="$t('app.review.front')">
+              <input class="back" x-model="card.back" :readonly="readOnly()" :placeholder="$t('app.review.back')" :aria-label="$t('app.review.back')">
               <div class="meta">
-                <input class="info" x-model="card.info" :placeholder="$t('app.review.info')" :aria-label="$t('app.review.infoLabel')">
-                <input class="subdeck" x-model="card.subdeck" :placeholder="$t('app.review.subdeck')"
+                <input class="info" x-model="card.info" :readonly="readOnly()" :placeholder="$t('app.review.info')" :aria-label="$t('app.review.infoLabel')">
+                <input class="subdeck" x-model="card.subdeck" :readonly="readOnly()" :placeholder="$t('app.review.subdeck')"
                        :aria-label="$t('app.review.subdeckLabel')"
                        list="subdecks" :size="Math.max(card.subdeck.length, 10)">
               </div>
             </div>
             <div class="flash-actions">
               <button class="icon-btn" x-show="hasAudio()" @click="play(card.back)" :aria-label="$t('app.review.listen')">🔊</button>
-              <button class="icon-btn muted" @click="removeCard(card)" :aria-label="$t('app.review.removeCard')">✕</button>
+              <button class="icon-btn muted" x-show="!readOnly()" @click="removeCard(card)" :aria-label="$t('app.review.removeCard')">✕</button>
             </div>
           </article>
         </template>
@@ -180,11 +181,11 @@
         <template x-for="s in subdecks()" :key="s"><option :value="s"></option></template>
       </datalist>
 
-      <button class="btn dashed wide" @click="addCard()" x-text="$t('app.review.addCard')"></button>
+      <button class="btn dashed wide" x-show="!readOnly()" @click="addCard()" x-text="$t('app.review.addCard')"></button>
 
       <div class="export-options">
-        <label class="switch">
-          <input type="checkbox" x-model="reverse">
+        <label class="switch" :class="{ disabled: readOnly() }">
+          <input type="checkbox" x-model="reverse" :disabled="readOnly()">
           <span class="track"><span class="knob"></span></span>
           <span><span x-text="$t('app.review.reverse')"></span> <small x-text="$t('app.review.reverseHint')"></small></span>
         </label>
@@ -269,7 +270,7 @@
           </button>
           <span class="badge shared" x-show="l.shared" x-text="$t('app.lessons.sharedBadge')"></span>
           <span class="badge" x-show="l.exported_at" x-text="$t('app.lessons.exported')"></span>
-          <button class="icon-btn muted" @click="deleteLesson(l)" :aria-label="$t('app.lessons.delete')">🗑</button>
+          <button class="icon-btn muted" x-show="canDelete(l)" @click="deleteLesson(l)" :aria-label="$t('app.lessons.delete')">🗑</button>
         </li>
       </template>
     </ul>

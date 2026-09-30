@@ -10,7 +10,7 @@ import pytest
 from PIL import Image
 
 from app import diagrams, llm
-from app.models import Card, Mask
+from app.models import Card, Frame, Mask
 
 
 def photo(width=1000, height=500) -> bytes:
@@ -179,12 +179,14 @@ def test_sideways_photo_saved_upright(client, monkeypatch):
 
     async def sideways(images, prompt, deck=""):
         mask = Mask(page=1, n=1, box=[0.1, 0.2, 0.3, 0.4])
-        return Deck(deck="D", cards=[Card(front="What is (1)?", back="x", mask=mask)]), [90]
+        deck = Deck(deck="D", cards=[Card(front="What is (1)?", back="x", mask=mask)])
+        return llm.Extracted(deck, [90], [Frame(page=1, box=[0.05, 0.1, 0.5, 0.6])])
 
     monkeypatch.setattr(main, "extract_cards", sideways)
     files = [("images", ("p.jpg", photo(1000, 500), "image/jpeg"))]
     lesson = client.post("/api/extract", files=files, data={"prompt": "p"}).json()
     assert lesson["cards"][0]["mask"]["box"] == pytest.approx([0.6, 0.1, 0.8, 0.3])
+    assert lesson["frames"] == [{"page": 1, "box": pytest.approx([0.4, 0.05, 0.9, 0.5])}]  # turned too
     saved = Image.open(io.BytesIO(client.get(f"/api/lessons/{lesson['id']}/photos/1").content))
     assert saved.size == (500, 1000)
 
@@ -231,3 +233,76 @@ def test_turn_a_photo_by_hand(client):
     assert client.post(f"{url}/2/rotate").json()["cards"] == turned["cards"]
     assert Image.open(io.BytesIO(client.get(f"{url}/2").content)).size == (500, 1000)
     assert client.post(f"{url}/3/rotate").status_code == 404
+
+
+def test_frames_become_fractions():
+    found = [Frame(page=1, box=[100, 200, 600, 800]), Frame(page=2, box=[1, 2, 3, 4]), Frame(page=1, box=[5])]
+    m = diagrams.CROP_MARGIN  # a frame from the AI gets a margin: it is often drawn tight on the drawing
+    (frame,) = diagrams.frames(found, [(1000, 500)], "gemini")
+    assert (frame.page, frame.box) == (1, pytest.approx([0.2 - m, 0.1 - m, 0.8 + m, 0.6 + m]))
+
+
+def test_crop_holds_the_frame_and_every_mask():
+    masks = [Mask(page=1, n=1, box=[0.05, 0.3, 0.15, 0.35]), Mask(page=1, n=2, box=[0.5, 0.5, 0.7, 0.9])]
+    m = diagrams.CROP_MARGIN
+    assert diagrams.crop([0.1, 0.2, 0.6, 0.8], masks) == pytest.approx([0.05 - m, 0.2, 0.7 + m, 0.9 + m])
+    assert diagrams.crop([0.0, 0.1, 0.9, 1.0], masks) == pytest.approx([0.0, 0.1, 0.9, 1.0])  # already holds them
+    assert diagrams.crop(None, masks) is None  # no frame from the AI: the whole photo
+    # A crop is stable: used as the frame, it gives itself again (a frame set by hand doesn't grow)
+    once = diagrams.crop([0.1, 0.2, 0.6, 0.8], masks)
+    assert diagrams.crop(once, masks) == pytest.approx(once)
+
+
+def test_frame_set_by_hand(client):
+    files = [("images", ("p.jpg", photo(1000, 500), "image/jpeg"))]
+    lesson = client.post("/api/extract", files=files, data={"prompt": "Le schéma"}).json()
+    assert lesson["frames"] == []  # the fake provider gives none: the whole photo
+    frame = {"page": 1, "box": [0.05, 0.05, 0.9, 0.9]}
+    saved = client.put(f"/api/lessons/{lesson['id']}", json={"deck": "D", "cards": lesson["cards"], "frames": [frame]})
+    assert saved.json()["frames"] == [frame]
+    # An update without frames (an older page) leaves them alone
+    older = client.put(f"/api/lessons/{lesson['id']}", json={"deck": "D", "cards": lesson["cards"]})
+    assert older.json()["frames"] == [frame]
+
+    def exported_size(**extra):
+        body = {"deck": "D", "cards": lesson["cards"], "lesson_id": lesson["id"], **extra}
+        with zipfile.ZipFile(io.BytesIO(client.post("/api/export", json=body).content)) as z:
+            (index,) = json.loads(z.read("media")).keys()
+            return Image.open(io.BytesIO(z.read(index))).size
+
+    assert exported_size() == (850, 425)  # the saved frame
+    assert exported_size(frames=[]) == (1000, 500)  # the page's current frames win: none, the whole photo
+
+
+def test_cropped_image_and_masks(tmp_path):
+    page = tmp_path / "page-1.jpg"
+    Image.new("RGB", (1000, 500), "white").save(page, "JPEG")
+    box = [0.2, 0.2, 0.6, 1.0]
+    assert Image.open(diagrams.page_image(tmp_path / "images", page, box)).size == (400, 400)
+    assert diagrams.page_image(tmp_path / "images", page, box) != diagrams.page_image(tmp_path / "images", page)
+    html = diagrams.masks_html([Mask(page=1, n=1, box=[0.3, 0.4, 0.4, 0.6])], target=1, reveal=False, box=box)
+    assert 'style="left:25.0%;top:25.0%;width:25.0%;height:25.0%"' in html  # relative to the crop
+
+
+def test_turning_a_photo_by_hand_turns_its_frame(client, monkeypatch):
+    from app import main
+    from app.models import Deck
+
+    async def framed(images, prompt, deck=""):
+        mask = Mask(page=1, n=1, box=[0.1, 0.2, 0.3, 0.4])
+        deck = Deck(deck="D", cards=[Card(front="What is (1)?", back="x", mask=mask)])
+        return llm.Extracted(deck, [0], [Frame(page=1, box=[0.05, 0.1, 0.5, 0.6])])
+
+    monkeypatch.setattr(main, "extract_cards", framed)
+    files = [("images", ("p.jpg", photo(1000, 500), "image/jpeg"))]
+    lesson = client.post("/api/extract", files=files, data={"prompt": "p"}).json()
+    turned = client.post(f"/api/lessons/{lesson['id']}/photos/1/rotate").json()
+    assert turned["frames"][0]["box"] == pytest.approx(diagrams.rotate_box([0.05, 0.1, 0.5, 0.6], 90))
+
+    # The exported image is cropped to the frame and its masks
+    body = {"deck": "D", "cards": turned["cards"], "lesson_id": lesson["id"]}
+    with zipfile.ZipFile(io.BytesIO(client.post("/api/export", json=body).content)) as z:
+        (name,) = json.loads(z.read("media")).values()
+        (index,) = json.loads(z.read("media")).keys()
+        size = Image.open(io.BytesIO(z.read(index))).size
+    assert name.startswith("diagram-page-1-") and size[0] < 500 and size[1] < 1000

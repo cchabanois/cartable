@@ -80,8 +80,9 @@
       "owner": "👤 <strong>{owner}</strong>'s lesson",
       "sharedSwitch": "Shared with the other profiles",
       "promptUsed": "📝 Instructions used for this lesson",
-      "diagramHint": "Diagram: drag a red mask to move it, its round corner to resize it, so it hides the whole label.",
+      "diagramHint": "Diagram: drag a red mask to move it, its round corner to resize it, so it hides the whole label. The dashed frame is what Anki shows of the photo: drag its blue corners to crop it.",
       "diagramWarning": "With this AI model (Claude), masks are sometimes too small on handwriting: check that they hide the whole label.",
+      "cropFrame": "What Anki shows of the photo",
       "readOnly": "🔒 Read only: only {owner}'s profile can change it. You can still add it to your Anki."
     },
     "revise": {

@@ -21,7 +21,7 @@ from pydantic import BaseModel
 
 from . import diagrams, i18n, settings
 from .errors import AppError
-from .models import Card, Deck, Extraction, Mask, Revision
+from .models import Card, Deck, Extraction, Frame, Mask, Revision
 from .settings import Settings
 
 log = logging.getLogger("cartable")
@@ -54,8 +54,9 @@ on each photo, in reading order. Front: a short question asking what the numbere
 is, e.g. "What is (2)?", in the language of the instructions. Back: the label's text. \
 Fill "mask": page = the photo's number, n = the label's number, box = the tight \
 bounding box of the label's text on that photo, in the format given with the request. \
-For every other card, "mask" is null. Boxes always refer to the photo as sent, even \
-when it is rotated.
+For every other card, "mask" is null. Also give, in "frames", the box of each such \
+diagram as a whole (its drawing and all its labels, nothing else of the page). Boxes \
+always refer to the photo as sent, even when it is rotated.
 - Text lines: for each photo, its longest line of printed text (a title, a sentence): \
 the box of its first word and the box of its last word, in reading order, in the same \
 format as the diagram boxes. On a photo taken sideways or upside down, the first word \
@@ -99,17 +100,26 @@ def _prepare(images: list[Image]) -> tuple[list[Image], list[tuple[int, int] | N
     return prepared, sizes
 
 
-async def extract_cards(images: list[Image], prompt: str, deck: str = "") -> tuple[Deck, list[int]]:
-    """The cards, and the clockwise turn that puts each photo upright."""
+@dataclass
+class Extracted:
+    deck: Deck
+    turns: list[int]  # clockwise turn that puts each photo upright
+    frames: list[Frame]  # diagram frames, as fractions of the photos (not turned yet)
+
+
+async def extract_cards(images: list[Image], prompt: str, deck: str = "") -> Extracted:
     s = settings.current()
     if s.llm == "fake":
-        return _fake(images, prompt, deck), [0] * len(images)
+        return Extracted(_fake(images, prompt, deck), [0] * len(images), [])
     fmt = diagrams.box_format(s.model_for_provider())
     images, sizes = _prepare(images)
     result = await _generate(s, images, _user_text(prompt, deck, len(images), sizes, fmt), Extraction)
     diagrams.normalize(result.cards, sizes, fmt)
-    turns = diagrams.turns(result.text_lines, sizes, fmt)
-    return Deck(deck=result.deck, cards=result.cards), turns
+    return Extracted(
+        Deck(deck=result.deck, cards=result.cards),
+        diagrams.turns(result.text_lines, sizes, fmt),
+        diagrams.frames(result.frames, sizes, fmt),
+    )
 
 
 def _revision_text(prompt: str, deck: Deck, instruction: str, lang: str, photos: int) -> str:

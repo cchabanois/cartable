@@ -12,7 +12,7 @@ from datetime import date
 from pathlib import Path
 
 from . import storage
-from .models import Lesson, LessonIn, LessonSummary
+from .models import Frame, Lesson, LessonIn, LessonSummary
 
 ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")  # folder names we create; blocks "../"
 
@@ -60,7 +60,7 @@ def _new_folder(deck: str) -> Path:
     return path
 
 
-def create(lesson: LessonIn, prompt: str, photos: list[bytes], owner: str = "") -> Lesson:
+def create(lesson: LessonIn, prompt: str, photos: list[bytes], owner: str = "", frames: list[Frame] = ()) -> Lesson:
     with storage.lock:
         path = _new_folder(lesson.deck)
         tmp = path.with_name(f".{path.name}.tmp")
@@ -72,7 +72,7 @@ def create(lesson: LessonIn, prompt: str, photos: list[bytes], owner: str = "") 
             _write(
                 tmp,
                 Lesson(
-                    **{**lesson.model_dump(), "owner": owner, "shared": False},
+                    **{**lesson.model_dump(), "owner": owner, "shared": False, "frames": list(frames)},
                     id=path.name,
                     prompt=prompt,
                     photo_count=len(photos),

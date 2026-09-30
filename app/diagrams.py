@@ -13,11 +13,12 @@ from pathlib import Path
 
 from PIL import Image, ImageOps
 
-from .models import Card, Mask, TextLine
+from .models import Card, Frame, Mask, TextLine
 
 MAX_SIDE = 1568  # larger images get downsized by some models: pixel boxes refer to what they see
 CARD_SIDE = 1000  # the diagram in Anki: enough to read it, light to sync
 CARD_QUALITY = 75
+CROP_MARGIN = 0.03  # around the diagram and its masks, as a fraction of the photo
 PADDING = 0.006  # added around a detected box, as a fraction of the photo's larger side
 
 # How each model family gives boxes. Gemini and Qwen are trained on 0-1000 boxes;
@@ -87,6 +88,31 @@ def normalize(cards: list[Card], sizes: list[tuple[int, int] | None], fmt: str) 
         card.mask = Mask(page=mask.page, n=mask.n, box=_clamp([x0 - pad_x, y0 - pad_y, x1 + pad_x, y1 + pad_y]))
 
 
+def frames(found: list[Frame], sizes: list[tuple[int, int] | None], fmt: str) -> list[Frame]:
+    """The AI's diagram frames as fractions of the photos (unusable ones dropped)."""
+    result = []
+    for frame in found:
+        size = sizes[frame.page - 1] if 1 <= frame.page <= len(sizes) else None
+        box = _fractions(frame.box, size, fmt) if size else None
+        if box:
+            margin = [-CROP_MARGIN, -CROP_MARGIN, CROP_MARGIN, CROP_MARGIN]  # a frame drawn tight on the drawing
+            result.append(Frame(page=frame.page, box=_clamp([v + m for v, m in zip(box, margin, strict=True)])))
+    return result
+
+
+def crop(frame: list[float] | None, masks: list[Mask]) -> list[float] | None:
+    """What Anki shows of a photo: the diagram's frame (from the AI, or as the user set
+    it), stretched to hold every mask with a margin, so a frame never cuts a label.
+    No frame: None, the whole photo. The page computes the same (cropFor)."""
+    if frame is None:
+        return None
+    m = CROP_MARGIN
+    boxes = [frame, *([b[0] - m, b[1] - m, b[2] + m, b[3] + m] for b in (mask.box for mask in masks))]
+    x0, y0 = min(b[0] for b in boxes), min(b[1] for b in boxes)
+    x1, y1 = max(b[2] for b in boxes), max(b[3] for b in boxes)
+    return _clamp([x0, y0, x1, y1])
+
+
 def turns(lines: list[TextLine], sizes: list[tuple[int, int] | None], fmt: str) -> list[int]:
     """The clockwise turn that puts each photo upright, from the reading direction of
     a line of text on it: from its first word to its last. Text going down the photo
@@ -124,8 +150,8 @@ def rotate_box(box: list[float], degrees: int) -> list[float]:
     return box
 
 
-def turn(data: bytes, masks: list[Mask], degrees: int) -> bytes:
-    """A photo turned `degrees` clockwise, its masks turned with it (in place).
+def turn(data: bytes, masks: list[Mask | Frame], degrees: int) -> bytes:
+    """A photo turned `degrees` clockwise, its masks (and frames) turned with it (in place).
     Not a right angle, or an unreadable photo: unchanged."""
     if degrees not in ROTATIONS:
         return data
@@ -140,39 +166,50 @@ def turn(data: bytes, masks: list[Mask], degrees: int) -> bytes:
     return out.getvalue()
 
 
-def straighten(photos: list[bytes], cards: list[Card], rotations: list[int]) -> list[bytes]:
-    """Turn the photos the AI found sideways or upside down, and their masks with them."""
+def straighten(photos: list[bytes], cards: list[Card], rotations: list[int], frames: list[Frame] = ()) -> list[bytes]:
+    """Turn the photos the AI found sideways or upside down, their masks and diagram
+    frames with them."""
     return [
-        turn(data, [c.mask for c in cards if c.mask and c.mask.page == page], rotations[page - 1])
-        if page <= len(rotations)
-        else data
+        turn(data, boxes_on(page, cards, frames), rotations[page - 1]) if page <= len(rotations) else data
         for page, data in enumerate(photos, start=1)
     ]
+
+
+def boxes_on(page: int, cards: list[Card], frames: list[Frame]) -> list[Mask | Frame]:
+    return [c.mask for c in cards if c.mask and c.mask.page == page] + [f for f in frames if f.page == page]
 
 
 def _clamp(box: list[float]) -> list[float]:
     return [round(min(1.0, max(0.0, v)), 4) for v in box]
 
 
-def page_image(folder: Path, photo: Path) -> Path:
-    """The photo as sent to Anki, shared by every card of the diagram: light (the
-    masks are HTML over it, not drawn in). Named after its content."""
+def page_image(folder: Path, photo: Path, box: list[float] | None = None) -> Path:
+    """The photo as sent to Anki, shared by every card of the diagram, cropped to `box`
+    (fractions, see `crop`): light, as the masks are HTML over it, not drawn in.
+    Named after its content."""
     data = photo.read_bytes()
     folder.mkdir(parents=True, exist_ok=True)
-    path = folder / f"diagram-{photo.stem}-{hashlib.sha1(data).hexdigest()[:10]}.jpg"
+    key = hashlib.sha1(data + repr(box).encode()).hexdigest()[:10]
+    path = folder / f"diagram-{photo.stem}-{key}.jpg"
     if not path.exists():
         image = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
+        if box:
+            w, h = image.size
+            image = image.crop((round(box[0] * w), round(box[1] * h), round(box[2] * w), round(box[3] * h)))
         image.thumbnail((CARD_SIDE, CARD_SIDE))
         image.save(path, "JPEG", quality=CARD_QUALITY, optimize=True)
     return path
 
 
-def masks_html(masks: list[Mask], target: int, reveal: bool) -> str:
-    """The masks over the diagram, positioned in % of the image: every label hidden
-    behind its number, `target` highlighted (question) or shown again (answer)."""
+def masks_html(masks: list[Mask], target: int, reveal: bool, box: list[float] | None = None) -> str:
+    """The masks over the diagram, positioned in % of the image (cropped to `box`):
+    every label hidden behind its number, `target` highlighted (question) or shown
+    again (answer)."""
+    cx, cy, cw, ch = (box[0], box[1], box[2] - box[0], box[3] - box[1]) if box else (0, 0, 1, 1)
     parts = []
     for mask in sorted(masks, key=lambda m: m.n):
-        x0, y0, x1, y1 = (round(v * 100, 2) for v in mask.box)
+        relative = ((mask.box[0] - cx) / cw, (mask.box[1] - cy) / ch, (mask.box[2] - cx) / cw, (mask.box[3] - cy) / ch)
+        x0, y0, x1, y1 = (round(v * 100, 2) for v in relative)
         style = f"left:{x0}%;top:{y0}%;width:{round(x1 - x0, 2)}%;height:{round(y1 - y0, 2)}%"
         if mask.n == target:
             kind, text = ("revealed", "") if reveal else ("target", f"({mask.n})")

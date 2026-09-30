@@ -39,13 +39,25 @@ class TextLine(BaseModel):
     last_word: list[float] = Field(description="Box of the line's last word, in the format of the instructions.")
 
 
+class Frame(BaseModel):
+    """Where a diagram is on a photo: the image Anki gets is cropped to it."""
+
+    page: int = Field(description="Number of the photo (1 = first photo).")
+    box: list[float] = Field(
+        description="Box of the whole diagram (its drawing and all its labels), in the format of the instructions."
+    )
+
+
 class Extraction(Deck):
-    """Cards read from the photos, and a line of text on each photo (to save sideways
-    photos upright)."""
+    """Cards read from the photos, a line of text on each photo (to save sideways
+    photos upright) and the frame of each diagram."""
 
     text_lines: list[TextLine] = Field(
         default_factory=list,
         description="For each photo: its longest line of printed text (a title, a sentence).",
+    )
+    frames: list[Frame] = Field(
+        default_factory=list, description="For each photo with diagram cards: the frame of the diagram."
     )
 
 
@@ -63,6 +75,8 @@ class LessonIn(Deck):
     # Whether every Anki profile sees the lesson (None in an update = unchanged).
     # Only the owner's profile may change it; the owner itself never changes.
     shared: bool | None = None
+    # Diagram frames: what Anki shows of each photo (None in an update = unchanged)
+    frames: list[Frame] | None = None
 
 
 class Lesson(LessonIn):
@@ -71,6 +85,7 @@ class Lesson(LessonIn):
     owner: str = ""  # Anki profile open when the lesson was created ("" = none: shared)
     shared: bool = False
     photo_count: int
+    frames: list[Frame] = []  # fractions of the photos: from the AI, then as the user set them
     created_at: str
     updated_at: str
     exported_at: str | None = None
@@ -87,6 +102,7 @@ class LessonSummary(BaseModel):
     shared: bool = False
     card_count: int
     photo_count: int
+    frames: list[Frame] = []  # fractions of the photos: from the AI, then as the user set them
     created_at: str
     updated_at: str
     exported_at: str | None = None

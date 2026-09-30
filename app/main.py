@@ -26,6 +26,7 @@ from .models import (
     Deck,
     ExportRequest,
     Lesson,
+    LessonAccess,
     LessonIn,
     LessonSummary,
     Prompt,
@@ -391,6 +392,27 @@ async def admin_test() -> dict:
     start = time.monotonic()
     result = await check(s)
     return {"llm": s.llm, "model": s.model_for_provider(), "seconds": round(time.monotonic() - start, 1), **result}
+
+
+@app.get("/api/admin/lessons", dependencies=[Depends(require_admin)])
+async def admin_lessons() -> dict:
+    """Every lesson, whoever owns it, and Anki's profiles (None: Anki not reachable)."""
+    return {"lessons": lessons.list_all(), "profiles": await ankiconnect.profiles()}
+
+
+@app.put("/api/admin/lessons/{id}", dependencies=[Depends(require_admin)])
+def admin_lesson_access(id: str, access: LessonAccess) -> LessonSummary:
+    """Give a lesson to another profile (or to nobody), share it or not."""
+    lesson = lessons.set_access(id, access.owner, access.shared)
+    if lesson is None:
+        raise AppError("lesson.not_found", 404)
+    return LessonSummary(card_count=len(lesson.cards), **lesson.model_dump(exclude={"cards"}))
+
+
+@app.delete("/api/admin/lessons/{id}", status_code=204, dependencies=[Depends(require_admin)])
+def admin_delete_lesson(id: str) -> None:
+    if not lessons.delete(id):
+        raise AppError("lesson.not_found", 404)
 
 
 @app.get("/api/qr")

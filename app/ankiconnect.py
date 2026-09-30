@@ -69,6 +69,15 @@ async def active_profile() -> str | None:
         return None
 
 
+async def profiles() -> list[str] | None:
+    """Every Anki profile, or None when Anki can't be reached."""
+    try:
+        async with httpx.AsyncClient(timeout=2.0, transport=_transport) as client:
+            return list(await _invoke(client, "getProfiles") or [])
+    except AnkiConnectError:
+        return None
+
+
 async def version() -> int:
     async with _client() as client:
         return await _invoke(client, "version")

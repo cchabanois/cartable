@@ -153,8 +153,14 @@ def _active_profile(p: dict) -> str | None:
     return mw.pm.name if mw.col else None
 
 
+def _profiles(p: dict) -> list[str]:
+    """Every Anki profile (same action as AnkiConnect): owners to pick in Cartable's settings."""
+    return list(mw.pm.profiles())
+
+
 ACTIONS: dict[str, Callable[[dict], Any]] = {
     "getActiveProfile": _active_profile,
+    "getProfiles": _profiles,
     "modelNames": _model_names,
     "createModel": _create_model,
     "createDeck": _create_deck,

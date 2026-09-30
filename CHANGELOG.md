@@ -7,6 +7,10 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ## [Unreleased]
 
+### Added
+
+- Settings page (⚙️), "Lessons" section: every lesson with its owner; give a lesson to another Anki profile or to nobody, share it or not, delete it. Lessons whose owner no longer exists in Anki are flagged.
+
 ### Changed
 
 - A lesson is read-only for the other Anki profiles: only the profile that created it can edit, correct with the AI, share or delete it. The others can still read it, send it to their own Anki and export it (without changing it).

@@ -264,6 +264,19 @@
       "allProfilesView": "Permettre de voir les leçons des autres profils",
       "allProfilesViewHint": "(interrupteur « Tous les profils » dans 📚 ; décoché, chaque profil ne voit que ses leçons et les leçons partagées)"
     },
+    "lessons": {
+      "title": "Leçons",
+      "hint": "À qui appartient chaque leçon. Une leçon ne se modifie que depuis le profil Anki de son propriétaire ; sans propriétaire, elle est à tout le monde. Les changements faits ici s'appliquent tout de suite.",
+      "ankiClosed": "Anki est injoignable : ouvre-le pour choisir parmi ses profils.",
+      "none": "Aucune leçon pour l'instant.",
+      "owner": "Propriétaire",
+      "noOwner": "Personne (commune à tous)",
+      "missing": "{owner} (n'existe plus dans Anki)",
+      "shared": "Partagée avec les autres profils",
+      "delete": "Supprimer la leçon",
+      "confirmDelete": "Supprimer la leçon « {deck} » pour tous les profils ? Ses photos et ses cartes sont effacées.",
+      "changed": "« {deck} » : enregistré."
+    },
     "passwordSection": {
       "title": "🔐 Mot de passe administrateur",
       "new": "Nouveau mot de passe",

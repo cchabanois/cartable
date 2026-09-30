@@ -210,6 +210,47 @@
           <p class="test-result" x-show="ankiResult" :class="ankiResult?.ok ? 'ok' : 'ko'" x-text="ankiResult?.text"></p>
         </section>
 
+        <!-- Lessons: who they belong to (changes apply right away, not with "Save") -->
+        <section class="panel admin-lessons" x-show="lessons">
+          <h2 x-text="$t('admin.lessons.title')"></h2>
+          <p class="hint" x-text="$t('admin.lessons.hint')"></p>
+          <p class="hint warn" x-show="lessons && !lessons.profiles" x-text="$t('admin.lessons.ankiClosed')"></p>
+          <p class="hint" x-show="lessons && !lessons.lessons.length" x-text="$t('admin.lessons.none')"></p>
+          <ul class="admin-lesson-list">
+            <template x-for="l in lessons?.lessons ?? []" :key="l.id">
+              <li :class="{ orphan: ownerMissing(l) }">
+                <div class="admin-lesson-head">
+                  <strong x-text="l.deck"></strong>
+                  <button type="button" class="icon-btn muted" @click="deleteLesson(l)"
+                          :aria-label="$t('admin.lessons.delete')">🗑</button>
+                </div>
+                <small class="muted">
+                  <span x-text="$t('common.count.cards', { count: l.card_count })"></span> ·
+                  <span x-text="formatDate(l.updated_at)"></span>
+                </small>
+                <div class="admin-lesson-access">
+                  <label class="owner-pick">
+                    <span x-text="$t('admin.lessons.owner')"></span>
+                    <select @change="setAccess(l, { owner: $event.target.value })">
+                      <option value="" :selected="!l.owner" x-text="$t('admin.lessons.noOwner')"></option>
+                      <template x-for="p in ownerChoices(l)" :key="p">
+                        <option :value="p" :selected="l.owner === p"
+                                x-text="ownerMissing({ owner: p }) ? $t('admin.lessons.missing', { owner: p }) : p"></option>
+                      </template>
+                    </select>
+                  </label>
+                  <label class="switch" :class="{ disabled: !l.owner }">
+                    <input type="checkbox" :checked="l.shared || !l.owner" :disabled="!l.owner"
+                           @change="setAccess(l, { shared: $event.target.checked })">
+                    <span class="track"><span class="knob"></span></span>
+                    <span x-text="$t('admin.lessons.shared')"></span>
+                  </label>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </section>
+
         <!-- Password -->
         <section class="panel" x-show="status.password_needed">
           <h2 x-text="$t('admin.passwordSection.title')"></h2>

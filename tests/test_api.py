@@ -1081,3 +1081,36 @@ def test_release_notes(tmp_path, monkeypatch):
     assert changelog_section.notes("0.3.0") == "- Next thing"  # not finalized yet: Unreleased
     changelog.write_text("# Changelog\n\n## [Unreleased]\n\n## [0.1.0]\n\n- First\n")
     assert changelog_section.notes("0.2.0") == "No changes listed yet."
+
+
+def test_admin_manages_every_lesson(anki, admin):
+    lea = _extract(admin)  # Léa's, private
+    url = f"/api/admin/lessons/{lea['id']}"
+    assert admin.get("/api/admin/lessons").status_code == 401  # settings password needed
+    assert admin.put(url, json={"owner": "Paul"}).status_code == 401
+
+    listing = admin.get("/api/admin/lessons", headers=ADMIN).json()
+    assert listing["profiles"] == ["Léa", "Paul"]
+    assert [(x["id"], x["owner"], x["shared"]) for x in listing["lessons"]] == [(lea["id"], "Léa", False)]
+
+    # Given to Paul, shared, then to nobody; the content is untouched
+    anki.profile = "Paul"
+    assert admin.put(url, headers=ADMIN, json={"owner": "Paul"}).json()["owner"] == "Paul"
+    assert admin.put(f"/api/lessons/{lea['id']}", json={"deck": "Paul's now", "cards": []}).status_code == 200
+    assert admin.put(url, headers=ADMIN, json={"shared": True}).json()["shared"] is True
+    nobody = admin.put(url, headers=ADMIN, json={"owner": ""}).json()
+    assert (nobody["owner"], nobody["deck"]) == ("", "Paul's now")
+
+    # A lesson whose owner left Anki can be deleted from the settings
+    admin.put(url, headers=ADMIN, json={"owner": "Ghost"})
+    assert admin.delete(url, headers=ADMIN).status_code == 204
+    assert admin.get(f"/api/lessons/{lea['id']}").status_code == 404
+    assert admin.delete(url, headers=ADMIN).status_code == 404
+    assert admin.put(url, headers=ADMIN, json={"owner": "Paul"}).status_code == 404
+
+
+def test_admin_lessons_without_anki(admin):
+    _extract(admin)
+    listing = admin.get("/api/admin/lessons", headers=ADMIN).json()
+    assert listing["profiles"] is None  # Anki closed: the page says so
+    assert len(listing["lessons"]) == 1

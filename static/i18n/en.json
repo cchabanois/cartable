@@ -264,6 +264,19 @@
       "allProfilesView": "Allow seeing other profiles' lessons",
       "allProfilesViewHint": "(“All profiles” switch in 📚; unchecked, each profile only sees its own and shared lessons)"
     },
+    "lessons": {
+      "title": "Lessons",
+      "hint": "Who each lesson belongs to. A lesson can only be changed from its owner's Anki profile; one without owner is everyone's. Changes here apply right away.",
+      "ankiClosed": "Anki isn't reachable: open it to choose among its profiles.",
+      "none": "No lessons yet.",
+      "owner": "Owner",
+      "noOwner": "Nobody (everyone's)",
+      "missing": "{owner} (not in Anki any more)",
+      "shared": "Shared with the other profiles",
+      "delete": "Delete the lesson",
+      "confirmDelete": "Delete the lesson \"{deck}\" for every profile? Its photos and cards are removed.",
+      "changed": "\"{deck}\": saved."
+    },
     "passwordSection": {
       "title": "🔐 Admin password",
       "new": "New password",

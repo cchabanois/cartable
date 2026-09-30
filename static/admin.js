@@ -128,6 +128,12 @@ document.addEventListener("alpine:init", () => {
       this.pw.login = "";
     },
 
+    // The demo provider (canned cards, whatever the photo) is for tests and development
+    // (CARTABLE_LLM=fake): only listed when it is the saved choice.
+    shownProviders() {
+      return PROVIDERS.filter((p) => p.id !== "fake" || this.saved?.llm === "fake");
+    },
+
     provider() {
       return PROVIDERS.find((p) => p.id === this.form.llm) ?? PROVIDERS[0];
     },

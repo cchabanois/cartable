@@ -73,7 +73,7 @@ Environment variables (see `.env.example`) provide defaults. Whatever is saved o
 | **Gemini** (default) | Official `google-genai` SDK. A free [AI Studio](https://aistudio.google.com/) key is enough to start. Falls back to other models when the main one is overloaded. |
 | **Claude** | Official `anthropic` SDK. |
 | **OpenAI-compatible** | Presets for OpenAI and OpenRouter (one key for GPT, Claude, Gemini, Mistral…), or any other URL. Each service keeps its own key. *Load models* lists only models that accept images (and structured output, when the service says so). *Test* sends a small image to check that the model can read it and answer in JSON. |
-| **Demo** (`fake`) | Canned cards, no key and no cost, for working on the interface. |
+| **Demo** (`fake`) | Canned cards whatever the photo, no key and no cost: for the tests and for working on the interface. Not offered in ⚙️; set `CARTABLE_LLM=fake` in `.env`. |
 
 The output format is always forced with a JSON schema. The user's prompt only says *what* to extract.
 

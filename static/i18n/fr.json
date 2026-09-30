@@ -221,7 +221,8 @@
       },
       "fake": {
         "name": "Démo",
-        "description": "Cartes factices, pour essayer l'appli sans clé."
+        "description": "Cartes factices, pour les tests et le développement.",
+        "warning": "Mode démo : les cartes ne viennent pas de tes photos, ce sont toujours les mêmes. Choisis un autre fournisseur pour utiliser Cartable."
       },
       "model": "Modèle",
       "default": "{model} (par défaut)",

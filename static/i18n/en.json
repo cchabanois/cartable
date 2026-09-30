@@ -221,7 +221,8 @@
       },
       "fake": {
         "name": "Demo",
-        "description": "Canned cards, to try the app without a key."
+        "description": "Canned cards, for tests and development.",
+        "warning": "Demo mode: the cards don't come from your photos, they are always the same. Choose another provider to use Cartable."
       },
       "model": "Model",
       "default": "{model} (default)",

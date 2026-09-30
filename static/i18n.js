@@ -63,7 +63,9 @@ function browserLanguage(available) {
 
 async function loadMessages(lang) {
   try {
-    const res = await fetch(`i18n/${lang}.json`);
+    // Always ask the server (a 304 when unchanged): an old cached copy would
+    // leave the new page's texts untranslated after an update.
+    const res = await fetch(`i18n/${lang}.json`, { cache: "no-cache" });
     return res.ok ? await res.json() : {};
   } catch {
     return {};

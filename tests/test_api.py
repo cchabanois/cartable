@@ -1012,12 +1012,12 @@ def test_private_lessons_hidden_when_option_off(anki, admin):
     admin.put(f"/api/lessons/{shared['id']}", json={"deck": "S", "cards": [], "shared": True})
 
     # Option on (default): the page may show everything
-    assert admin.get("/api/config").json() == {"all_profiles_view": True}
+    assert admin.get("/api/config").json()["all_profiles_view"] is True
     assert len(admin.get("/api/lessons").json()) == 3
 
     # Option off: Paul doesn't get Léa's private lesson, in any route
     admin.put("/api/admin/settings", headers=ADMIN, json={"all_profiles_view": False})
-    assert admin.get("/api/config").json() == {"all_profiles_view": False}
+    assert admin.get("/api/config").json()["all_profiles_view"] is False
     ids = {lesson["id"] for lesson in admin.get("/api/lessons").json()}
     assert ids == {paul["id"], shared["id"]}
     for method, url in [
@@ -1031,3 +1031,27 @@ def test_private_lessons_hidden_when_option_off(anki, admin):
 
     anki.profile = "Léa"  # back in Léa's profile: it's hers again
     assert admin.get(f"/api/lessons/{lea['id']}").status_code == 200
+
+
+def test_version_from_pyproject(client):
+    import tomllib
+    from pathlib import Path
+
+    version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+    assert client.get("/api/config").json()["version"] == version
+
+
+def test_release_notes(tmp_path, monkeypatch):
+    from tools import changelog_section
+
+    changelog = tmp_path / "CHANGELOG.md"
+    monkeypatch.setattr(changelog_section, "CHANGELOG", changelog)
+    changelog.write_text(
+        "# Changelog\n\n## [Unreleased]\n\n- Next thing\n\n## [0.2.0] - 2026-10-01\n\n- Done\n\n"
+        "## [0.1.0]\n\n- First\n\n[0.2.0]: https://example.com\n"
+    )
+    assert changelog_section.notes("0.2.0") == "- Done"  # release being finalized
+    assert changelog_section.notes("0.1.0") == "- First"  # last section, before the links
+    assert changelog_section.notes("0.3.0") == "- Next thing"  # not finalized yet: Unreleased
+    changelog.write_text("# Changelog\n\n## [Unreleased]\n\n## [0.1.0]\n\n- First\n")
+    assert changelog_section.notes("0.2.0") == "No changes listed yet."

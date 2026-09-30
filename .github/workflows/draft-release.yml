@@ -1,0 +1,56 @@
+name: Draft release
+
+# After every merge on main, keep a draft GitHub release ready for the version
+# in pyproject.toml: the Anki add-on built from main, and the CHANGELOG.md notes.
+# Publishing the draft on GitHub creates the tag v<version> on that commit.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write  # create and update the draft release
+
+concurrency:
+  group: draft-release
+  cancel-in-progress: true
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Version
+        run: |
+          version=$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "TAG=v$version" >> "$GITHUB_ENV"
+      - name: Skip if this version is already published
+        run: |
+          if [ "$(gh release view "$TAG" --json isDraft -q .isDraft 2>/dev/null)" = "false" ]; then
+            echo "::notice::$TAG is already published: bump the version in pyproject.toml to prepare the next one."
+            echo "PUBLISHED=1" >> "$GITHUB_ENV"
+          fi
+      - if: env.PUBLISHED != '1'
+        run: python tools/changelog_section.py "$VERSION" > notes.md
+      - if: env.PUBLISHED != '1'
+        run: python tools/build_addon.py
+      - name: Create or update the draft
+        if: env.PUBLISHED != '1'
+        run: |
+          # A single draft: remove drafts left for other versions
+          gh release list --json tagName,isDraft -q '.[] | select(.isDraft) | .tagName' | while read -r other; do
+            [ "$other" != "$TAG" ] && gh release delete "$other" --yes
+          done
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release edit "$TAG" --draft --target "$GITHUB_SHA" --title "Cartable $VERSION" --notes-file notes.md
+            gh release upload "$TAG" dist/*.ankiaddon --clobber
+          else
+            gh release create "$TAG" dist/*.ankiaddon --draft --target "$GITHUB_SHA" --title "Cartable $VERSION" --notes-file notes.md
+          fi

@@ -22,7 +22,7 @@ Cartable was built for learning languages (French → Spanish vocabulary and sen
 
 Cartable starts and stops with Anki desktop and writes cards directly into the open profile. You don't need AnkiConnect.
 
-1. Build the add-on: `python3 tools/build_addon.py` → `dist/cartable.ankiaddon`.
+1. Download `cartable-<version>.ankiaddon` from the [latest release](https://github.com/cchabanois/cartable/releases/latest), or build it: `python3 tools/build_addon.py` → `dist/cartable-<version>.ankiaddon`.
 2. Double-click the file (or *Tools → Add-ons → Install from file*) and restart Anki.
 3. On first start, the add-on installs its Python dependencies with [uv](https://docs.astral.sh/uv/) into its `user_files/` folder, which add-on updates keep. Official Anki builds ship uv; otherwise uv must be installed on the system.
 4. A QR code appears: scan it with the phone (same Wi-Fi) and add the page to the home screen.
@@ -151,7 +151,8 @@ Stack:
 | `app/storage.py` | data folder, atomic JSON writes, readable file names |
 | `static/` | the phone page and the settings page |
 | `anki_addon/` | the Anki add-on: server launcher and an AnkiConnect-compatible bridge |
-| `tools/build_addon.py` | builds `dist/cartable.ankiaddon` |
+| `tools/build_addon.py` | builds `dist/cartable-<version>.ankiaddon` |
+| `tools/changelog_section.py` | release notes of a version, from `CHANGELOG.md` |
 
 ## Good to know
 
@@ -160,6 +161,17 @@ Stack:
 - **Plain HTTP on the local network.** The camera works over plain HTTP, and the page can be added to the home screen as a shortcut. A fully installed app would need HTTPS.
 - **Never expose AnkiConnect or Cartable to the Internet.** Keep them on your local network.
 - **edge-tts is unofficial.** Microsoft could shut it down.
+
+## Releasing
+
+The version lives in one place, `pyproject.toml` ([semantic versioning](https://semver.org/)). The server reads it (shown at the bottom of ⚙️), and the add-on build writes it into Anki's add-on list.
+
+`pyproject.toml` holds the version being prepared. After every merge on `main`, the *Draft release* workflow keeps a draft GitHub release `vX.Y.Z` up to date: the add-on built from `main`, and the **Unreleased** section of [CHANGELOG.md](CHANGELOG.md) as notes.
+
+1. Every pull request adds a line under **Unreleased**.
+2. To release, open a pull request that renames **Unreleased** to `[X.Y.Z] - yyyy-mm-dd` (keep an empty **Unreleased** above it, and update the links at the bottom). Once merged, the draft shows these notes.
+3. Review the draft on GitHub (*Releases*) and click *Publish release*: GitHub creates the tag `vX.Y.Z` on that commit.
+4. In the next pull request, set the next version in `pyproject.toml` (until then, the draft isn't updated).
 
 ## License
 

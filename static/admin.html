@@ -237,6 +237,8 @@
           </template>
         </select>
       </label>
+      <span class="version" x-data="{ version: '' }" x-text="version && 'Cartable ' + version"
+            x-init="version = (await (await fetch('/api/config')).json()).version"></span>
     </footer>
   </main>
 

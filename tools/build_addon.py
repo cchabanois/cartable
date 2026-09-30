@@ -29,7 +29,7 @@ def main() -> None:
             for path in files(ROOT / folder):
                 z.write(path, Path("server") / path.relative_to(ROOT))
         z.write(ROOT / "requirements.txt", "server/requirements.txt")
-    print(f"{OUT} ({OUT.stat().st_size // 1024} Ko)")
+    print(f"{OUT} ({OUT.stat().st_size // 1024} KB)")
 
 
 if __name__ == "__main__":

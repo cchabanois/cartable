@@ -122,10 +122,32 @@ async def extract_cards(images: list[Image], prompt: str, deck: str = "") -> Ext
     )
 
 
-def _revision_text(prompt: str, deck: Deck, instruction: str, lang: str, photos: int) -> str:
+def _revision_text(
+    prompt: str,
+    deck: Deck,
+    instruction: str,
+    lang: str,
+    photos: int,
+    sizes: list[tuple[int, int] | None] = (),
+    fmt: str = "",
+    labels: dict[int, list[int]] | None = None,
+) -> str:
+    """`labels`: numbers of the diagram labels already hidden, per photo."""
     current = json.dumps(deck.model_dump(), ensure_ascii=False, indent=1)
     source = "these photos with these instructions" if photos else "these instructions (no photo)"
     add = "To add cards, use the photos." if photos else "To add cards, follow the instructions."
+    if photos and fmt:
+        add += (
+            ' Cards about labels already hidden on a diagram have "mask": null here: keep it null.'
+            ' To add a card about another label of a diagram (a title, a part…), fill its "mask": page,'
+            " the next free number n on that photo, and the box of the label's text,"
+            f" {diagrams.FORMATS[fmt]}."
+        )
+        if labels:
+            add += " Numbers already used: " + "; ".join(f"photo {p}: {sorted(ns)}" for p, ns in labels.items()) + "."
+        if fmt == "pixels":
+            known = [f"photo {i}: {size[0]}x{size[1]}" for i, size in enumerate(sizes, 1) if size]
+            add += " Photo sizes: " + ", ".join(known) + "."
     return f"""\
 The cards below were made from {source}:
 {prompt.strip()}
@@ -150,24 +172,45 @@ async def revise_cards(
     s = settings.current()
     if s.llm == "fake":
         return _fake_revision(deck, instruction, lang)
-    # Masks stay out of the conversation (their boxes are in our own format): the
-    # revised cards get back the mask of the card they were.
+    # The existing masks stay out of the conversation (their boxes are in our own
+    # format): the revised cards get back the mask of the card they were. New cards
+    # about a diagram label come with a mask in the model's format.
+    fmt = diagrams.box_format(s.model_for_provider())
+    images, sizes = _prepare(images)
+    labels: dict[int, list[int]] = {}
+    for card in deck.cards:
+        if card.mask:
+            labels.setdefault(card.mask.page, []).append(card.mask.n)
     plain = Deck(deck=deck.deck, cards=[c.model_copy(update={"mask": None}) for c in deck.cards])
-    revision = await _generate(s, images, _revision_text(prompt, plain, instruction, lang, len(images)), Revision)
-    _keep_masks(revision.cards, deck.cards)
+    text = _revision_text(prompt, plain, instruction, lang, len(images), sizes, fmt, labels)
+    revision = await _generate(s, images, text, Revision)
+    _keep_masks(revision.cards, deck.cards, sizes, fmt)
     return revision
 
 
-def _keep_masks(revised: list[Card], before: list[Card]) -> None:
+def _keep_masks(
+    revised: list[Card], before: list[Card], sizes: list[tuple[int, int] | None] = (), fmt: str = "pixels"
+) -> None:
     """Give each revised card the mask of the same card before (same front and back,
-    else same front; a changed answer keeps its place on the diagram)."""
+    else same front; a changed answer keeps its place on the diagram). Other cards keep
+    the mask the model gave (a label added by the correction), placed like at
+    extraction, with a number not used yet on its photo."""
     masked = [c for c in before if c.mask]
+    added = []
     for card in revised:
         match = next((c for c in masked if (c.front, c.back) == (card.front, card.back)), None)
         match = match or next((c for c in masked if c.front == card.front), None)
-        card.mask = match.mask if match else None
         if match:
+            card.mask = match.mask
             masked.remove(match)
+        elif card.mask:
+            added.append(card)
+    diagrams.normalize(added, sizes, fmt)
+    used = {(c.mask.page, c.mask.n) for c in revised if c.mask and c not in added}
+    for card in (c for c in added if c.mask):
+        if (card.mask.page, card.mask.n) in used:
+            card.mask.n = max((n for page, n in used if page == card.mask.page), default=0) + 1
+        used.add((card.mask.page, card.mask.n))
 
 
 async def _generate[T: BaseModel](s: Settings, images: list[Image], text: str, schema: type[T]) -> T:

@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- An AI correction can add a diagram label ("add a mask for the title"): the new card gets its mask, with the next free number; existing masks never move.
+
 - Diagram cards are cropped to the diagram: the AI gives its frame, stretched to hold every mask, so the diagram shows bigger on a phone. In the review, the frame is a dashed line whose corners can be dragged to crop by hand (it never cuts a label).
 
 - Photos taken sideways or upside down are saved upright, diagram masks turning with them. The turn comes from the reading direction of a line of text (where the AI places its first and last words), which is more reliable than asking the model for the page's orientation. A ↻ button on each photo turns it by hand.

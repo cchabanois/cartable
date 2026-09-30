@@ -306,3 +306,29 @@ def test_turning_a_photo_by_hand_turns_its_frame(client, monkeypatch):
         (index,) = json.loads(z.read("media")).keys()
         size = Image.open(io.BytesIO(z.read(index))).size
     assert name.startswith("diagram-page-1-") and size[0] < 500 and size[1] < 1000
+
+
+def test_correction_adds_a_masked_label():
+    kept = Mask(page=1, n=1, box=[0.1, 0.1, 0.2, 0.2])
+    before = [Card(front="What is (1)?", back="mouth", mask=kept)]
+    revised = [
+        Card(front="What is (1)?", back="mouth", mask=Mask(page=1, n=1, box=[1, 1, 2, 2])),  # the model's copy
+        Card(front="What is (2)?", back="title", mask=Mask(page=1, n=1, box=[100, 50, 300, 100])),  # added, n taken
+        Card(front="le chat", back="el gato"),
+    ]
+    llm._keep_masks(revised, before, [(1000, 500)], "pixels")
+    assert revised[0].mask == kept  # an existing mask never moves
+    added = revised[1].mask
+    assert (added.page, added.n) == (1, 2)  # the next free number
+    m = diagrams.PADDING
+    assert added.box == pytest.approx([0.1 - m, 0.1 - 2 * m, 0.3 + m, 0.2 + 2 * m])
+    assert revised[2].mask is None
+
+
+def test_correction_tells_the_model_how_to_place_a_label():
+    from app.models import Deck
+
+    empty = Deck(deck="D", cards=[])
+    text = llm._revision_text("p", empty, "add the title", "en", 1, [(800, 600)], "pixels", {1: [1, 2]})
+    assert "photo 1: [1, 2]" in text and "photo 1: 800x600" in text and diagrams.FORMATS["pixels"] in text
+    assert "mask" not in llm._revision_text("p", empty, "x", "en", 0)  # no photo, no diagram

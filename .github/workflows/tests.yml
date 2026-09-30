@@ -40,7 +40,7 @@ jobs:
         with:
           python-version: "3.14"
       - run: python tools/build_addon.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: cartable-addon
           path: dist/cartable.ankiaddon

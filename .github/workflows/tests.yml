@@ -13,6 +13,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/ruff-action@v4.1.0  # no major-version tag for this action
+      - run: ruff format --check .
+
   tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10

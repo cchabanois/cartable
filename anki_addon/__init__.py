@@ -19,7 +19,6 @@ import urllib.request
 import webbrowser
 
 import anki.lang
-
 from aqt import gui_hooks, mw
 from aqt.qt import QAction, QApplication, QDialog, QDialogButtonBox, QLabel, QMenu, QPixmap, Qt, QVBoxLayout
 from aqt.utils import showInfo, showText, showWarning, tooltip
@@ -94,8 +93,7 @@ def start() -> None:
 
     # Creating the environment can take a minute the first time: not on the UI thread.
     lang = anki_lang()
-    mw.taskman.run_in_background(lambda: server.start(config(), url, key, lang), on_done,
-                                 uses_collection=False)
+    mw.taskman.run_in_background(lambda: server.start(config(), url, key, lang), on_done, uses_collection=False)
 
 
 def check_started() -> None:
@@ -127,6 +125,7 @@ def on_main_window_ready() -> None:
 
 # --- Tools → Cartable menu -----------------------------------------------------
 
+
 def open_in_browser() -> None:
     if not server.running():
         start()
@@ -146,7 +145,7 @@ def qr_png(text: str) -> bytes | None:
 
 def show_phone() -> None:
     """How to open Cartable on the phone: a QR code of the address, and three steps."""
-    local, lan = urls()
+    _, lan = urls()
     if not server.running():
         start()
         showInfo(t("addon.notRunningYet"), title="Cartable")

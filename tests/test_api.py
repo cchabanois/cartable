@@ -4,7 +4,6 @@ import sqlite3
 import zipfile
 
 import httpx
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -62,7 +61,7 @@ def test_prompt_crud(client):
 
     assert client.delete(f"/api/prompts/{created['id']}").status_code == 204
     assert client.delete(f"/api/prompts/{created['id']}").status_code == 404
-    assert client.put(f"/api/prompts/999", json={"name": "x", "text": "y"}).status_code == 404
+    assert client.put("/api/prompts/999", json={"name": "x", "text": "y"}).status_code == 404
 
 
 def test_extract_fake(client):
@@ -330,8 +329,11 @@ def test_admin_password_protected(admin):
 
 def test_admin_keys_never_sent_back(admin, monkeypatch, tmp_path):
     monkeypatch.setenv("GEMINI_API_KEY", "AIzaFROMENV0001")
-    res = admin.put("/api/admin/settings", headers=ADMIN,
-                    json={"llm": "anthropic", "model": "claude-sonnet-5", "anthropic_api_key": " sk-ant-SECRET9876 "})
+    res = admin.put(
+        "/api/admin/settings",
+        headers=ADMIN,
+        json={"llm": "anthropic", "model": "claude-sonnet-5", "anthropic_api_key": " sk-ant-SECRET9876 "},
+    )
     assert res.status_code == 200
     view = res.json()
     assert view["anthropic_api_key"] == "•••• 9876"
@@ -372,11 +374,16 @@ def test_extraction_follows_settings(admin, monkeypatch):
 
 # --- AI correction -------------------------------------------------------------
 
+
 def test_revision_by_instruction(client):
     lesson = _extract(client)
     n = len(lesson["cards"])
-    body = {"deck": lesson["deck"], "cards": lesson["cards"], "voice": "es-ES-ElviraNeural",
-            "instruction": "supprime la dernière carte"}
+    body = {
+        "deck": lesson["deck"],
+        "cards": lesson["cards"],
+        "voice": "es-ES-ElviraNeural",
+        "instruction": "supprime la dernière carte",
+    }
     res = client.post(f"/api/lessons/{lesson['id']}/revise", json=body)
     assert res.status_code == 200
     assert res.json()["summary"]
@@ -403,6 +410,7 @@ def test_revision_errors(client, monkeypatch):
 
 
 # --- Direct send to Anki (AnkiConnect) -------------------------------------------
+
 
 class FakeAnki:
     """In-memory AnkiConnect, enough for Cartable's calls."""
@@ -433,11 +441,16 @@ class FakeAnki:
         elif action == "storeMediaFile":
             self.media[p["filename"]] = base64.b64decode(p["data"])
         elif action == "findNotes":
-            result = [i for i, n in self.notes.items()
-                      if p["query"] == f'"note:{n["modelName"]}" did:{self.decks[n["deckName"]]}']
+            result = [
+                i
+                for i, n in self.notes.items()
+                if p["query"] == f'"note:{n["modelName"]}" did:{self.decks[n["deckName"]]}'
+            ]
         elif action == "notesInfo":
-            result = [{"noteId": i, "fields": {k: {"value": v} for k, v in self.notes[i]["fields"].items()}}
-                      for i in p["notes"]]
+            result = [
+                {"noteId": i, "fields": {k: {"value": v} for k, v in self.notes[i]["fields"].items()}}
+                for i in p["notes"]
+            ]
         elif action == "updateNoteFields":
             self.notes[p["note"]["id"]]["fields"] = p["note"]["fields"]
         elif action == "addNote":
@@ -489,7 +502,10 @@ def test_direct_send_to_anki(anki, client):
     assert mother["fields"]["Audio"] == f"[sound:{tts.filename('la madre', 'es-ES-ElviraNeural')}]"
     assert mother["tags"] == ["famille_proche"]
     assert anki.notes[2]["fields"]["Front"] == "&lt;b&gt;"
-    assert set(anki.media) == {tts.filename("la madre", "es-ES-ElviraNeural"), tts.filename("el padre", "es-ES-ElviraNeural")}
+    assert set(anki.media) == {
+        tts.filename("la madre", "es-ES-ElviraNeural"),
+        tts.filename("el padre", "es-ES-ElviraNeural"),
+    }
     assert anki.calls[-1] == "sync"
     assert client.get(f"/api/lessons/{lesson['id']}").json()["exported_at"] is not None
 
@@ -499,7 +515,7 @@ def test_direct_send_to_anki(anki, client):
     assert (res["added"], res["updated"]) == (0, 2)
     assert len(anki.notes) == 2
     assert anki.notes[1]["fields"]["Back"] == "la mamá"
-    assert "createModel" not in anki.calls[anki.calls.index("sync"):]  # note type reused
+    assert "createModel" not in anki.calls[anki.calls.index("sync") :]  # note type reused
 
 
 def test_send_without_sync_or_with_key(anki, client):
@@ -516,7 +532,10 @@ def test_sync_failure_not_blocking(client, monkeypatch):
     monkeypatch.setattr(ankiconnect, "_transport", httpx.MockTransport(fake.handle))
     res = client.post("/api/anki/send", json=SEND).json()
     assert res["added"] == 2 and res["synced"] is False
-    assert res["sync_error"] == {"code": "anki.error", "params": {"action": "sync", "detail": "AnkiWeb: login required"}}
+    assert res["sync_error"] == {
+        "code": "anki.error",
+        "params": {"action": "sync", "detail": "AnkiWeb: login required"},
+    }
 
 
 def test_anki_not_logged_in_to_ankiweb(client, monkeypatch):
@@ -538,8 +557,11 @@ def test_anki_not_logged_in_to_ankiweb(client, monkeypatch):
 def test_addon_mode(client, monkeypatch):
     """In the Anki add-on, the bridge address and key win over saved AnkiConnect settings."""
     client.post("/api/admin/password", json={"new": "secret"})
-    client.put("/api/admin/settings", headers={"X-Admin-Password": "secret"},
-               json={"ankiconnect_url": "http://autre-pc:8765", "ankiconnect_key": "ancienne"})
+    client.put(
+        "/api/admin/settings",
+        headers={"X-Admin-Password": "secret"},
+        json={"ankiconnect_url": "http://autre-pc:8765", "ankiconnect_key": "ancienne"},
+    )
     assert settings.current().ankiconnect_url == "http://autre-pc:8765"
 
     monkeypatch.setenv("CARTABLE_EMBEDDED", "1")
@@ -581,6 +603,7 @@ def test_qr_code(client):
     assert res.status_code == 200 and res.headers["content-type"] == "image/png"
     assert res.content.startswith(b"\x89PNG")
 
+
 def test_lesson_owned_by_anki_profile(anki, client):
     lesson = _extract(client)
     assert (lesson["owner"], lesson["shared"]) == ("Léa", False)
@@ -596,8 +619,10 @@ def test_send_refused_in_another_profile(anki, client):
     anki.profile = "Paul"
     res = client.post("/api/anki/send", json={**SEND, "lesson_id": lesson["id"]})
     assert res.status_code == 409
-    assert res.json()["detail"] == {"code": "anki.profile_mismatch",
-                                    "params": {"lesson_profile": "Léa", "active_profile": "Paul"}}
+    assert res.json()["detail"] == {
+        "code": "anki.profile_mismatch",
+        "params": {"lesson_profile": "Léa", "active_profile": "Paul"},
+    }
     assert "addNote" not in anki.calls  # nothing written into Paul's collection
 
     res = client.post("/api/anki/send", json={**SEND, "lesson_id": lesson["id"], "force": True})
@@ -607,8 +632,8 @@ def test_send_refused_in_another_profile(anki, client):
     assert client.post("/api/anki/send", json={**SEND, "lesson_id": lesson["id"]}).status_code == 200
 
 
-
 # --- Languages ---------------------------------------------------------------------
+
 
 def _keys(d, prefix=""):
     keys = set()
@@ -632,9 +657,12 @@ def test_all_error_codes_translated():
     """Every AppError code raised in the code has a message in English."""
     import re
     from pathlib import Path
+
     codes = set()
     for path in Path("app").glob("*.py"):
-        codes |= set(re.findall(r'(?:AppError|ExtractionError|AnkiConnectError)\(\s*"([a-z_]+\.[a-z_]+)"', path.read_text()))
+        codes |= set(
+            re.findall(r'(?:AppError|ExtractionError|AnkiConnectError)\(\s*"([a-z_]+\.[a-z_]+)"', path.read_text())
+        )
     codes |= set(ankiconnect.KNOWN_ERRORS.values())
     assert codes, "no error code found"
     missing = [c for c in sorted(codes) if i18n.get("en", f"errors.{c}") is None]
@@ -654,8 +682,11 @@ def test_language_choice(monkeypatch):
 
 
 def test_lang_route(client, monkeypatch):
-    assert client.get("/api/lang").json() == {"lang": None, "available": ["en", "fr"],
-                                              "names": {"en": "English", "fr": "Français"}}
+    assert client.get("/api/lang").json() == {
+        "lang": None,
+        "available": ["en", "fr"],
+        "names": {"en": "English", "fr": "Français"},
+    }
     monkeypatch.setenv("CARTABLE_LANG", "fr_FR")
     assert client.get("/api/lang").json()["lang"] == "fr"
 
@@ -668,6 +699,7 @@ def test_revision_summary_in_page_language(client):
 
 
 # --- OpenAI-compatible services ------------------------------------------------------
+
 
 class FakeModel:
     def __init__(self, id, modalities=None, parameters=None):
@@ -683,6 +715,7 @@ def fake_openai(models, seen):
             async def gen():
                 for m in models:
                     yield m
+
             return gen()
 
     class Client:
@@ -695,17 +728,28 @@ def fake_openai(models, seen):
 
 def test_service_models(admin, monkeypatch):
     import openai
+
     seen = {}
-    admin.put("/api/admin/settings", headers=ADMIN,
-              json={"llm": "openai", "openai_base_url": "https://openrouter.ai/api/v1", "openai_api_key": "sk-or-1"})
+    admin.put(
+        "/api/admin/settings",
+        headers=ADMIN,
+        json={"llm": "openai", "openai_base_url": "https://openrouter.ai/api/v1", "openai_api_key": "sk-or-1"},
+    )
 
     # OpenRouter-like: models describe their inputs → only those accepting images
-    monkeypatch.setattr(openai, "AsyncOpenAI", fake_openai([
-        FakeModel("openai/gpt-6-luna", ["text", "image"], ["tools", "structured_outputs"]),
-        FakeModel("some/text-only", ["text"], ["structured_outputs"]),
-        FakeModel("anthropic/claude-sonnet-5", ["image", "text"], ["structured_outputs"]),
-        FakeModel("vision/no-json", ["image", "text"], ["tools", "response_format"]),
-    ], seen))
+    monkeypatch.setattr(
+        openai,
+        "AsyncOpenAI",
+        fake_openai(
+            [
+                FakeModel("openai/gpt-6-luna", ["text", "image"], ["tools", "structured_outputs"]),
+                FakeModel("some/text-only", ["text"], ["structured_outputs"]),
+                FakeModel("anthropic/claude-sonnet-5", ["image", "text"], ["structured_outputs"]),
+                FakeModel("vision/no-json", ["image", "text"], ["tools", "response_format"]),
+            ],
+            seen,
+        ),
+    )
     res = admin.post("/api/admin/models", headers=ADMIN)
     assert res.json() == {"models": ["anthropic/claude-sonnet-5", "openai/gpt-6-luna"], "vision_only": True}
     assert seen == {"base_url": "https://openrouter.ai/api/v1", "api_key": "sk-or-1"}
@@ -739,26 +783,36 @@ def test_openai_compatible_service_error(admin, monkeypatch):
             async def gen():
                 raise openai.InternalServerError("boom", response=_httpx.Response(500, request=request), body=None)
                 yield
+
             return gen()
 
-    admin.put("/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "https://api.example.test/v1"})
+    admin.put(
+        "/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "https://api.example.test/v1"}
+    )
     monkeypatch.setattr(openai, "AsyncOpenAI", Failing)
     res = admin.post("/api/admin/models", headers=ADMIN)
     assert res.status_code == 502
-    assert res.json()["detail"] == {"code": "llm.api_error",
-                                    "params": {"provider": "api.example.test", "status": 500, "detail": "boom"}}
+    assert res.json()["detail"] == {
+        "code": "llm.api_error",
+        "params": {"provider": "api.example.test", "status": 500, "detail": "boom"},
+    }
 
     admin.put("/api/admin/settings", headers=ADMIN, json={"openai_base_url": ""})
     assert admin.post("/api/admin/models", headers=ADMIN).json()["detail"]["code"] == "llm.missing_url"
 
 
 def test_one_key_per_openai_compatible_service(admin, tmp_path):
-    put = lambda body: admin.put("/api/admin/settings", headers=ADMIN, json=body).json()
+    def put(body):
+        return admin.put("/api/admin/settings", headers=ADMIN, json=body).json()
+
     put({"llm": "openai", "openai_base_url": "https://api.openai.com/v1", "openai_api_key": "sk-openai-1111"})
     view = put({"openai_base_url": "https://openrouter.ai/api/v1", "openai_api_key": "sk-or-2222"})
 
     # Each service keeps its own key; the page gets them masked, by service
-    assert view["openai_keys"] == {"https://api.openai.com/v1": "•••• 1111", "https://openrouter.ai/api/v1": "•••• 2222"}
+    assert view["openai_keys"] == {
+        "https://api.openai.com/v1": "•••• 1111",
+        "https://openrouter.ai/api/v1": "•••• 2222",
+    }
     assert view["openai_api_key"] == "•••• 2222"  # the current service's
     assert "sk-" not in json.dumps(view)
     assert settings.current().openai_key() == "sk-or-2222"
@@ -777,15 +831,15 @@ def test_legacy_openai_key_moved_to_its_service(client, tmp_path):
     """A key saved before keys per service belongs to the service saved with it only."""
     path = tmp_path / "data" / "settings.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"llm": "openai", "openai_base_url": "https://api.openai.com/v1",
-                                "openai_api_key": "sk-old-9999"}))
+    path.write_text(
+        json.dumps({"llm": "openai", "openai_base_url": "https://api.openai.com/v1", "openai_api_key": "sk-old-9999"})
+    )
     assert settings.current().openai_key() == "sk-old-9999"
     settings.save({"openai_base_url": "https://openrouter.ai/api/v1"})
     assert settings.current().openai_key() == ""  # not reused for OpenRouter
     saved = json.loads(path.read_text())
     assert "openai_api_key" not in saved  # migrated on save
     assert saved["openai_keys"] == {"https://api.openai.com/v1": "sk-old-9999"}
-
 
 
 class FakeMistralModel:
@@ -796,10 +850,19 @@ class FakeMistralModel:
 
 def test_mistral_models(admin, monkeypatch):
     import openai
-    admin.put("/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "https://api.mistral.ai/v1"})
-    monkeypatch.setattr(openai, "AsyncOpenAI", fake_openai(
-        [FakeMistralModel("mistral-medium-3-5", True), FakeMistralModel("codestral", False)], {}))
-    assert admin.post("/api/admin/models", headers=ADMIN).json() == {"models": ["mistral-medium-3-5"], "vision_only": True}
+
+    admin.put(
+        "/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "https://api.mistral.ai/v1"}
+    )
+    monkeypatch.setattr(
+        openai,
+        "AsyncOpenAI",
+        fake_openai([FakeMistralModel("mistral-medium-3-5", True), FakeMistralModel("codestral", False)], {}),
+    )
+    assert admin.post("/api/admin/models", headers=ADMIN).json() == {
+        "models": ["mistral-medium-3-5"],
+        "vision_only": True,
+    }
 
 
 def local_server(monkeypatch, routes):
@@ -818,33 +881,52 @@ def local_server(monkeypatch, routes):
 
 def test_lm_studio_models(admin, monkeypatch):
     import openai
-    admin.put("/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "http://localhost:1234/v1"})
+
+    admin.put(
+        "/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "http://localhost:1234/v1"}
+    )
     monkeypatch.setattr(openai, "AsyncOpenAI", fake_openai([FakeModel("google/gemma-4"), FakeModel("qwen/qwen3")], {}))
-    local_server(monkeypatch, {("GET", "/api/v1/models"): {"models": [
-        {"type": "llm", "key": "google/gemma-4", "capabilities": {"vision": True}},
-        {"type": "llm", "key": "qwen/qwen3", "capabilities": {"vision": False}},
-        {"type": "embedding", "key": "nomic-embed"},
-    ]}})
+    local_server(
+        monkeypatch,
+        {
+            ("GET", "/api/v1/models"): {
+                "models": [
+                    {"type": "llm", "key": "google/gemma-4", "capabilities": {"vision": True}},
+                    {"type": "llm", "key": "qwen/qwen3", "capabilities": {"vision": False}},
+                    {"type": "embedding", "key": "nomic-embed"},
+                ]
+            }
+        },
+    )
     assert admin.post("/api/admin/models", headers=ADMIN).json() == {"models": ["google/gemma-4"], "vision_only": True}
 
 
 def test_ollama_models(admin, monkeypatch):
     import openai
-    admin.put("/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "http://localhost:11434/v1"})
+
+    admin.put(
+        "/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "http://localhost:11434/v1"}
+    )
     monkeypatch.setattr(openai, "AsyncOpenAI", fake_openai([FakeModel("qwen2.5vl:7b"), FakeModel("llama3:8b")], {}))
     capabilities = {"qwen2.5vl:7b": ["completion", "vision"], "llama3:8b": ["completion"]}
-    local_server(monkeypatch, {
-        ("GET", "/api/tags"): {"models": [{"name": "qwen2.5vl:7b"}, {"name": "llama3:8b"}]},
-        ("POST", "/api/show"): lambda body: {"capabilities": capabilities[body["model"]]},
-    })
+    local_server(
+        monkeypatch,
+        {
+            ("GET", "/api/tags"): {"models": [{"name": "qwen2.5vl:7b"}, {"name": "llama3:8b"}]},
+            ("POST", "/api/show"): lambda body: {"capabilities": capabilities[body["model"]]},
+        },
+    )
     assert admin.post("/api/admin/models", headers=ADMIN).json() == {"models": ["qwen2.5vl:7b"], "vision_only": True}
 
 
 def test_test_image_and_json(admin, monkeypatch):
     """The admin test tells whether the model reads the image and answers in JSON."""
     from app import llm
+
     admin.put("/api/admin/settings", headers=ADMIN, json={"llm": "gemini", "gemini_api_key": "k"})
-    test = lambda: admin.post("/api/admin/test", headers=ADMIN)
+
+    def test():
+        return admin.post("/api/admin/test", headers=ADMIN)
 
     async def answer(color):
         return llm._CheckAnswer(color=color)
@@ -857,11 +939,13 @@ def test_test_image_and_json(admin, monkeypatch):
 
     async def not_json(*_):
         raise llm.ExtractionError("llm.invalid_answer")
+
     monkeypatch.setattr(llm, "_generate", not_json)
     assert test().json()["json"] is False
 
     async def bad_key(*_):
         raise llm.ExtractionError("llm.invalid_key", provider="Gemini")
+
     monkeypatch.setattr(llm, "_generate", bad_key)
     assert test().status_code == 502 and test().json()["detail"]["code"] == "llm.invalid_key"
 
@@ -869,11 +953,17 @@ def test_test_image_and_json(admin, monkeypatch):
 def test_model_without_vision_refuses_image(admin, monkeypatch):
     """Ollama refuses an image for a text-only model with a 400: the test says so plainly."""
     from app import llm
+
     admin.put("/api/admin/settings", headers=ADMIN, json={"llm": "gemini", "gemini_api_key": "k"})
 
     async def refuse(*_):
-        raise llm.ExtractionError("llm.api_error", provider="localhost:11434", status=400,
-                                  detail="Multimodal data provided, but model does not support multimodal requests.")
+        raise llm.ExtractionError(
+            "llm.api_error",
+            provider="localhost:11434",
+            status=400,
+            detail="Multimodal data provided, but model does not support multimodal requests.",
+        )
+
     monkeypatch.setattr(llm, "_generate", refuse)
     r = admin.post("/api/admin/test", headers=ADMIN).json()
     assert (r["vision"], r["json"]) == (False, None)
@@ -883,8 +973,8 @@ def test_model_without_vision_refuses_image(admin, monkeypatch):
     assert llm._error_message(nested) == "no vision here"
 
 
-
 # --- Lesson owner / shared -------------------------------------------------------
+
 
 def test_only_the_owner_shares(anki, client):
     lesson = _extract(client)  # created in Léa's profile: hers, private
@@ -928,10 +1018,13 @@ def test_private_lessons_hidden_when_option_off(anki, admin):
     # Option off: Paul doesn't get Léa's private lesson, in any route
     admin.put("/api/admin/settings", headers=ADMIN, json={"all_profiles_view": False})
     assert admin.get("/api/config").json() == {"all_profiles_view": False}
-    ids = {l["id"] for l in admin.get("/api/lessons").json()}
+    ids = {lesson["id"] for lesson in admin.get("/api/lessons").json()}
     assert ids == {paul["id"], shared["id"]}
-    for method, url in [("GET", f"/api/lessons/{lea['id']}"), ("GET", f"/api/lessons/{lea['id']}/photos/1"),
-                        ("DELETE", f"/api/lessons/{lea['id']}")]:
+    for method, url in [
+        ("GET", f"/api/lessons/{lea['id']}"),
+        ("GET", f"/api/lessons/{lea['id']}/photos/1"),
+        ("DELETE", f"/api/lessons/{lea['id']}"),
+    ]:
         assert admin.request(method, url).status_code == 404
     assert admin.put(f"/api/lessons/{lea['id']}", json={"deck": "x", "cards": []}).status_code == 404
     assert admin.post("/api/anki/send", json={**SEND, "lesson_id": lea["id"], "force": True}).status_code == 404

@@ -12,8 +12,9 @@ import base64
 import json
 import secrets
 import threading
+from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Callable
+from typing import Any
 
 from aqt import mw
 from aqt.qt import QTimer
@@ -72,6 +73,7 @@ def _col():
 
 
 # --- Actions (main thread) ----------------------------------------------------
+
 
 def _model_names(p: dict) -> list[str]:
     return [m.name for m in _col().models.all_names_and_ids()]
@@ -166,6 +168,7 @@ ACTIONS: dict[str, Callable[[dict], Any]] = {
 
 
 # --- HTTP server ----------------------------------------------------------------
+
 
 class Bridge:
     def __init__(self) -> None:

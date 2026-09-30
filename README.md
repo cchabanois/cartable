@@ -118,6 +118,7 @@ The server never builds sentences: its errors are codes (`llm.overloaded`, `less
 ```sh
 .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/pytest
+.venv/bin/ruff check . && .venv/bin/ruff format --check .   # lint and formatting (ruff.toml)
 ```
 
 To develop the add-on against this checkout, link it into Anki's add-ons folder and restart Anki:

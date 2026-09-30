@@ -210,16 +210,19 @@ def test_diagram_lesson_on_a_real_collection(bridged, col):
     body = {"deck": lesson["deck"], "cards": lesson["cards"], "lesson_id": lesson["id"]}
     assert client.post("/api/anki/send", json=body).json()["added"] == 3
 
-    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Cartable schéma")]
+    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Cartable légendes")]
     note_ids = col.find_notes(f'"note:{note_type.name}"')
     first = fields(col, min(note_ids))
     image = first["Image"].split('"')[1]
     assert first["Id"] == f"{lesson['id']}:1:1"
-    assert (Path(col.media.dir()) / image).stat().st_size > 1000  # the drawn diagram
+    assert (Path(col.media.dir()) / image).stat().st_size > 1000  # the diagram, shared by its 3 cards
+    assert {fields(col, n)["Image"] for n in note_ids} == {first["Image"]}
 
     # A mask moved in the review: the same notes, updated with new images
     lesson["cards"][0]["mask"]["box"] = [0.15, 0.1, 0.4, 0.2]
     res = client.post("/api/anki/send", json={**body, "cards": lesson["cards"]}).json()
     assert (res["added"], res["updated"]) == (0, 3)
     assert col.find_notes(f'"note:{note_type.name}"') == note_ids
-    assert fields(col, min(note_ids))["Image"] != first["Image"]
+    moved = fields(col, min(note_ids))
+    assert moved["Image"] == first["Image"]  # one image per diagram
+    assert moved["Masks"] != first["Masks"]

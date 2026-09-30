@@ -10,7 +10,7 @@ from pathlib import Path
 
 import genanki
 
-from . import tts
+from . import diagrams, tts
 from .errors import AppError
 from .models import ExportRequest
 
@@ -18,6 +18,19 @@ CSS = """\
 .card { font-family: system-ui, sans-serif; font-size: 26px; text-align: center; }
 .info { font-size: 18px; color: #777; margin-top: 12px; }
 .card img { max-width: 100%; height: auto; }
+"""
+
+# Diagram cards: the masks are HTML over the image, placed in % of its size.
+DIAGRAM_CSS = """\
+.cartable-diagram { position: relative; display: inline-block; max-width: 100%; line-height: 0; }
+.cartable-diagram img { display: block; }
+.cartable-mask {
+  position: absolute; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; line-height: 1; font-size: 13px; font-weight: 700;
+  background: #ffe08a; border: 2px solid #c77700; border-radius: 3px; color: #3d2b00;
+}
+.cartable-mask.target { background: #ff7a59; border-color: #b3261e; color: #fff; }
+.cartable-mask.revealed { background: transparent; border: 3px solid #1b873f; }
 """
 
 
@@ -75,22 +88,25 @@ def note_type(voice: str, reverse: bool) -> NoteType:
 
 
 def diagram_note_type(voice: str) -> NoteType:
-    """A diagram label: the diagram with the labels hidden and the question, then the
-    answer with the label shown again. "Id" (lesson, photo, label number) tells which
-    note an update is for, as the question alone ("What is (1)?") repeats."""
+    """A diagram label: the diagram with every label hidden and the question, then the
+    answer with that label shown again. One image per diagram, shared by its cards;
+    the masks are HTML ("Masks", "AnswerMasks"). "Id" (lesson, photo, label number)
+    tells which note an update is for, as the question alone ("What is (1)?") repeats."""
     anki_tts = tts.is_anki_locale(voice)
     sound = f"{{{{tts {voice}:Back}}}}" if anki_tts else "{{Audio}}"
     info = '{{#Info}}<div class="info">{{Info}}</div>{{/Info}}'
     templates = (
         {
             "name": "Schéma",
-            "qfmt": "{{Image}}<div>{{Front}}</div>",
-            "afmt": f'{{{{AnswerImage}}}}<div>{{{{Front}}}}</div><hr id="answer">{{{{Back}}}}{sound}{info}',
+            "qfmt": '<div class="cartable-diagram">{{Image}}{{Masks}}</div><div>{{Front}}</div>',
+            "afmt": '<div class="cartable-diagram">{{Image}}{{AnswerMasks}}</div><div>{{Front}}</div>'
+            f'<hr id="answer">{{{{Back}}}}{sound}{info}',
         },
     )
-    fields = ["Front", "Back", "Info"] + ([] if anki_tts else ["Audio"]) + ["Image", "AnswerImage", "Id"]
-    kind = f"diagram TTS Anki {voice}" if anki_tts else "diagram audio"
-    return NoteType(f"Cartable schéma ({kind.removeprefix('diagram ')})", kind, tuple(fields), templates, key="Id")
+    fields = ["Front", "Back", "Info"] + ([] if anki_tts else ["Audio"]) + ["Image", "Masks", "AnswerMasks", "Id"]
+    kind = f"labels TTS Anki {voice}" if anki_tts else "labels audio"
+    name = f"Cartable légendes ({kind.removeprefix('labels ')})"
+    return NoteType(name, kind, tuple(fields), templates, css=CSS + DIAGRAM_CSS, key="Id")
 
 
 @dataclass
@@ -109,10 +125,10 @@ class Note:
 def notes(
     req: ExportRequest,
     audio: dict[str, Path] | None = None,
-    images: dict[int, tuple[Path, Path]] | None = None,
+    images: dict[int, Path] | None = None,
 ) -> list[Note]:
     """The notes to send, in both output formats. `audio` maps a card back to its mp3;
-    `images` maps the index of a diagram card to its front and back images."""
+    `images` maps the index of a diagram card to its diagram's image."""
     audio, images = audio or {}, images or {}
     text_nt, diagram_nt = note_type(req.voice, req.reverse), diagram_note_type(req.voice)
     result = []
@@ -128,11 +144,12 @@ def notes(
             values["Audio"] = f"[sound:{mp3.name}]" if mp3 else ""
             media += [mp3] if mp3 else []
         if i in images:
-            question, answer = images[i]
-            values["Image"] = f'<img src="{question.name}">'
-            values["AnswerImage"] = f'<img src="{answer.name}">'
+            page = [c.mask for c in req.cards if c.mask and c.mask.page == card.mask.page]
+            values["Image"] = f'<img src="{images[i].name}">'
+            values["Masks"] = diagrams.masks_html(page, card.mask.n, reveal=False)
+            values["AnswerMasks"] = diagrams.masks_html(page, card.mask.n, reveal=True)
             values["Id"] = f"{req.lesson_id or ''}:{card.mask.page}:{card.mask.n}"
-            media += [question, answer]
+            media.append(images[i])
         result.append(
             Note(
                 nt=nt,
@@ -169,7 +186,7 @@ def _tag(t: str) -> str:
 def build_apkg(
     req: ExportRequest,
     audio: dict[str, Path] | None = None,
-    images: dict[int, tuple[Path, Path]] | None = None,
+    images: dict[int, Path] | None = None,
 ) -> str:
     """Write the package to a temporary file and return its path.
 

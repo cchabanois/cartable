@@ -153,9 +153,9 @@ async def _card_audio(req: ExportRequest, background: BackgroundTasks) -> tuple[
     return audio, failures
 
 
-def _diagram_images(req: ExportRequest, lesson: Lesson | None) -> dict[int, tuple[Path, Path]]:
-    """Front and back images of the diagram cards (index in req.cards → paths), drawn
-    from the saved lesson's photos. Without a saved lesson, masks can't be drawn."""
+def _diagram_images(req: ExportRequest, lesson: Lesson | None) -> dict[int, Path]:
+    """The diagram image of each diagram card (index in req.cards → path), from the
+    saved lesson's photos. Without a saved lesson, there is no photo to show."""
     folder = lessons.folder(lesson.id) if lesson else None
     if folder is None:
         return {}
@@ -163,8 +163,8 @@ def _diagram_images(req: ExportRequest, lesson: Lesson | None) -> dict[int, tupl
     for i, card in enumerate(req.cards):
         photo = lessons.photo_path(lesson.id, card.mask.page) if card.mask else None
         if photo and photo.is_file():
-            images[i] = diagrams.card_images(folder / "images", photo, card, req.cards)
-            used.update(images[i])
+            images[i] = diagrams.page_image(folder / "images", photo)
+            used.add(images[i])
     diagrams.prune(folder / "images", used)
     return images
 

@@ -64,32 +64,31 @@ def test_masks_that_cant_be_placed_are_dropped():
     assert cards[0].mask is None
 
 
-def test_card_images_hide_every_label(tmp_path):
+def test_one_light_image_per_diagram(tmp_path):
     page = tmp_path / "page-1.jpg"
-    page.write_bytes(photo())
-    cards = [
-        Card(front="What is (1)?", back="mouth", mask=Mask(page=1, n=1, box=[0.1, 0.1, 0.3, 0.2])),
-        Card(front="What is (2)?", back="heart", mask=Mask(page=1, n=2, box=[0.6, 0.6, 0.8, 0.7])),
-    ]
-    question, answer = diagrams.card_images(tmp_path / "images", page, cards[0], cards)
+    Image.new("RGB", (3000, 2000), "white").save(page, "JPEG")
+    image = diagrams.page_image(tmp_path / "images", page)
+    assert max(Image.open(image).size) == diagrams.CARD_SIDE
+    assert diagrams.page_image(tmp_path / "images", page) == image  # same photo: same file, not redone
 
-    def color(path, x, y):
-        image = Image.open(path)
-        return image.getpixel((int(x * image.width), int(y * image.height)))
+    # Another photo content: a new file; the old one is pruned once unused
+    Image.new("RGB", (3000, 2000), "black").save(page, "JPEG")
+    other = diagrams.page_image(tmp_path / "images", page)
+    assert other != image
+    diagrams.prune(tmp_path / "images", {other})
+    assert [p.name for p in (tmp_path / "images").iterdir()] == [other.name]
 
-    red = lambda c: c[0] > 200 and c[1] < 160  # noqa: E731  (the asked label, highlighted)
-    yellow = lambda c: c[0] > 200 and c[1] > 180 and c[2] < 180  # noqa: E731  (the other labels)
-    assert red(color(question, 0.12, 0.12)) and yellow(color(question, 0.62, 0.62))
-    assert color(answer, 0.12, 0.12) == pytest.approx((255, 255, 255), abs=12)  # shown again
-    assert yellow(color(answer, 0.62, 0.62))
 
-    # Same masks: the same files, not drawn again; a moved mask: new files, old ones pruned
-    assert diagrams.card_images(tmp_path / "images", page, cards[0], cards) == (question, answer)
-    cards[1].mask.box = [0.5, 0.5, 0.7, 0.6]
-    moved = diagrams.card_images(tmp_path / "images", page, cards[0], cards)
-    assert moved != (question, answer)
-    diagrams.prune(tmp_path / "images", set(moved))
-    assert sorted(p.name for p in (tmp_path / "images").iterdir()) == sorted(p.name for p in moved)
+def test_masks_as_html():
+    masks = [Mask(page=1, n=2, box=[0.6, 0.6, 0.8, 0.7]), Mask(page=1, n=1, box=[0.1, 0.1, 0.3, 0.25])]
+    question = diagrams.masks_html(masks, target=2, reveal=False)
+    assert question == (
+        '<div class="cartable-mask" style="left:10.0%;top:10.0%;width:20.0%;height:15.0%">(1)</div>'
+        '<div class="cartable-mask target" style="left:60.0%;top:60.0%;width:20.0%;height:10.0%">(2)</div>'
+    )
+    answer = diagrams.masks_html(masks, target=2, reveal=True)
+    assert '<div class="cartable-mask revealed" style="left:60.0%;top:60.0%;width:20.0%;height:10.0%"></div>' in answer
+    assert ">(1)</div>" in answer  # the other labels stay hidden
 
 
 def test_revision_keeps_the_masks():
@@ -127,18 +126,22 @@ def test_diagram_lesson_exported(client, tmp_path):
         return notes, models, sorted(media.values())
 
     notes, models, media = export(cards)
-    assert {m["name"] for m in models.values()} == {"Cartable schéma (audio)"}
-    fields = [html.unescape(f) for f in notes[0][1].split("\x1f")]
-    assert fields[:2] == ["Qu'est-ce que (1) ?", "la bouche"]
-    assert fields[-1] == f"{lesson['id']}:1:1"  # Id: lesson, photo, label number
-    assert len(media) == 6 and all(m.startswith("diagram-1-") for m in media)  # front and back per label
+    (model,) = models.values()
+    assert model["name"] == "Cartable légendes (audio)"
+    names = [f["name"] for f in model["flds"]]
+    fields = dict(zip(names, (html.unescape(f) for f in notes[0][1].split("\x1f")), strict=True))
+    assert (fields["Front"], fields["Back"]) == ("Qu'est-ce que (1) ?", "la bouche")
+    assert fields["Id"] == f"{lesson['id']}:1:1"  # lesson, photo, label number
+    assert fields["Masks"].count("cartable-mask") == 3 and 'class="cartable-mask target"' in fields["Masks"]
+    assert len(media) == 1 and fields["Image"] == f'<img src="{media[0]}">'  # one image for the whole diagram
 
-    # Mask moved and answer corrected: same notes (GUID from the Id), new images
+    # Mask moved and answer corrected: same notes (GUID from the Id), same image, new masks
     cards[0]["mask"]["box"] = [0.12, 0.1, 0.37, 0.2]
     cards[0]["back"] = "la langue"
     notes2, _, media2 = export(cards)
     assert [g for g, _ in notes2] == [g for g, _ in notes]
-    assert media2 != media
+    assert media2 == media
+    assert notes2[0][1] != notes[0][1]
 
 
 @pytest.mark.parametrize("degrees", [90, 180, 270])

@@ -9,6 +9,7 @@ Cartable was built for learning languages (French → Spanish vocabulary and sen
 - **Phone first**: a web page, not an app. It opens the phone's own camera, and you can add it to the home screen.
 - **Several pages per lesson**, with a saved prompt that says what to extract ("one word per card, gender and plural in the notes").
 - **Review screen**: edit, delete or add cards, or ask the AI to fix them ("remove the card about the father", "you forgot the colours").
+- **Diagrams**: ask for "one card per label" and the AI hides every label of a diagram behind a number; each card asks "What is (2)?" and shows the answer on the diagram. Masks can be moved and resized in the review. Gemini and GPT place them most precisely.
 - **Audio**: the back of each card is read aloud with [edge-tts](https://github.com/rany2/edge-tts) and embedded in the deck, so it plays everywhere, even offline.
 - **Straight into Anki**, or as a `.apkg`. Sending a corrected lesson again updates its cards instead of duplicating them.
 - **Lessons are saved** (photos + cards), so you can reopen, fix and re-send them later.
@@ -91,6 +92,7 @@ data/
       lesson.json                            deck, cards, prompt, voice, owner, dates
       page-1.jpg, page-2.jpg                 photos
       audio/la-madre-3f2a1c9e.mp3            card audio (included in the .apkg)
+      images/diagram-1-2-3cdb18fcc2-q.jpg    diagram cards: labels hidden (q) or shown (a)
   cache/tts/                                 voice previews, safe to delete
 ```
 
@@ -146,6 +148,7 @@ Stack:
 | `app/anki.py` | `.apkg` builder (genanki, audio, reverse cards) |
 | `app/ankiconnect.py` | direct send through AnkiConnect or the add-on's bridge |
 | `app/tts.py` | edge-tts audio |
+| `app/diagrams.py` | diagram labels: boxes from the AI, card images with the labels hidden |
 | `app/prompts.py` | saved prompts |
 | `app/settings.py` | settings, API keys, admin password |
 | `app/i18n.py`, `static/i18n.js`, `static/i18n/` | languages |

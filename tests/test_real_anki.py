@@ -193,3 +193,33 @@ def test_apkg_import_then_reimport_updates(cartable, col, tmp_path):
     assert (len(log.new), len(log.updated)) == (0, len(cards))
     assert col.note_count() == len(cards)
     assert fields(col, mother[0])["Back"] == "la mamá"
+
+
+def test_diagram_lesson_on_a_real_collection(bridged, col):
+    import io
+
+    from PIL import Image
+
+    client, _ = bridged
+    out = io.BytesIO()
+    Image.new("RGB", (800, 600), "white").save(out, "JPEG")
+    res = client.post(
+        "/api/extract", files=[("images", ("p.jpg", out.getvalue(), "image/jpeg"))], data={"prompt": "Le schéma"}
+    )
+    lesson = res.json()
+    body = {"deck": lesson["deck"], "cards": lesson["cards"], "lesson_id": lesson["id"]}
+    assert client.post("/api/anki/send", json=body).json()["added"] == 3
+
+    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Cartable schéma")]
+    note_ids = col.find_notes(f'"note:{note_type.name}"')
+    first = fields(col, min(note_ids))
+    image = first["Image"].split('"')[1]
+    assert first["Id"] == f"{lesson['id']}:1:1"
+    assert (Path(col.media.dir()) / image).stat().st_size > 1000  # the drawn diagram
+
+    # A mask moved in the review: the same notes, updated with new images
+    lesson["cards"][0]["mask"]["box"] = [0.15, 0.1, 0.4, 0.2]
+    res = client.post("/api/anki/send", json={**body, "cards": lesson["cards"]}).json()
+    assert (res["added"], res["updated"]) == (0, 3)
+    assert col.find_notes(f'"note:{note_type.name}"') == note_ids
+    assert fields(col, min(note_ids))["Image"] != first["Image"]

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import httpx
 
 from . import settings
-from .anki import Note, NoteType
+from .anki import Note
 from .errors import AppError
 
 TIMEOUT = 30.0
@@ -83,34 +83,37 @@ async def version() -> int:
         return await _invoke(client, "version")
 
 
-async def send(nt: NoteType, notes: list[Note]) -> SendResult:
+async def send(notes: list[Note]) -> SendResult:
     async with _client() as client:
-        if nt.name not in await _invoke(client, "modelNames"):
+        note_types = list(dict.fromkeys(n.nt for n in notes))
+        known = await _invoke(client, "modelNames")
+        for nt in note_types:
+            if nt.name not in known:
+                await _invoke(
+                    client,
+                    "createModel",
+                    modelName=nt.name,
+                    inOrderFields=list(nt.fields),
+                    css=nt.css,
+                    isCloze=False,
+                    cardTemplates=[{"Name": t["name"], "Front": t["qfmt"], "Back": t["afmt"]} for t in nt.templates],
+                )
+        for path in dict.fromkeys(p for n in notes for p in n.media):
             await _invoke(
-                client,
-                "createModel",
-                modelName=nt.name,
-                inOrderFields=nt.fields,
-                css=nt.css,
-                isCloze=False,
-                cardTemplates=[{"Name": t["name"], "Front": t["qfmt"], "Back": t["afmt"]} for t in nt.templates],
+                client, "storeMediaFile", filename=path.name, data=base64.b64encode(path.read_bytes()).decode()
             )
-        for mp3 in dict.fromkeys(n.mp3 for n in notes if n.mp3):
-            await _invoke(client, "storeMediaFile", filename=mp3.name, data=base64.b64encode(mp3.read_bytes()).decode())
 
         added = updated = 0
-        for deck in dict.fromkeys(n.deck for n in notes):
+        for deck, nt in dict.fromkeys((n.deck, n.nt) for n in notes):
             # createDeck returns the id of the deck, existing or new. Searching by id
-            # and comparing fronts here avoids escaping names in Anki's search syntax.
+            # and comparing keys here avoids escaping names in Anki's search syntax.
             deck_id = await _invoke(client, "createDeck", deck=deck)
             ids = await _invoke(client, "findNotes", query=f'"note:{nt.name}" did:{deck_id}')
             infos = await _invoke(client, "notesInfo", notes=ids) if ids else []
-            existing = {info["fields"]["Front"]["value"]: info["noteId"] for info in infos}
-            for note in (n for n in notes if n.deck == deck):
-                if note.fields["Front"] in existing:
-                    await _invoke(
-                        client, "updateNoteFields", note={"id": existing[note.fields["Front"]], "fields": note.fields}
-                    )
+            existing = {info["fields"][nt.key]["value"]: info["noteId"] for info in infos if nt.key in info["fields"]}
+            for note in (n for n in notes if (n.deck, n.nt) == (deck, nt)):
+                if note.key in existing:
+                    await _invoke(client, "updateNoteFields", note={"id": existing[note.key], "fields": note.fields})
                     updated += 1
                 else:
                     await _invoke(

@@ -5,6 +5,7 @@ python-dotenv>=1.2.3
 genanki>=0.13.1
 httpx>=0.28.1
 segno>=1.6.6
+pillow>=12.0
 google-genai>=2.25
 anthropic>=1.9
 openai>=3.20

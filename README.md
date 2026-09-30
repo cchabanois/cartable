@@ -118,8 +118,10 @@ The server never builds sentences: its errors are codes (`llm.overloaded`, `less
 ```sh
 .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/pytest
-.venv/bin/ruff check . && .venv/bin/ruff format --check .   # lint and formatting (ruff.toml)
+.venv/bin/ruff check . && .venv/bin/ruff format --check .   # lint and formatting (pyproject.toml)
 ```
+
+`tests/test_real_anki.py` runs the add-on's bridge and the `.apkg` import against Anki's real engine (the `anki` package, no Anki window). It is skipped unless that package is installed: `.venv/bin/pip install -r requirements-anki.txt`.
 
 To develop the add-on against this checkout, link it into Anki's add-ons folder and restart Anki:
 

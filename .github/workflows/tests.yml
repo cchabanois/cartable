@@ -46,6 +46,32 @@ jobs:
         shell: bash
         run: for f in static/*.js; do node --check "$f"; done
 
+  real-anki:
+    # The add-on's bridge and the .apkg import against Anki's real engine (the
+    # `anki` package, no window), with the oldest and the newest supported Anki.
+    name: anki (${{ matrix.anki }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        anki: ["25.2.7", "latest"]  # latest: requirements-anki.txt (kept up to date by Dependabot)
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - name: Install
+        run: |
+          if [ "${{ matrix.anki }}" = latest ]; then
+            pip install -r requirements-anki.txt
+          else
+            pip install -r requirements-dev.txt "anki==${{ matrix.anki }}"
+          fi
+      - run: pytest -q tests/test_real_anki.py
+
   addon-install:
     # The packaged add-on, unpacked as Anki would: downloads uv, installs Python
     # and the dependencies, starts the server (see tools/check_addon_install.py).

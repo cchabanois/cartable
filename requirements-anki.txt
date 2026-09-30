@@ -1,0 +1,4 @@
+# Anki's engine, for tests/test_real_anki.py only (not needed to run Cartable).
+# The CI runs them with the oldest and the newest supported Anki.
+-r requirements-dev.txt
+anki==26.9.3

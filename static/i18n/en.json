@@ -48,6 +48,8 @@
       "edit": "✏️ Edit instructions",
       "saveAsNew": "💾 Save as new instructions",
       "regenerate": "✨ Generate again",
+      "fromPrompt": "✨ Generate from the prompt alone",
+      "fromPromptHint": "No photo? The AI creates the cards from your prompt: put the words in it, or ask for a topic. Check the cards carefully.",
       "regenerateHint": "(new lesson)",
       "unavailable": "Instructions unavailable: {message}"
     },
@@ -109,6 +111,7 @@
     },
     "loading": {
       "reading": "Reading the lesson…",
+      "writing": "Creating the cards…",
       "revising": "Correcting the cards…",
       "duration": "This usually takes 10 to 30 seconds."
     },
@@ -316,7 +319,7 @@
       "not_found": "Photo not found."
     },
     "extract": {
-      "no_photo": "Add at least one photo.",
+      "no_input": "Add a photo, or write a prompt.",
       "too_many": "{max} photos at most.",
       "bad_format": "Unsupported format: {format}"
     },

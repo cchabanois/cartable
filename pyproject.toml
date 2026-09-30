@@ -28,5 +28,8 @@ ignore = [
   "RUF001", "RUF002", "RUF003",    # typographic characters (…, ×, →) are intended
 ]
 
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.File", "fastapi.Form"]  # FastAPI's way of declaring parameters
+
 [tool.ruff.lint.per-file-ignores]
 "app/main.py" = ["E402"]  # .env is loaded before the app modules read it

@@ -13,7 +13,7 @@ load_dotenv()  # before the app imports, some of which read variables at import 
 
 import io
 
-from fastapi import BackgroundTasks, Depends, FastAPI, Form, Header, Request, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -106,15 +106,16 @@ def delete_prompt(id: int) -> None:
 
 @app.post("/api/extract", status_code=201)
 async def extract(
-    images: list[UploadFile],
+    images: list[UploadFile] = File([]),
     prompt: str = Form(...),
     deck: str = Form(""),
     voice: str = Form(""),
     prompt_id: int | None = Form(None),
 ) -> Lesson:
-    """Read the photos, then save the lesson (photos + cards) so it can be reopened."""
-    if not images:
-        raise AppError("extract.no_photo")
+    """Read the photos (or, without photos, work from the prompt alone), then save the
+    lesson (photos + cards) so it can be reopened."""
+    if not images and not prompt.strip():
+        raise AppError("extract.no_input")
     if len(images) > MAX_IMAGES:
         raise AppError("extract.too_many", max=MAX_IMAGES)
     for img in images:

@@ -1122,3 +1122,27 @@ def test_page_files_revalidated(client):
         assert res.status_code == 200 and res.headers["cache-control"] == "no-cache", path
     etag = client.get("/style.css").headers["etag"]
     assert client.get("/style.css", headers={"If-None-Match": etag}).status_code == 304  # unchanged: nothing re-sent
+
+
+def test_lesson_from_the_prompt_alone(client):
+    res = client.post("/api/extract", data={"prompt": "Cards with: le chat, le chien"})
+    assert res.status_code == 201, res.text
+    lesson = res.json()
+    assert (lesson["photo_count"], lesson["prompt"]) == (0, "Cards with: le chat, le chien")
+    assert "0 photo(s)" in lesson["cards"][-1]["front"]  # the fake provider got no image
+    assert client.get(f"/api/lessons/{lesson['id']}").status_code == 200
+    body = {"deck": lesson["deck"], "cards": lesson["cards"], "instruction": "add the colours"}
+    assert client.post(f"/api/lessons/{lesson['id']}/revise", json=body).status_code == 200  # no photos to send
+
+    # Neither a photo nor a prompt: nothing to work from
+    res = client.post("/api/extract", data={"prompt": "  "})
+    assert (res.status_code, res.json()["detail"]["code"]) == (400, "extract.no_input")
+
+
+def test_prompt_only_tells_the_ai_there_is_no_photo():
+    from app import llm
+    from app.models import Deck
+
+    assert "no photo" in llm._user_text("Cards with: le chat", "", photos=0)
+    assert "no photo" not in llm._user_text("Vocabulary", "", photos=2)
+    assert "these instructions (no photo)" in llm._revision_text("p", Deck(deck="D", cards=[]), "x", "en", photos=0)

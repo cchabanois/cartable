@@ -13,7 +13,7 @@ from pathlib import Path
 
 from PIL import Image, ImageOps
 
-from .models import Card, Mask
+from .models import Card, Mask, TextLine
 
 MAX_SIDE = 1568  # larger images get downsized by some models: pixel boxes refer to what they see
 CARD_SIDE = 1000  # the diagram in Anki: enough to read it, light to sync
@@ -51,6 +51,23 @@ def prepare(data: bytes, media_type: str) -> tuple[bytes, str, tuple[int, int] |
     return out.getvalue(), "image/jpeg", image.size
 
 
+def _fractions(box: list[float], size: tuple[int, int], fmt: str) -> list[float] | None:
+    """A box from the AI as [x0, y0, x1, y1] fractions of the photo; None if it isn't a box."""
+    if len(box) != 4:
+        return None
+    width, height = size
+    a, b, c, d = box
+    if fmt == "gemini":
+        x0, y0, x1, y1 = b / 1000, a / 1000, d / 1000, c / 1000
+    elif fmt == "normalized":
+        x0, y0, x1, y1 = a / 1000, b / 1000, c / 1000, d / 1000
+    else:
+        x0, y0, x1, y1 = a / width, b / height, c / width, d / height
+    x0, x1 = sorted((x0, x1))
+    y0, y1 = sorted((y0, y1))
+    return [x0, y0, x1, y1] if x1 > x0 and y1 > y0 else None
+
+
 def normalize(cards: list[Card], sizes: list[tuple[int, int] | None], fmt: str) -> None:
     """Turn the AI's boxes into fractions of the photo, with a little margin. A mask
     that can't be placed (unknown photo, empty box) is dropped: the card stays text."""
@@ -58,25 +75,38 @@ def normalize(cards: list[Card], sizes: list[tuple[int, int] | None], fmt: str) 
         mask = card.mask
         if mask is None:
             continue
-        if not 1 <= mask.page <= len(sizes) or sizes[mask.page - 1] is None or len(mask.box) != 4:
+        size = sizes[mask.page - 1] if 1 <= mask.page <= len(sizes) else None
+        box = _fractions(mask.box, size, fmt) if size else None
+        if box is None:
             card.mask = None
             continue
-        width, height = sizes[mask.page - 1]
-        a, b, c, d = mask.box
-        if fmt == "gemini":
-            x0, y0, x1, y1 = b / 1000, a / 1000, d / 1000, c / 1000
-        elif fmt == "normalized":
-            x0, y0, x1, y1 = a / 1000, b / 1000, c / 1000, d / 1000
-        else:
-            x0, y0, x1, y1 = a / width, b / height, c / width, d / height
-        x0, x1 = sorted((x0, x1))
-        y0, y1 = sorted((y0, y1))
-        if x1 - x0 <= 0 or y1 - y0 <= 0:
-            card.mask = None
-            continue
+        width, height = size
+        x0, y0, x1, y1 = box
         pad_x = PADDING * max(width, height) / width
         pad_y = PADDING * max(width, height) / height
         card.mask = Mask(page=mask.page, n=mask.n, box=_clamp([x0 - pad_x, y0 - pad_y, x1 + pad_x, y1 + pad_y]))
+
+
+def turns(lines: list[TextLine], sizes: list[tuple[int, int] | None], fmt: str) -> list[int]:
+    """The clockwise turn that puts each photo upright, from the reading direction of
+    a line of text on it: from its first word to its last. Text going down the photo
+    means its top is on the right (270°), going up: on the left (90°), going left:
+    upside down (180°). Unknown: 0."""
+    result = [0] * len(sizes)
+    for line in lines:
+        size = sizes[line.page - 1] if 1 <= line.page <= len(sizes) else None
+        first = _fractions(line.first_word, size, fmt) if size else None
+        last = _fractions(line.last_word, size, fmt) if size else None
+        if first is None or last is None:
+            continue
+        width, height = size
+        dx = ((last[0] + last[2]) - (first[0] + first[2])) / 2 * width
+        dy = ((last[1] + last[3]) - (first[1] + first[3])) / 2 * height
+        if abs(dx) >= abs(dy):
+            result[line.page - 1] = 0 if dx >= 0 else 180
+        else:
+            result[line.page - 1] = 270 if dy > 0 else 90
+    return result
 
 
 ROTATIONS = {90: Image.Transpose.ROTATE_270, 180: Image.Transpose.ROTATE_180, 270: Image.Transpose.ROTATE_90}
@@ -94,27 +124,30 @@ def rotate_box(box: list[float], degrees: int) -> list[float]:
     return box
 
 
+def turn(data: bytes, masks: list[Mask], degrees: int) -> bytes:
+    """A photo turned `degrees` clockwise, its masks turned with it (in place).
+    Not a right angle, or an unreadable photo: unchanged."""
+    if degrees not in ROTATIONS:
+        return data
+    try:
+        image = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
+    except (OSError, ValueError):
+        return data
+    out = io.BytesIO()
+    image.transpose(ROTATIONS[degrees]).save(out, "JPEG", quality=90)
+    for mask in masks:
+        mask.box = rotate_box(mask.box, degrees)
+    return out.getvalue()
+
+
 def straighten(photos: list[bytes], cards: list[Card], rotations: list[int]) -> list[bytes]:
-    """Turn the photos the AI found sideways or upside down, and their masks with them.
-    Unknown rotations count as 0; an unreadable photo stays as it is."""
-    result = []
-    for page, data in enumerate(photos, start=1):
-        degrees = rotations[page - 1] if page <= len(rotations) else 0
-        if degrees not in ROTATIONS:
-            result.append(data)
-            continue
-        try:
-            image = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
-        except (OSError, ValueError):
-            result.append(data)
-            continue
-        out = io.BytesIO()
-        image.transpose(ROTATIONS[degrees]).save(out, "JPEG", quality=90)
-        result.append(out.getvalue())
-        for card in cards:
-            if card.mask and card.mask.page == page:
-                card.mask.box = rotate_box(card.mask.box, degrees)
-    return result
+    """Turn the photos the AI found sideways or upside down, and their masks with them."""
+    return [
+        turn(data, [c.mask for c in cards if c.mask and c.mask.page == page], rotations[page - 1])
+        if page <= len(rotations)
+        else data
+        for page, data in enumerate(photos, start=1)
+    ]
 
 
 def _clamp(box: list[float]) -> list[float]:

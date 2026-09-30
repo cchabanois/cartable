@@ -66,6 +66,8 @@
             <img :src="p.url" :alt="$t('app.photos.page', { n: i + 1 })">
             <figcaption x-text="i + 1"></figcaption>
             <button class="thumb-remove" @click="removePhoto(i)" :aria-label="$t('app.photos.remove')">✕</button>
+            <button class="thumb-rotate" x-show="!readOnly()" @click="rotatePhoto(i)" :disabled="loading"
+                    :aria-label="$t('app.photos.rotate')">↻</button>
           </figure>
         </template>
         <div class="add-stack">

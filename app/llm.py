@@ -56,9 +56,10 @@ Fill "mask": page = the photo's number, n = the label's number, box = the tight 
 bounding box of the label's text on that photo, in the format given with the request. \
 For every other card, "mask" is null. Boxes always refer to the photo as sent, even \
 when it is rotated.
-- Rotations: for each photo, in order, the clockwise rotation (0, 90, 180 or 270 \
-degrees) that would make its text upright, e.g. 90 for a page photographed sideways \
-whose lines go up from bottom to top.
+- Text lines: for each photo, its longest line of printed text (a title, a sentence): \
+the box of its first word and the box of its last word, in reading order, in the same \
+format as the diagram boxes. On a photo taken sideways or upside down, the first word \
+is still the one you start reading with.
 """
 
 
@@ -98,15 +99,17 @@ def _prepare(images: list[Image]) -> tuple[list[Image], list[tuple[int, int] | N
     return prepared, sizes
 
 
-async def extract_cards(images: list[Image], prompt: str, deck: str = "") -> Extraction:
+async def extract_cards(images: list[Image], prompt: str, deck: str = "") -> tuple[Deck, list[int]]:
+    """The cards, and the clockwise turn that puts each photo upright."""
     s = settings.current()
     if s.llm == "fake":
-        return _fake(images, prompt, deck)
+        return _fake(images, prompt, deck), [0] * len(images)
     fmt = diagrams.box_format(s.model_for_provider())
     images, sizes = _prepare(images)
     result = await _generate(s, images, _user_text(prompt, deck, len(images), sizes, fmt), Extraction)
     diagrams.normalize(result.cards, sizes, fmt)
-    return result
+    turns = diagrams.turns(result.text_lines, sizes, fmt)
+    return Deck(deck=result.deck, cards=result.cards), turns
 
 
 def _revision_text(prompt: str, deck: Deck, instruction: str, lang: str, photos: int) -> str:
@@ -437,10 +440,10 @@ async def _openai[T: BaseModel](s: Settings, images: list[Image], text: str, sch
         raise ExtractionError("llm.invalid_answer") from e
 
 
-def _fake(images: list[Image], prompt: str, deck: str) -> Extraction:
+def _fake(images: list[Image], prompt: str, deck: str) -> Deck:
     if images and any(w in prompt.lower() for w in ("diagram", "schéma", "schema")):
         return _fake_diagram()
-    return Extraction(
+    return Deck(
         deck="Espagnol::Leçon 5 - La famille",
         cards=[
             Card(front="la mère", back="la madre", info="nom féminin", subdeck="Vocabulaire"),
@@ -457,14 +460,14 @@ def _fake(images: list[Image], prompt: str, deck: str) -> Extraction:
     )
 
 
-def _fake_diagram() -> Extraction:
+def _fake_diagram() -> Deck:
     """Demo mode, diagram prompt: three labels hidden on the first photo."""
     labels = [
         ("la bouche", [0.1, 0.1, 0.35, 0.2]),
         ("le cœur", [0.55, 0.4, 0.85, 0.5]),
         ("l'estomac", [0.2, 0.7, 0.5, 0.8]),
     ]
-    return Extraction(
+    return Deck(
         deck="Sciences::Le corps humain",
         cards=[
             Card(front=f"Qu'est-ce que ({n}) ?", back=text, mask=Mask(page=1, n=n, box=box))

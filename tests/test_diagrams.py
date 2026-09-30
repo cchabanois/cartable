@@ -175,18 +175,59 @@ def test_rotation_ignored_when_unknown_or_unreadable():
 
 def test_sideways_photo_saved_upright(client, monkeypatch):
     from app import main
-    from app.models import Extraction
+    from app.models import Deck
 
     async def sideways(images, prompt, deck=""):
         mask = Mask(page=1, n=1, box=[0.1, 0.2, 0.3, 0.4])
-        return Extraction(deck="D", cards=[Card(front="What is (1)?", back="x", mask=mask)], rotations=[90])
+        return Deck(deck="D", cards=[Card(front="What is (1)?", back="x", mask=mask)]), [90]
 
     monkeypatch.setattr(main, "extract_cards", sideways)
-    res = client.post(
-        "/api/extract", files=[("images", ("p.jpg", photo(1000, 500), "image/jpeg"))], data={"prompt": "p"}
-    )
-    lesson = res.json()
-    assert "rotations" not in lesson
+    files = [("images", ("p.jpg", photo(1000, 500), "image/jpeg"))]
+    lesson = client.post("/api/extract", files=files, data={"prompt": "p"}).json()
     assert lesson["cards"][0]["mask"]["box"] == pytest.approx([0.6, 0.1, 0.8, 0.3])
     saved = Image.open(io.BytesIO(client.get(f"/api/lessons/{lesson['id']}/photos/1").content))
     assert saved.size == (500, 1000)
+
+
+@pytest.mark.parametrize(
+    ("first", "last", "turn"),
+    [
+        ([100, 400, 150, 450], [100, 600, 150, 650], 0),  # left to right: upright
+        ([100, 600, 150, 650], [100, 400, 150, 450], 180),  # right to left: upside down
+        ([100, 400, 150, 450], [700, 400, 750, 450], 270),  # down the photo: its top is on the right
+        ([700, 400, 750, 450], [100, 400, 150, 450], 90),  # up the photo: its top is on the left
+    ],
+)
+def test_turn_from_the_reading_direction(first, last, turn):
+    from app.models import TextLine
+
+    line = TextLine(page=1, first_word=first, last_word=last)  # gemini boxes: y, x, y, x on 0-1000
+    assert diagrams.turns([line], [(1000, 800)], "gemini") == [turn]
+
+
+def test_turn_unknown_without_a_usable_line():
+    from app.models import TextLine
+
+    lines = [
+        TextLine(page=2, first_word=[1, 2, 3, 4], last_word=[5, 6, 7, 8]),
+        TextLine(page=1, first_word=[1], last_word=[]),
+    ]
+    assert diagrams.turns(lines, [(100, 100)], "pixels") == [0]
+
+
+def test_turn_a_photo_by_hand(client):
+    files = [("images", (f"p{i}.jpg", photo(1000, 500), "image/jpeg")) for i in (1, 2)]
+    lesson = client.post("/api/extract", files=files, data={"prompt": "Le schéma"}).json()  # masks on photo 1
+    url = f"/api/lessons/{lesson['id']}/photos"
+
+    turned = client.post(f"{url}/1/rotate").json()
+    assert [c["mask"]["box"] for c in turned["cards"]] == [
+        pytest.approx(diagrams.rotate_box(c["mask"]["box"], 90)) for c in lesson["cards"]
+    ]
+    assert Image.open(io.BytesIO(client.get(f"{url}/1").content)).size == (500, 1000)
+    assert Image.open(io.BytesIO(client.get(f"{url}/2").content)).size == (1000, 500)  # the other photo: as it was
+
+    # Photo 2 has no mask: only the photo turns
+    assert client.post(f"{url}/2/rotate").json()["cards"] == turned["cards"]
+    assert Image.open(io.BytesIO(client.get(f"{url}/2").content)).size == (500, 1000)
+    assert client.post(f"{url}/3/rotate").status_code == 404

@@ -102,7 +102,7 @@
 
       <div class="prompt-actions">
         <button class="link-btn" x-show="selectedId" @click="openEditor('edit')" x-text="$t('app.prompt.edit')"></button>
-        <button class="link-btn strong" x-show="isModified()" @click="openEditor('copy')"
+        <button class="link-btn strong" x-show="canSaveAsNew()" @click="openEditor('copy')"
                 x-text="$t('app.prompt.saveAsNew')"></button>
       </div>
 
@@ -132,6 +132,11 @@
         <span x-text="$t('app.review.deck')"></span>
         <input x-model="deck" :readonly="readOnly()">
       </label>
+      <!-- The prompt this lesson was generated with (read-only; the prompt area above holds it too) -->
+      <details class="lesson-prompt" x-show="lessonPrompt">
+        <summary x-text="$t('app.review.promptUsed')"></summary>
+        <p x-text="lessonPrompt"></p>
+      </details>
       <!-- The Anki profile that created the lesson, and whether it shares it -->
       <div class="lesson-owner" x-show="lessonOwner">
         <span class="owner-name" x-html="$th('app.review.owner', { owner: lessonOwner })"></span>

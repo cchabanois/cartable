@@ -78,6 +78,7 @@
       "noCards": "Aucune carte trouvée : vérifie les photos ou la consigne.",
       "owner": "👤 Leçon de <strong>{owner}</strong>",
       "sharedSwitch": "Partagée avec les autres profils",
+      "promptUsed": "📝 Consigne utilisée pour cette leçon",
       "readOnly": "🔒 Lecture seule : seul le profil de {owner} peut la modifier. Tu peux quand même l'ajouter à ton Anki."
     },
     "revise": {

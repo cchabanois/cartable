@@ -630,6 +630,9 @@ h2 {
 .owner-pick { display: inline-flex; align-items: center; gap: .4rem; font-size: .88rem; color: var(--muted); }
 .owner-pick { min-width: 0; max-width: 100%; }
 .owner-pick select { width: auto; min-width: 0; max-width: 100%; padding: .3rem 1.8rem .3rem .7rem; border-radius: 999px; font-size: .88rem; }
+.lesson-prompt { margin: .2rem 0 .6rem; font-size: .88rem; color: var(--muted); }
+.lesson-prompt summary { cursor: pointer; font-weight: 700; }
+.lesson-prompt p { margin: .4rem 0 0; padding: .6rem .8rem; border-radius: var(--radius-sm); background: var(--primary-soft); color: var(--text); white-space: pre-wrap; }
 .from-prompt { margin-top: .8rem; }
 .from-prompt .hint { margin: .4rem 0 0; }
 .page-footer { display: flex; flex-direction: column; align-items: center; gap: .4rem; margin: .5rem 0 1rem; }

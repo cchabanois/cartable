@@ -33,6 +33,7 @@ from .models import (
     RevisionRequest,
     SettingsUpdate,
 )
+from .version import VERSION
 
 log = logging.getLogger("cartable")
 
@@ -43,11 +44,11 @@ MAX_IMAGES = 10
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    log.warning("LLM provider: %s", settings.current().llm)
+    log.warning("Cartable %s, LLM provider: %s", VERSION, settings.current().llm)
     yield
 
 
-app = FastAPI(title="Cartable", lifespan=lifespan)
+app = FastAPI(title="Cartable", version=VERSION, lifespan=lifespan)
 
 
 @app.exception_handler(AppError)
@@ -213,7 +214,7 @@ async def anki_send(req: ExportRequest, background: BackgroundTasks) -> dict:
 @app.get("/api/config")
 def config() -> dict:
     """Settings the main page needs (no secrets, no password)."""
-    return {"all_profiles_view": settings.current().all_profiles_view}
+    return {"all_profiles_view": settings.current().all_profiles_view, "version": VERSION}
 
 
 @app.get("/api/lessons")

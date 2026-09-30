@@ -1012,12 +1012,12 @@ def test_private_lessons_hidden_when_option_off(anki, admin):
     admin.put(f"/api/lessons/{shared['id']}", json={"deck": "S", "cards": [], "shared": True})
 
     # Option on (default): the page may show everything
-    assert admin.get("/api/config").json() == {"all_profiles_view": True}
+    assert admin.get("/api/config").json()["all_profiles_view"] is True
     assert len(admin.get("/api/lessons").json()) == 3
 
     # Option off: Paul doesn't get Léa's private lesson, in any route
     admin.put("/api/admin/settings", headers=ADMIN, json={"all_profiles_view": False})
-    assert admin.get("/api/config").json() == {"all_profiles_view": False}
+    assert admin.get("/api/config").json()["all_profiles_view"] is False
     ids = {lesson["id"] for lesson in admin.get("/api/lessons").json()}
     assert ids == {paul["id"], shared["id"]}
     for method, url in [
@@ -1031,3 +1031,14 @@ def test_private_lessons_hidden_when_option_off(anki, admin):
 
     anki.profile = "Léa"  # back in Léa's profile: it's hers again
     assert admin.get(f"/api/lessons/{lea['id']}").status_code == 200
+
+
+def test_version_from_pyproject(client):
+    import tomllib
+    from pathlib import Path
+
+    from tools.changelog_section import section
+
+    version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+    assert client.get("/api/config").json()["version"] == version
+    assert section(version)  # the release notes of the current version exist

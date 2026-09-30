@@ -51,5 +51,5 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: cartable-addon
-          path: dist/cartable.ankiaddon
+          path: dist/*.ankiaddon
           retention-days: 30

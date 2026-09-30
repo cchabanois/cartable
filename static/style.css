@@ -619,7 +619,8 @@ h2 {
 .toast.ok { background: var(--ok); }
 
 /* ---- Language picker ------------------------------------------------------ */
-.page-footer { display: flex; justify-content: center; margin: .5rem 0 1rem; }
+.page-footer { display: flex; flex-direction: column; align-items: center; gap: .4rem; margin: .5rem 0 1rem; }
+.page-footer .version { font-size: .8rem; color: var(--muted); }
 .lang-select {
   display: inline-flex;
   align-items: center;

@@ -1,0 +1,34 @@
+name: Release
+
+# Pushing a tag v<version> (the version of pyproject.toml) publishes a GitHub
+# release with the Anki add-on attached and the CHANGELOG.md section as notes.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write  # create the release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Check the tag matches pyproject.toml
+        run: |
+          version=$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the version in pyproject.toml ($version)"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - run: python tools/changelog_section.py "$VERSION" > notes.md
+      - run: python tools/build_addon.py
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.ankiaddon --title "Cartable $VERSION" --notes-file notes.md --verify-tag

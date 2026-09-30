@@ -344,7 +344,8 @@
     },
     "addon": {
       "source_not_found": "Code du serveur Cartable introuvable.",
-      "uv_missing": "uv est introuvable : installe-le (https://docs.astral.sh/uv/) ou utilise une version officielle d'Anki, qui l'inclut.",
+      "uv_unsupported": "Cet ordinateur n'est pas pris en charge (pas de uv pour lui) : installe uv toi-même (https://docs.astral.sh/uv/), puis redémarre Anki.",
+      "uv_download_failed": "Téléchargement de uv depuis GitHub impossible (voir le journal). Vérifie la connexion Internet, puis Outils → Cartable → Redémarrer le serveur.",
       "install_failed": "Installation des dépendances de Cartable impossible (voir le journal)."
     }
   },
@@ -374,7 +375,9 @@
     "phoneTitle": "Ouvrir Cartable sur le téléphone",
     "phoneSteps": "1. Connecte le téléphone au même Wi-Fi que cet ordinateur.\n2. Scanne ce QR code avec l'appareil photo du téléphone.\n3. Dans le navigateur : menu → « Ajouter à l'écran d'accueil », pour l'avoir comme une appli.\n\nLes réglages (clés d'IA…) s'ouvrent ici, sur l'ordinateur : Outils → Cartable → Réglages.",
     "localOnly": "⚠ Le serveur n'écoute que sur cet ordinateur (réglage « host » à 127.0.0.1) : mets « 0.0.0.0 » dans la config du greffon pour y accéder depuis le téléphone.",
-    "notRunningYet": "Cartable démarre : réessaie dans quelques secondes."
+    "notRunningYet": "Cartable démarre : réessaie dans quelques secondes.",
+    "installConfirm": "Avant de démarrer, Cartable doit installer ses composants :\n\n• uv (depuis GitHub), Python 3.13 et ses bibliothèques Python (depuis PyPI) : environ 300 Mo sur le disque ;\n• uniquement dans le dossier du greffon : rien ne change sur le reste de l'ordinateur, et désinstaller le greffon les supprime.\n\nCela prend une ou deux minutes, la première fois et après certaines mises à jour. Installer maintenant ?",
+    "installDeclined": "Cartable n'est pas démarré. Pour l'installer plus tard : Outils → Cartable → Ouvrir Cartable."
   },
   "defaultPrompts": [
     {

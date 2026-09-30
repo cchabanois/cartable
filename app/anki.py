@@ -2,6 +2,7 @@
 
 import hashlib
 import html
+import os
 import re
 import tempfile
 from dataclasses import dataclass
@@ -89,13 +90,15 @@ def notes(req: ExportRequest, nt: NoteType, audio: dict[str, Path] | None = None
         mp3 = audio.get(back) if "Audio" in nt.fields else None
         if "Audio" in nt.fields:
             values["Audio"] = f"[sound:{mp3.name}]" if mp3 else ""
-        result.append(Note(
-            deck=_deck_name(req.deck, card.subdeck),
-            front=front,
-            fields=values,
-            tags=[_tag(t) for t in card.tags if t.strip()],
-            mp3=mp3,
-        ))
+        result.append(
+            Note(
+                deck=_deck_name(req.deck, card.subdeck),
+                front=front,
+                fields=values,
+                tags=[_tag(t) for t in card.tags if t.strip()],
+                mp3=mp3,
+            )
+        )
     if not result:
         raise AppError("export.no_cards")
     return result
@@ -142,6 +145,7 @@ def build_apkg(req: ExportRequest, audio: dict[str, Path] | None = None) -> str:
             )
         )
     media = sorted({str(n.mp3) for n in all_notes if n.mp3})
-    path = tempfile.NamedTemporaryFile(suffix=".apkg", delete=False).name
+    fd, path = tempfile.mkstemp(suffix=".apkg")
+    os.close(fd)
     genanki.Package(list(decks.values()), media_files=media).write_to_file(path)
     return path

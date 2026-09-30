@@ -29,7 +29,7 @@ class LaunchError(Exception):
 
 @dataclass
 class Layout:
-    source: Path   # folder containing app/ and static/
+    source: Path  # folder containing app/ and static/
     python: Path | None  # None: a venv must be created with uv
     data: Path
     dev: bool
@@ -60,6 +60,7 @@ def layout(config: dict) -> Layout:
 
 
 # --- Python environment (packaged add-on) -------------------------------------
+
 
 def _venv_python(venv: Path) -> Path:
     return venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
@@ -111,6 +112,7 @@ def _no_window() -> dict:
 
 # --- Server process -------------------------------------------------------------
 
+
 class Server:
     def __init__(self) -> None:
         self.process: subprocess.Popen | None = None
@@ -124,7 +126,7 @@ class Server:
         USER_FILES.mkdir(parents=True, exist_ok=True)
         lay = layout(config)
         lay.data.mkdir(parents=True, exist_ok=True)
-        log = open(self.log_path, "a", encoding="utf-8")
+        log = open(self.log_path, "a", encoding="utf-8")  # noqa: SIM115 (kept open: the server writes to it)
         python = lay.python or ensure_venv(lay.source, log)
         env = {
             **os.environ,
@@ -138,8 +140,16 @@ class Server:
         # Anki's own Python settings must not leak into the server's interpreter.
         for var in ("PYTHONHOME", "PYTHONPATH"):
             env.pop(var, None)
-        command = [str(python), "-m", "uvicorn", "app.main:app",
-                   "--host", str(config.get("host", "0.0.0.0")), "--port", str(config.get("port", 8000))]
+        command = [
+            str(python),
+            "-m",
+            "uvicorn",
+            "app.main:app",
+            "--host",
+            str(config.get("host", "0.0.0.0")),
+            "--port",
+            str(config.get("port", 8000)),
+        ]
         log.write(f"\n--- starting: {' '.join(command)} (in {lay.source})\n")
         log.flush()
         self.process = subprocess.Popen(

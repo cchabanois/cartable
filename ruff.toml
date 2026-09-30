@@ -1,0 +1,20 @@
+line-length = 120
+target-version = "py313"
+
+[lint]
+select = [
+  "E", "W",  # pycodestyle
+  "F",       # pyflakes
+  "I",       # import order
+  "UP",      # modern syntax
+  "B",       # likely bugs
+  "SIM",     # simpler code
+  "RUF",     # ruff-specific
+]
+ignore = [
+  "SIM108",                        # if/else blocks are often clearer than a ternary
+  "RUF001", "RUF002", "RUF003",    # typographic characters (…, ×, →) are intended
+]
+
+[lint.per-file-ignores]
+"app/main.py" = ["E402"]  # .env is loaded before the app modules read it

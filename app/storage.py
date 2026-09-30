@@ -1,9 +1,9 @@
 """Plain-file storage: everything lives under CARTABLE_DATA (default ./data).
 
-    data/
-      prompts.json
-      lessons/<yyyy-mm-dd-deck-slug>/lesson.json, page-N.jpg, audio/*.mp3
-      cache/tts/            voice previews, safe to delete
+data/
+  prompts.json
+  lessons/<yyyy-mm-dd-deck-slug>/lesson.json, page-N.jpg, audio/*.mp3
+  cache/tts/            voice previews, safe to delete
 """
 
 import json
@@ -30,7 +30,7 @@ def now() -> str:
 
 
 def slugify(text: str, max_length: int = 40) -> str:
-    """"Espagnol::Leçon 5 - La famille" → "espagnol-lecon-5-la-famille"."""
+    """ "Espagnol::Leçon 5 - La famille" → "espagnol-lecon-5-la-famille"."""
     ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
     slug = re.sub(r"[^a-z0-9]+", "-", ascii_text.lower()).strip("-")
     return slug[:max_length].rstrip("-")

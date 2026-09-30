@@ -11,8 +11,8 @@ from dataclasses import dataclass
 import httpx
 
 from . import settings
-from .errors import AppError
 from .anki import Note, NoteType
+from .errors import AppError
 
 TIMEOUT = 30.0
 _transport: httpx.AsyncBaseTransport | None = None  # tests plug a fake AnkiConnect here
@@ -78,7 +78,8 @@ async def send(nt: NoteType, notes: list[Note]) -> SendResult:
     async with _client() as client:
         if nt.name not in await _invoke(client, "modelNames"):
             await _invoke(
-                client, "createModel",
+                client,
+                "createModel",
                 modelName=nt.name,
                 inOrderFields=nt.fields,
                 css=nt.css,
@@ -86,8 +87,7 @@ async def send(nt: NoteType, notes: list[Note]) -> SendResult:
                 cardTemplates=[{"Name": t["name"], "Front": t["qfmt"], "Back": t["afmt"]} for t in nt.templates],
             )
         for mp3 in dict.fromkeys(n.mp3 for n in notes if n.mp3):
-            await _invoke(client, "storeMediaFile", filename=mp3.name,
-                          data=base64.b64encode(mp3.read_bytes()).decode())
+            await _invoke(client, "storeMediaFile", filename=mp3.name, data=base64.b64encode(mp3.read_bytes()).decode())
 
         added = updated = 0
         for deck in dict.fromkeys(n.deck for n in notes):
@@ -99,14 +99,22 @@ async def send(nt: NoteType, notes: list[Note]) -> SendResult:
             existing = {info["fields"]["Front"]["value"]: info["noteId"] for info in infos}
             for note in (n for n in notes if n.deck == deck):
                 if note.fields["Front"] in existing:
-                    await _invoke(client, "updateNoteFields",
-                                  note={"id": existing[note.fields["Front"]], "fields": note.fields})
+                    await _invoke(
+                        client, "updateNoteFields", note={"id": existing[note.fields["Front"]], "fields": note.fields}
+                    )
                     updated += 1
                 else:
-                    await _invoke(client, "addNote", note={
-                        "deckName": deck, "modelName": nt.name, "fields": note.fields, "tags": note.tags,
-                        "options": {"allowDuplicate": True},  # same front in another deck is fine
-                    })
+                    await _invoke(
+                        client,
+                        "addNote",
+                        note={
+                            "deckName": deck,
+                            "modelName": nt.name,
+                            "fields": note.fields,
+                            "tags": note.tags,
+                            "options": {"allowDuplicate": True},  # same front in another deck is fine
+                        },
+                    )
                     added += 1
 
         result = SendResult(added, updated, synced=False)

@@ -18,11 +18,21 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from . import ankiconnect, i18n, lessons, prompts, settings, tts
-from .errors import AppError
 from .anki import build_apkg, note_type, notes
+from .errors import AppError
 from .llm import Image, check, extract_cards, list_models, revise_cards
-from .models import (AdminPassword, Deck, ExportRequest, Lesson, LessonIn, LessonSummary, Prompt, PromptIn,
-                     RevisionRequest, SettingsUpdate)
+from .models import (
+    AdminPassword,
+    Deck,
+    ExportRequest,
+    Lesson,
+    LessonIn,
+    LessonSummary,
+    Prompt,
+    PromptIn,
+    RevisionRequest,
+    SettingsUpdate,
+)
 
 log = logging.getLogger("cartable")
 
@@ -56,11 +66,15 @@ def lang() -> dict:
     """In the Anki add-on: Anki's language (English if we don't have it).
     Otherwise None: the page uses the browser's language. A language picked on
     the page itself (kept in the browser) wins over both."""
-    return {"lang": i18n.anki_language(), "available": i18n.available(),
-            "names": {code: i18n.get(code, "meta.name", code) for code in i18n.available()}}
+    return {
+        "lang": i18n.anki_language(),
+        "available": i18n.available(),
+        "names": {code: i18n.get(code, "meta.name", code) for code in i18n.available()},
+    }
 
 
 # --- Prompts ---------------------------------------------------------------
+
 
 @app.get("/api/prompts")
 def list_prompts(lang: str = Depends(page_lang)) -> list[Prompt]:
@@ -86,6 +100,7 @@ def delete_prompt(id: int) -> None:
 
 
 # --- Extraction & export ---------------------------------------------------
+
 
 @app.post("/api/extract", status_code=201)
 async def extract(
@@ -163,11 +178,15 @@ async def export(req: ExportRequest, background: BackgroundTasks) -> FileRespons
 
 # --- Direct send to Anki (AnkiConnect) ----------------------------------------
 
+
 @app.get("/api/anki/status")
 async def anki_status() -> dict:
     try:
-        return {"available": True, "version": await ankiconnect.version(),
-                "profile": await ankiconnect.active_profile()}
+        return {
+            "available": True,
+            "version": await ankiconnect.version(),
+            "profile": await ankiconnect.active_profile(),
+        }
     except ankiconnect.AnkiConnectError as e:
         return {"available": False, "error": e.detail()}
 
@@ -189,6 +208,7 @@ async def anki_send(req: ExportRequest, background: BackgroundTasks) -> dict:
 
 
 # --- Saved lessons ---------------------------------------------------------
+
 
 @app.get("/api/config")
 def config() -> dict:
@@ -232,12 +252,11 @@ async def delete_lesson(id: str) -> None:
 async def revise_lesson(id: str, req: RevisionRequest, lang: str = Depends(page_lang)) -> dict:
     """Apply a natural-language correction to the cards, using the lesson photos."""
     lesson = await _lesson(id)
-    photos = [Image(lessons.photo_path(id, n).read_bytes(), "image/jpeg")
-              for n in range(1, lesson.photo_count + 1)]
-    revision = await revise_cards(photos, lesson.prompt, Deck(deck=req.deck, cards=req.cards),
-                                  req.instruction, lang)
-    updated = lessons.update(id, LessonIn(deck=revision.deck, cards=revision.cards,
-                                          voice=req.voice, reverse=req.reverse))
+    photos = [Image(lessons.photo_path(id, n).read_bytes(), "image/jpeg") for n in range(1, lesson.photo_count + 1)]
+    revision = await revise_cards(photos, lesson.prompt, Deck(deck=req.deck, cards=req.cards), req.instruction, lang)
+    updated = lessons.update(
+        id, LessonIn(deck=revision.deck, cards=revision.cards, voice=req.voice, reverse=req.reverse)
+    )
     return {"lesson": updated, "summary": revision.summary}
 
 
@@ -251,6 +270,7 @@ async def get_photo(id: str, n: int) -> FileResponse:
 
 
 # --- Voices ----------------------------------------------------------------
+
 
 @app.get("/api/voices")
 async def list_voices() -> list[dict]:
@@ -275,6 +295,7 @@ async def preview(text: str, voice: str, lesson: str | None = None) -> FileRespo
 
 
 # --- Admin -----------------------------------------------------------------
+
 
 def is_local(request: Request) -> bool:
     """Request made on this computer itself (not from a phone, not relayed by a proxy)."""
@@ -305,8 +326,12 @@ def _settings_view() -> dict:
     s["openai_keys"] = {url: settings.masked(key) for url, key in current.openai_keys.items()}
     s["openai_api_key"] = settings.masked(current.openai_key())
     s["openai_default_key"] = settings.masked(current.openai_api_key)
-    return {**s, "providers": settings.PROVIDERS, "default_models": settings.DEFAULT_MODELS,
-            "embedded": settings.embedded()}
+    return {
+        **s,
+        "providers": settings.PROVIDERS,
+        "default_models": settings.DEFAULT_MODELS,
+        "embedded": settings.embedded(),
+    }
 
 
 @app.get("/api/admin")

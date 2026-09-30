@@ -16,7 +16,6 @@ import base64
 import json
 import logging
 from dataclasses import dataclass
-from typing import TypeVar
 
 from pydantic import BaseModel
 
@@ -27,7 +26,6 @@ from .settings import Settings
 
 log = logging.getLogger("cartable")
 
-T = TypeVar("T", bound=BaseModel)
 
 SYSTEM_PROMPT = """\
 You create Anki flashcards from photos of a lesson (usually a pupil's notebook or \
@@ -56,6 +54,7 @@ class Image:
 
 class ExtractionError(AppError):
     """The AI provider failed; `code` is translated by the page (errors.* keys)."""
+
     status = 502
 
 
@@ -90,8 +89,9 @@ are, in the same order. To add cards, use the photos. In "summary", describe in 
 short sentence, in {i18n.language_name(lang)}, what you changed."""
 
 
-async def revise_cards(images: list[Image], prompt: str, deck: Deck, instruction: str,
-                       lang: str = i18n.DEFAULT) -> Revision:
+async def revise_cards(
+    images: list[Image], prompt: str, deck: Deck, instruction: str, lang: str = i18n.DEFAULT
+) -> Revision:
     """Apply a natural-language correction ("remove…", "you forgot…") to the cards.
 
     `lang`: language of the page, for the one-line summary."""
@@ -101,7 +101,7 @@ async def revise_cards(images: list[Image], prompt: str, deck: Deck, instruction
     return await _generate(s, images, _revision_text(prompt, deck, instruction, lang), Revision)
 
 
-async def _generate(s: Settings, images: list[Image], text: str, schema: type[T]) -> T:
+async def _generate[T: BaseModel](s: Settings, images: list[Image], text: str, schema: type[T]) -> T:
     """Send photos + text to the configured provider and parse the answer as `schema`."""
     if s.llm == "gemini":
         return await _gemini(s, images, text, schema)
@@ -123,14 +123,12 @@ def _gemini_client(s: Settings):
     return genai.Client(
         api_key=s.gemini_api_key,
         http_options=types.HttpOptions(
-            retry_options=types.HttpRetryOptions(
-                attempts=3, initial_delay=2, http_status_codes=[500, 502, 503, 504]
-            )
+            retry_options=types.HttpRetryOptions(attempts=3, initial_delay=2, http_status_codes=[500, 502, 503, 504])
         ),
     )
 
 
-async def _gemini(s: Settings, images: list[Image], text: str, schema: type[T]) -> T:
+async def _gemini[T: BaseModel](s: Settings, images: list[Image], text: str, schema: type[T]) -> T:
     from google.genai import errors, types
 
     client = _gemini_client(s)
@@ -147,9 +145,7 @@ async def _gemini(s: Settings, images: list[Image], text: str, schema: type[T]) 
 
     for model in models:
         try:
-            response = await client.aio.models.generate_content(
-                model=model, contents=contents, config=config
-            )
+            response = await client.aio.models.generate_content(model=model, contents=contents, config=config)
             break
         except errors.ClientError as e:
             log.warning("Gemini %s : %s %s", model, e.code, e.message)
@@ -183,7 +179,7 @@ def _anthropic_client(s: Settings):
     return anthropic.AsyncAnthropic(api_key=s.anthropic_api_key)
 
 
-async def _anthropic(s: Settings, images: list[Image], text: str, schema: type[T]) -> T:
+async def _anthropic[T: BaseModel](s: Settings, images: list[Image], text: str, schema: type[T]) -> T:
     import anthropic
 
     client = _anthropic_client(s)
@@ -279,8 +275,9 @@ def _openai_error(e: Exception, s: Settings) -> ExtractionError:
     if isinstance(e, openai.RateLimitError):
         return ExtractionError("llm.quota", provider=service)
     if isinstance(e, openai.APIStatusError):
-        return ExtractionError("llm.api_error", provider=service, status=e.status_code,
-                               detail=_error_message(e.body) or e.message)
+        return ExtractionError(
+            "llm.api_error", provider=service, status=e.status_code, detail=_error_message(e.body) or e.message
+        )
     return ExtractionError("llm.api_error", provider=service, status="", detail=str(e))
 
 
@@ -301,8 +298,9 @@ def _usable(m) -> bool | None:
 async def _local_vision_models(s: Settings) -> list[str] | None:
     """LM Studio and Ollama only describe their models in their own API, next to
     the OpenAI-compatible one: the vision models there, or None if not such a server."""
-    import httpx
     from urllib.parse import urlparse
+
+    import httpx
 
     root = s.openai_base_url.strip().rstrip("/").removesuffix("/v1")
     if urlparse(root).scheme != "http":  # local servers; cloud services answer in /models
@@ -343,14 +341,14 @@ async def list_models(s: Settings) -> dict:
 
     known = [_usable(m) for m in models]
     if any(k is not None for k in known):
-        return {"models": sorted(m.id for m, k in zip(models, known) if k), "vision_only": True}
+        return {"models": sorted(m.id for m, k in zip(models, known, strict=True) if k), "vision_only": True}
     local = await _local_vision_models(s)
     if local is not None:
         return {"models": sorted(local), "vision_only": True}
     return {"models": sorted(m.id for m in models), "vision_only": False}
 
 
-async def _openai(s: Settings, images: list[Image], text: str, schema: type[T]) -> T:
+async def _openai[T: BaseModel](s: Settings, images: list[Image], text: str, schema: type[T]) -> T:
     """OpenAI-compatible providers: Ollama (qwen2.5vl, gemma3…), etc."""
     import openai
 
@@ -358,9 +356,7 @@ async def _openai(s: Settings, images: list[Image], text: str, schema: type[T]) 
     content = [
         {
             "type": "image_url",
-            "image_url": {
-                "url": f"data:{img.media_type};base64,{base64.standard_b64encode(img.data).decode()}"
-            },
+            "image_url": {"url": f"data:{img.media_type};base64,{base64.standard_b64encode(img.data).decode()}"},
         }
         for img in images
     ]

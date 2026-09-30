@@ -120,10 +120,13 @@ def save(changes: dict) -> Settings:
             else:
                 keys.pop(service_id(url), None)
             stored["openai_keys"] = keys
-        stored.update({
-            k: v.strip() if isinstance(v, str) else v
-            for k, v in changes.items() if k in Settings.model_fields and v is not None
-        })
+        stored.update(
+            {
+                k: v.strip() if isinstance(v, str) else v
+                for k, v in changes.items()
+                if k in Settings.model_fields and v is not None
+            }
+        )
         Settings(**{**current().model_dump(), **stored})  # validate before writing
         _write(stored)
     return current()
@@ -135,6 +138,7 @@ def _write(stored: dict) -> None:
 
 
 # --- Admin password ---------------------------------------------------------
+
 
 def password_is_set() -> bool:
     return bool(_stored().get("admin_password"))
@@ -161,5 +165,5 @@ def check_password(password: str | None) -> bool:
 
 
 def masked(value: str) -> str:
-    """"AIzaSyD…a1b2" → "•••• a1b2" (empty stays empty)."""
+    """ "AIzaSyD…a1b2" → "•••• a1b2" (empty stays empty)."""
     return f"•••• {value[-4:]}" if value else ""

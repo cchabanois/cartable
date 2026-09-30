@@ -7,7 +7,9 @@ class Card(BaseModel):
     front: str = Field(description="Front: what is shown first (e.g. the word in the pupil's language).")
     back: str = Field(description="Back: the answer (e.g. the translation in the language being learned).")
     info: str = Field(default="", description="Useful extra info: gender, plural, example… Empty if none.")
-    subdeck: str = Field(default="", description='Sub-deck (e.g. "Vocabulary", "Conjugation"). Empty for a single deck.')
+    subdeck: str = Field(
+        default="", description='Sub-deck (e.g. "Vocabulary", "Conjugation"). Empty for a single deck.'
+    )
     tags: list[str] = Field(default_factory=list)
 
 
@@ -18,6 +20,7 @@ class Deck(BaseModel):
 
 class Revision(Deck):
     """Cards after a natural-language correction, with what changed."""
+
     summary: str = Field(description="One short sentence describing what changed, in the requested language.")
 
 
@@ -60,6 +63,7 @@ class LessonSummary(BaseModel):
 
 class RevisionRequest(LessonIn):
     """Current (possibly unsaved) state of the lesson + the correction to apply."""
+
     instruction: str = Field(min_length=1, max_length=2000)
 
 
@@ -82,6 +86,7 @@ class Prompt(PromptIn):
 
 class SettingsUpdate(BaseModel):
     """Admin page form: None leaves a field unchanged ("" clears an API key)."""
+
     llm: Literal["gemini", "anthropic", "openai", "fake"] | None = None
     model: str | None = None
     fallback_models: str | None = None

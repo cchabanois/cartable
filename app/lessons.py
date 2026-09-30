@@ -1,9 +1,9 @@
 """Saved lessons: one folder per lesson under data/lessons/.
 
-    <yyyy-mm-dd-deck-slug>/
-      lesson.json     deck, cards, prompt text, voice, dates
-      page-1.jpg …    the photos, in order
-      audio/          mp3 of the card backs, embedded in exported packages
+<yyyy-mm-dd-deck-slug>/
+  lesson.json     deck, cards, prompt text, voice, dates
+  page-1.jpg …    the photos, in order
+  audio/          mp3 of the card backs, embedded in exported packages
 """
 
 import re
@@ -69,9 +69,17 @@ def create(lesson: LessonIn, prompt: str, photos: list[bytes], owner: str = "") 
             for n, data in enumerate(photos, start=1):
                 (tmp / f"page-{n}.jpg").write_bytes(data)
             now = storage.now()
-            _write(tmp, Lesson(**{**lesson.model_dump(), "owner": owner, "shared": False},
-                               id=path.name, prompt=prompt, photo_count=len(photos),
-                               created_at=now, updated_at=now))
+            _write(
+                tmp,
+                Lesson(
+                    **{**lesson.model_dump(), "owner": owner, "shared": False},
+                    id=path.name,
+                    prompt=prompt,
+                    photo_count=len(photos),
+                    created_at=now,
+                    updated_at=now,
+                ),
+            )
             tmp.rename(path)  # the lesson appears complete, or not at all
         except BaseException:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -103,12 +111,14 @@ def update(id: str, changes: LessonIn, exported: bool = False, share: bool | Non
         if not path:
             return None
         now = storage.now()
-        lesson = _read(path).model_copy(update={
-            **changes.model_dump(include=set(LessonIn.model_fields) - {"shared"}, exclude_none=True),
-            **({"shared": share} if share is not None else {}),
-            "updated_at": now,
-            **({"exported_at": now} if exported else {}),
-        })
+        lesson = _read(path).model_copy(
+            update={
+                **changes.model_dump(include=set(LessonIn.model_fields) - {"shared"}, exclude_none=True),
+                **({"shared": share} if share is not None else {}),
+                "updated_at": now,
+                **({"exported_at": now} if exported else {}),
+            }
+        )
         _write(path, lesson)
     return lesson
 

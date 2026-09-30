@@ -30,13 +30,22 @@ class Deck(BaseModel):
     cards: list[Card]
 
 
-class Extraction(Deck):
-    """Cards read from the photos, and how to turn each photo so its text is upright."""
+class TextLine(BaseModel):
+    """A line of text on a photo, by its first and last words: its reading direction
+    tells how the photo is turned (models place words well, but name directions badly)."""
 
-    rotations: list[int] = Field(
+    page: int = Field(description="Number of the photo (1 = first photo).")
+    first_word: list[float] = Field(description="Box of the line's first word, in the format of the instructions.")
+    last_word: list[float] = Field(description="Box of the line's last word, in the format of the instructions.")
+
+
+class Extraction(Deck):
+    """Cards read from the photos, and a line of text on each photo (to save sideways
+    photos upright)."""
+
+    text_lines: list[TextLine] = Field(
         default_factory=list,
-        description="For each photo, in order: the clockwise rotation in degrees (0, 90, 180 or 270) "
-        "that makes its text upright; 0 when it already is.",
+        description="For each photo: its longest line of printed text (a title, a sentence).",
     )
 
 

@@ -17,6 +17,20 @@ async function resize(file) {
   return new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", JPEG_QUALITY));
 }
 
+// A photo turned a quarter turn clockwise (JPEG).
+async function rotateBlob(blob) {
+  const bitmap = await createImageBitmap(blob);
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.height;
+  canvas.height = bitmap.width;
+  const ctx = canvas.getContext("2d");
+  ctx.translate(canvas.width, 0);
+  ctx.rotate(Math.PI / 2);
+  ctx.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", JPEG_QUALITY));
+}
+
 async function api(path, options = {}) {
   // The server uses the page's language for default prompts and AI summaries.
   const headers = { "X-Cartable-Lang": I18N.lang, ...options.headers };
@@ -126,6 +140,27 @@ document.addEventListener("alpine:init", () => {
         }
       }
       event.target.value = "";  // allows picking the same photo again
+    },
+
+    // A quarter turn clockwise, when a photo (or the AI's guess) is sideways. In a saved
+    // lesson the server turns the photo and its diagram masks; before, just the photo here.
+    async rotatePhoto(i) {
+      this.error = "";
+      try {
+        if (!this.lessonId) {
+          const blob = await rotateBlob(this.photos[i].blob);
+          URL.revokeObjectURL(this.photos[i].url);
+          this.photos.splice(i, 1, { blob, url: URL.createObjectURL(blob) });
+          return;
+        }
+        if (this.saveTimer) await this.saveNow();
+        const lesson = await (await api(`/api/lessons/${this.lessonId}/photos/${i + 1}/rotate`, { method: "POST" })).json();
+        await this.loadPhotos(lesson);
+        lesson.cards.forEach((card, n) => { if (this.cards[n]) this.cards[n].mask = card.mask; });
+        this.lastSaved = this.snapshot();  // already saved by the server
+      } catch (e) {
+        this.error = e.message;
+      }
     },
 
     removePhoto(i) {

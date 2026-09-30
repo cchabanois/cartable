@@ -123,13 +123,13 @@ async def extract(
             raise AppError("extract.bad_format", format=img.content_type)
 
     data = [Image(await img.read(), img.content_type) for img in images]
-    extraction = await extract_cards(data, prompt, deck)
+    result, turns = await extract_cards(data, prompt, deck)
     if prompt_id is not None:
         prompts.mark_used(prompt_id)
     # Photos taken sideways are saved upright (the masks turn with them)
-    photos = diagrams.straighten([i.data for i in data], extraction.cards, extraction.rotations)
+    photos = diagrams.straighten([i.data for i in data], result.cards, turns)
     profile = await ankiconnect.active_profile() or ""  # the lesson belongs to this Anki profile
-    lesson = LessonIn(**extraction.model_dump(exclude={"rotations"}), voice=voice)
+    lesson = LessonIn(**result.model_dump(), voice=voice)
     return lessons.create(lesson, prompt, photos, profile)
 
 
@@ -153,9 +153,9 @@ async def _card_audio(req: ExportRequest, background: BackgroundTasks) -> tuple[
     return audio, failures
 
 
-def _diagram_images(req: ExportRequest, lesson: Lesson | None) -> dict[int, tuple[Path, Path]]:
-    """Front and back images of the diagram cards (index in req.cards → paths), drawn
-    from the saved lesson's photos. Without a saved lesson, masks can't be drawn."""
+def _diagram_images(req: ExportRequest, lesson: Lesson | None) -> dict[int, Path]:
+    """The diagram image of each diagram card (index in req.cards → path), from the
+    saved lesson's photos. Without a saved lesson, there is no photo to show."""
     folder = lessons.folder(lesson.id) if lesson else None
     if folder is None:
         return {}
@@ -163,8 +163,8 @@ def _diagram_images(req: ExportRequest, lesson: Lesson | None) -> dict[int, tupl
     for i, card in enumerate(req.cards):
         photo = lessons.photo_path(lesson.id, card.mask.page) if card.mask else None
         if photo and photo.is_file():
-            images[i] = diagrams.card_images(folder / "images", photo, card, req.cards)
-            used.update(images[i])
+            images[i] = diagrams.page_image(folder / "images", photo)
+            used.add(images[i])
     diagrams.prune(folder / "images", used)
     return images
 
@@ -293,6 +293,19 @@ async def revise_lesson(id: str, req: RevisionRequest, lang: str = Depends(page_
         id, LessonIn(deck=revision.deck, cards=revision.cards, voice=req.voice, reverse=req.reverse)
     )
     return {"lesson": updated, "summary": revision.summary}
+
+
+@app.post("/api/lessons/{id}/photos/{n}/rotate")
+async def rotate_photo(id: str, n: int) -> Lesson:
+    """Turn a photo a quarter turn clockwise (the AI got its direction wrong), with the
+    diagram masks on it."""
+    lesson = await _editable(id)
+    path = lessons.photo_path(id, n)
+    if path is None or not path.is_file():
+        raise AppError("photo.not_found", 404)
+    cards = [card.model_copy(deep=True) for card in lesson.cards]
+    path.write_bytes(diagrams.turn(path.read_bytes(), [c.mask for c in cards if c.mask and c.mask.page == n], 90))
+    return lessons.update(id, LessonIn(**{**lesson.model_dump(include=set(LessonIn.model_fields)), "cards": cards}))
 
 
 @app.get("/api/lessons/{id}/photos/{n}")

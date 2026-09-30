@@ -1,22 +1,23 @@
 """Diagram labels hidden on the photo (image occlusion).
 
 The AI finds each label of a diagram and its box on the photo (in the format the
-model knows best); the boxes are saved as fractions of the photo's size, the review
-lets the user move them, and the card images are drawn here: on the front every
-label is hidden behind its number, the asked one highlighted; on the back that one
-is shown again.
+model knows best); the boxes are saved as fractions of the photo's size and the
+review lets the user move them. In Anki, every card of a diagram shares one image
+of it; the masks are HTML over it: on the front every label hidden behind its
+number, the asked one highlighted; on the back that one shown again.
 """
 
 import hashlib
 import io
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageOps
 
-from .models import Card, Mask
+from .models import Card, Mask, TextLine
 
 MAX_SIDE = 1568  # larger images get downsized by some models: pixel boxes refer to what they see
-CARD_SIDE = 1200  # card images in Anki: enough to read a diagram, light to sync
+CARD_SIDE = 1000  # the diagram in Anki: enough to read it, light to sync
+CARD_QUALITY = 75
 PADDING = 0.006  # added around a detected box, as a fraction of the photo's larger side
 
 # How each model family gives boxes. Gemini and Qwen are trained on 0-1000 boxes;
@@ -25,12 +26,6 @@ FORMATS = {
     "gemini": "[y_min, x_min, y_max, x_max] normalized to 0-1000 (box_2d)",
     "normalized": "[x_min, y_min, x_max, y_max] normalized to 0-1000",
     "pixels": "[x_min, y_min, x_max, y_max] in pixels of the photo (sizes below)",
-}
-
-COLORS = {
-    "mask": ("#ffe08a", "#c77700", "#3d2b00"),  # fill, outline, number
-    "target": ("#ff7a59", "#b3261e", "#ffffff"),
-    "revealed": (None, "#1b873f", None),
 }
 
 
@@ -56,6 +51,23 @@ def prepare(data: bytes, media_type: str) -> tuple[bytes, str, tuple[int, int] |
     return out.getvalue(), "image/jpeg", image.size
 
 
+def _fractions(box: list[float], size: tuple[int, int], fmt: str) -> list[float] | None:
+    """A box from the AI as [x0, y0, x1, y1] fractions of the photo; None if it isn't a box."""
+    if len(box) != 4:
+        return None
+    width, height = size
+    a, b, c, d = box
+    if fmt == "gemini":
+        x0, y0, x1, y1 = b / 1000, a / 1000, d / 1000, c / 1000
+    elif fmt == "normalized":
+        x0, y0, x1, y1 = a / 1000, b / 1000, c / 1000, d / 1000
+    else:
+        x0, y0, x1, y1 = a / width, b / height, c / width, d / height
+    x0, x1 = sorted((x0, x1))
+    y0, y1 = sorted((y0, y1))
+    return [x0, y0, x1, y1] if x1 > x0 and y1 > y0 else None
+
+
 def normalize(cards: list[Card], sizes: list[tuple[int, int] | None], fmt: str) -> None:
     """Turn the AI's boxes into fractions of the photo, with a little margin. A mask
     that can't be placed (unknown photo, empty box) is dropped: the card stays text."""
@@ -63,25 +75,38 @@ def normalize(cards: list[Card], sizes: list[tuple[int, int] | None], fmt: str) 
         mask = card.mask
         if mask is None:
             continue
-        if not 1 <= mask.page <= len(sizes) or sizes[mask.page - 1] is None or len(mask.box) != 4:
+        size = sizes[mask.page - 1] if 1 <= mask.page <= len(sizes) else None
+        box = _fractions(mask.box, size, fmt) if size else None
+        if box is None:
             card.mask = None
             continue
-        width, height = sizes[mask.page - 1]
-        a, b, c, d = mask.box
-        if fmt == "gemini":
-            x0, y0, x1, y1 = b / 1000, a / 1000, d / 1000, c / 1000
-        elif fmt == "normalized":
-            x0, y0, x1, y1 = a / 1000, b / 1000, c / 1000, d / 1000
-        else:
-            x0, y0, x1, y1 = a / width, b / height, c / width, d / height
-        x0, x1 = sorted((x0, x1))
-        y0, y1 = sorted((y0, y1))
-        if x1 - x0 <= 0 or y1 - y0 <= 0:
-            card.mask = None
-            continue
+        width, height = size
+        x0, y0, x1, y1 = box
         pad_x = PADDING * max(width, height) / width
         pad_y = PADDING * max(width, height) / height
         card.mask = Mask(page=mask.page, n=mask.n, box=_clamp([x0 - pad_x, y0 - pad_y, x1 + pad_x, y1 + pad_y]))
+
+
+def turns(lines: list[TextLine], sizes: list[tuple[int, int] | None], fmt: str) -> list[int]:
+    """The clockwise turn that puts each photo upright, from the reading direction of
+    a line of text on it: from its first word to its last. Text going down the photo
+    means its top is on the right (270°), going up: on the left (90°), going left:
+    upside down (180°). Unknown: 0."""
+    result = [0] * len(sizes)
+    for line in lines:
+        size = sizes[line.page - 1] if 1 <= line.page <= len(sizes) else None
+        first = _fractions(line.first_word, size, fmt) if size else None
+        last = _fractions(line.last_word, size, fmt) if size else None
+        if first is None or last is None:
+            continue
+        width, height = size
+        dx = ((last[0] + last[2]) - (first[0] + first[2])) / 2 * width
+        dy = ((last[1] + last[3]) - (first[1] + first[3])) / 2 * height
+        if abs(dx) >= abs(dy):
+            result[line.page - 1] = 0 if dx >= 0 else 180
+        else:
+            result[line.page - 1] = 270 if dy > 0 else 90
+    return result
 
 
 ROTATIONS = {90: Image.Transpose.ROTATE_270, 180: Image.Transpose.ROTATE_180, 270: Image.Transpose.ROTATE_90}
@@ -99,75 +124,67 @@ def rotate_box(box: list[float], degrees: int) -> list[float]:
     return box
 
 
+def turn(data: bytes, masks: list[Mask], degrees: int) -> bytes:
+    """A photo turned `degrees` clockwise, its masks turned with it (in place).
+    Not a right angle, or an unreadable photo: unchanged."""
+    if degrees not in ROTATIONS:
+        return data
+    try:
+        image = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
+    except (OSError, ValueError):
+        return data
+    out = io.BytesIO()
+    image.transpose(ROTATIONS[degrees]).save(out, "JPEG", quality=90)
+    for mask in masks:
+        mask.box = rotate_box(mask.box, degrees)
+    return out.getvalue()
+
+
 def straighten(photos: list[bytes], cards: list[Card], rotations: list[int]) -> list[bytes]:
-    """Turn the photos the AI found sideways or upside down, and their masks with them.
-    Unknown rotations count as 0; an unreadable photo stays as it is."""
-    result = []
-    for page, data in enumerate(photos, start=1):
-        degrees = rotations[page - 1] if page <= len(rotations) else 0
-        if degrees not in ROTATIONS:
-            result.append(data)
-            continue
-        try:
-            image = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
-        except (OSError, ValueError):
-            result.append(data)
-            continue
-        out = io.BytesIO()
-        image.transpose(ROTATIONS[degrees]).save(out, "JPEG", quality=90)
-        result.append(out.getvalue())
-        for card in cards:
-            if card.mask and card.mask.page == page:
-                card.mask.box = rotate_box(card.mask.box, degrees)
-    return result
+    """Turn the photos the AI found sideways or upside down, and their masks with them."""
+    return [
+        turn(data, [c.mask for c in cards if c.mask and c.mask.page == page], rotations[page - 1])
+        if page <= len(rotations)
+        else data
+        for page, data in enumerate(photos, start=1)
+    ]
 
 
 def _clamp(box: list[float]) -> list[float]:
     return [round(min(1.0, max(0.0, v)), 4) for v in box]
 
 
-def render(photo: bytes, masks: list[Mask], target: int, reveal: bool) -> bytes:
-    """The photo with every mask drawn (numbered), `target` highlighted, or shown
-    again when `reveal`."""
-    image = ImageOps.exif_transpose(Image.open(io.BytesIO(photo))).convert("RGB")
-    image.thumbnail((CARD_SIDE, CARD_SIDE))
-    width, height = image.size
-    draw = ImageDraw.Draw(image)
-    line = max(2, round(max(width, height) / 400))
-    for mask in masks:
-        x0, y0, x1, y1 = mask.box[0] * width, mask.box[1] * height, mask.box[2] * width, mask.box[3] * height
-        style = "revealed" if reveal and mask.n == target else "target" if mask.n == target else "mask"
-        fill, outline, ink = COLORS[style]
-        draw.rectangle((x0, y0, x1, y1), fill=fill, outline=outline, width=line)
-        if ink:
-            label = f"({mask.n})"
-            size = max(10, min((y1 - y0) * 0.7, (x1 - x0) / (0.6 * len(label)), max(width, height) / 25))
-            font = ImageFont.load_default(size=size)
-            draw.text(((x0 + x1) / 2, (y0 + y1) / 2), label, fill=ink, font=font, anchor="mm")
-    out = io.BytesIO()
-    image.save(out, "JPEG", quality=82)
-    return out.getvalue()
-
-
-def card_images(folder: Path, photo: Path, card: Card, cards: list[Card]) -> tuple[Path, Path]:
-    """Front and back images of a diagram card, in the lesson's images/ folder.
-    Named after what they show, so they are only drawn again when something changed."""
-    masks = sorted((c.mask for c in cards if c.mask and c.mask.page == card.mask.page), key=lambda m: m.n)
+def page_image(folder: Path, photo: Path) -> Path:
+    """The photo as sent to Anki, shared by every card of the diagram: light (the
+    masks are HTML over it, not drawn in). Named after its content."""
     data = photo.read_bytes()
-    key = hashlib.sha1(data + repr([m.model_dump() for m in masks]).encode() + f"|{card.mask.n}".encode())
-    stem = f"diagram-{card.mask.page}-{card.mask.n}-{key.hexdigest()[:10]}"
     folder.mkdir(parents=True, exist_ok=True)
-    paths = []
-    for side, reveal in (("q", False), ("a", True)):
-        path = folder / f"{stem}-{side}.jpg"
-        if not path.exists():
-            path.write_bytes(render(data, masks, card.mask.n, reveal))
-        paths.append(path)
-    return paths[0], paths[1]
+    path = folder / f"diagram-{photo.stem}-{hashlib.sha1(data).hexdigest()[:10]}.jpg"
+    if not path.exists():
+        image = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
+        image.thumbnail((CARD_SIDE, CARD_SIDE))
+        image.save(path, "JPEG", quality=CARD_QUALITY, optimize=True)
+    return path
+
+
+def masks_html(masks: list[Mask], target: int, reveal: bool) -> str:
+    """The masks over the diagram, positioned in % of the image: every label hidden
+    behind its number, `target` highlighted (question) or shown again (answer)."""
+    parts = []
+    for mask in sorted(masks, key=lambda m: m.n):
+        x0, y0, x1, y1 = (round(v * 100, 2) for v in mask.box)
+        style = f"left:{x0}%;top:{y0}%;width:{round(x1 - x0, 2)}%;height:{round(y1 - y0, 2)}%"
+        if mask.n == target:
+            kind, text = ("revealed", "") if reveal else ("target", f"({mask.n})")
+        else:
+            kind, text = "", f"({mask.n})"
+        classes = " ".join(filter(None, ("cartable-mask", kind)))
+        parts.append(f'<div class="{classes}" style="{style}">{text}</div>')
+    return "".join(parts)
 
 
 def prune(folder: Path, keep: set[Path]) -> None:
-    """Remove the images no card uses any more (masks moved, cards deleted)."""
+    """Remove the images no card uses any more (photos deleted, older versions)."""
     if folder.is_dir():
         for path in folder.glob("diagram-*.jpg"):
             if path not in keep:

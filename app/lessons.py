@@ -72,11 +72,10 @@ def create(lesson: LessonIn, prompt: str, photos: list[bytes], owner: str = "", 
             _write(
                 tmp,
                 Lesson(
-                    **{**lesson.model_dump(), "owner": owner, "shared": False},
+                    **{**lesson.model_dump(), "owner": owner, "shared": False, "frames": list(frames)},
                     id=path.name,
                     prompt=prompt,
                     photo_count=len(photos),
-                    frames=list(frames),
                     created_at=now,
                     updated_at=now,
                 ),
@@ -104,16 +103,9 @@ def list_all() -> list[LessonSummary]:
     return sorted(summaries, key=lambda s: (s.updated_at, s.id), reverse=True)
 
 
-def update(
-    id: str,
-    changes: LessonIn,
-    exported: bool = False,
-    share: bool | None = None,
-    frames: list[Frame] | None = None,
-) -> Lesson | None:
+def update(id: str, changes: LessonIn, exported: bool = False, share: bool | None = None) -> Lesson | None:
     """Save the lesson's content. Sharing only changes through `share`, after the
-    caller checked it's the owner's profile (content updates never touch it).
-    `frames`: diagram frames turned with a photo."""
+    caller checked it's the owner's profile (content updates never touch it)."""
     with storage.lock:
         path = folder(id)
         if not path:
@@ -123,7 +115,6 @@ def update(
             update={
                 **changes.model_dump(include=set(LessonIn.model_fields) - {"shared"}, exclude_none=True),
                 **({"shared": share} if share is not None else {}),
-                **({"frames": frames} if frames is not None else {}),
                 "updated_at": now,
                 **({"exported_at": now} if exported else {}),
             }

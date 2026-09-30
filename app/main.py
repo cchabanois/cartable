@@ -159,7 +159,7 @@ def _diagram_images(req: ExportRequest, lesson: Lesson | None) -> dict[int, tupl
     folder = lessons.folder(lesson.id) if lesson else None
     if folder is None:
         return {}
-    frames = {f.page: f.box for f in lesson.frames}
+    frames = {f.page: f.box for f in (req.frames if req.frames is not None else lesson.frames)}
     images, used = {}, set()
     for i, card in enumerate(req.cards):
         photo = lessons.photo_path(lesson.id, card.mask.page) if card.mask else None
@@ -309,8 +309,8 @@ async def rotate_photo(id: str, n: int) -> Lesson:
     cards = [card.model_copy(deep=True) for card in lesson.cards]
     frames = [frame.model_copy(deep=True) for frame in lesson.frames]
     path.write_bytes(diagrams.turn(path.read_bytes(), diagrams.boxes_on(n, cards, frames), 90))
-    content = LessonIn(**{**lesson.model_dump(include=set(LessonIn.model_fields)), "cards": cards})
-    return lessons.update(id, content, frames=frames)
+    content = LessonIn(**{**lesson.model_dump(include=set(LessonIn.model_fields)), "cards": cards, "frames": frames})
+    return lessons.update(id, content)
 
 
 @app.get("/api/lessons/{id}/photos/{n}")

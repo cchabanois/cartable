@@ -180,8 +180,12 @@
             <template x-if="card.mask && photoFor(card)">
               <div class="diagram">
                 <img :src="photoFor(card)" alt="" draggable="false">
-                <div class="crop-frame" x-show="cropFor(card)" :style="cropFor(card) && maskStyle(cropFor(card))"
-                     :title="$t('app.review.cropFrame')"></div>
+                <div class="crop-frame" :style="maskStyle(cropFor(card))" :title="$t('app.review.cropFrame')">
+                  <template x-for="corner in ['nw', 'ne', 'sw', 'se']" :key="corner">
+                    <i class="crop-handle" :class="corner" x-show="!readOnly()"
+                       @pointerdown.stop="startCrop($event, card, corner)"></i>
+                  </template>
+                </div>
                 <template x-for="other in masksOnPage(card)" :key="other.key">
                   <div class="mask" :class="{ target: other === card, editable: other === card && !readOnly() }"
                        :style="maskStyle(other.mask)" @pointerdown="other === card && startDrag($event, card, 'move')">

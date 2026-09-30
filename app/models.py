@@ -75,6 +75,8 @@ class LessonIn(Deck):
     # Whether every Anki profile sees the lesson (None in an update = unchanged).
     # Only the owner's profile may change it; the owner itself never changes.
     shared: bool | None = None
+    # Diagram frames: what Anki shows of each photo (None in an update = unchanged)
+    frames: list[Frame] | None = None
 
 
 class Lesson(LessonIn):
@@ -83,8 +85,7 @@ class Lesson(LessonIn):
     owner: str = ""  # Anki profile open when the lesson was created ("" = none: shared)
     shared: bool = False
     photo_count: int
-    # Diagram frames, as fractions of the photos: set by the AI, turned with the photos
-    frames: list[Frame] = []
+    frames: list[Frame] = []  # fractions of the photos: from the AI, then as the user set them
     created_at: str
     updated_at: str
     exported_at: str | None = None
@@ -101,8 +102,7 @@ class LessonSummary(BaseModel):
     shared: bool = False
     card_count: int
     photo_count: int
-    # Diagram frames, as fractions of the photos: set by the AI, turned with the photos
-    frames: list[Frame] = []
+    frames: list[Frame] = []  # fractions of the photos: from the AI, then as the user set them
     created_at: str
     updated_at: str
     exported_at: str | None = None

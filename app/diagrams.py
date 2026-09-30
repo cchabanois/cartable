@@ -95,20 +95,22 @@ def frames(found: list[Frame], sizes: list[tuple[int, int] | None], fmt: str) ->
         size = sizes[frame.page - 1] if 1 <= frame.page <= len(sizes) else None
         box = _fractions(frame.box, size, fmt) if size else None
         if box:
-            result.append(Frame(page=frame.page, box=_clamp(box)))
+            margin = [-CROP_MARGIN, -CROP_MARGIN, CROP_MARGIN, CROP_MARGIN]  # a frame drawn tight on the drawing
+            result.append(Frame(page=frame.page, box=_clamp([v + m for v, m in zip(box, margin, strict=True)])))
     return result
 
 
 def crop(frame: list[float] | None, masks: list[Mask]) -> list[float] | None:
-    """What Anki shows of a photo: the diagram's frame, stretched to hold every mask
-    (a frame drawn too tight never cuts a label), with a margin. No frame: None, the
-    whole photo."""
+    """What Anki shows of a photo: the diagram's frame (from the AI, or as the user set
+    it), stretched to hold every mask with a margin, so a frame never cuts a label.
+    No frame: None, the whole photo. The page computes the same (cropFor)."""
     if frame is None:
         return None
-    boxes = [frame, *(m.box for m in masks)]
+    m = CROP_MARGIN
+    boxes = [frame, *([b[0] - m, b[1] - m, b[2] + m, b[3] + m] for b in (mask.box for mask in masks))]
     x0, y0 = min(b[0] for b in boxes), min(b[1] for b in boxes)
     x1, y1 = max(b[2] for b in boxes), max(b[3] for b in boxes)
-    return _clamp([x0 - CROP_MARGIN, y0 - CROP_MARGIN, x1 + CROP_MARGIN, y1 + CROP_MARGIN])
+    return _clamp([x0, y0, x1, y1])
 
 
 def turns(lines: list[TextLine], sizes: list[tuple[int, int] | None], fmt: str) -> list[int]:

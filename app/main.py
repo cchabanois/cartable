@@ -17,8 +17,8 @@ from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, Reque
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from . import ankiconnect, i18n, lessons, prompts, settings, tts
-from .anki import build_apkg, note_type, notes
+from . import ankiconnect, diagrams, i18n, lessons, prompts, settings, tts
+from .anki import build_apkg, notes
 from .errors import AppError
 from .llm import Image, check, extract_cards, list_models, revise_cards
 from .models import (
@@ -150,6 +150,22 @@ async def _card_audio(req: ExportRequest, background: BackgroundTasks) -> tuple[
     return audio, failures
 
 
+def _diagram_images(req: ExportRequest, lesson: Lesson | None) -> dict[int, tuple[Path, Path]]:
+    """Front and back images of the diagram cards (index in req.cards → paths), drawn
+    from the saved lesson's photos. Without a saved lesson, masks can't be drawn."""
+    folder = lessons.folder(lesson.id) if lesson else None
+    if folder is None:
+        return {}
+    images, used = {}, set()
+    for i, card in enumerate(req.cards):
+        photo = lessons.photo_path(lesson.id, card.mask.page) if card.mask else None
+        if photo and photo.is_file():
+            images[i] = diagrams.card_images(folder / "images", photo, card, req.cards)
+            used.update(images[i])
+    diagrams.prune(folder / "images", used)
+    return images
+
+
 async def _lesson(id: str | None) -> Lesson | None:
     """The lesson, if the open Anki profile may see it: when "see other profiles'
     lessons" is off in the settings, another profile's private lessons don't exist."""
@@ -181,7 +197,7 @@ async def _editable(id: str) -> Lesson:
 async def export(req: ExportRequest, background: BackgroundTasks) -> FileResponse:
     lesson = await _lesson(req.lesson_id)
     audio, failures = await _card_audio(req, background)
-    path = build_apkg(req, audio)
+    path = build_apkg(req, audio, _diagram_images(req, lesson))
     background.add_task(os.remove, path)
     if lesson and await _is_owner(lesson):  # someone else's lesson: exported, not changed
         lessons.update(lesson.id, req, exported=True)
@@ -218,8 +234,7 @@ async def anki_send(req: ExportRequest, background: BackgroundTasks) -> dict:
             raise AppError("anki.profile_mismatch", 409, lesson_profile=lesson.owner, active_profile=active)
     save = lesson and await _is_owner(lesson)  # someone else's lesson: sent, not changed
     audio, failures = await _card_audio(req, background)
-    nt = note_type(req.voice, req.reverse)
-    result = await ankiconnect.send(nt, notes(req, nt, audio))
+    result = await ankiconnect.send(notes(req, audio, _diagram_images(req, lesson)))
     if save:
         lessons.update(lesson.id, req, exported=True)
     return {**result.__dict__, "audio_failures": failures}
@@ -231,7 +246,10 @@ async def anki_send(req: ExportRequest, background: BackgroundTasks) -> dict:
 @app.get("/api/config")
 def config() -> dict:
     """Settings the main page needs (no secrets, no password)."""
-    return {"all_profiles_view": settings.current().all_profiles_view, "version": VERSION}
+    s = settings.current()
+    # Claude places diagram masks less precisely (too tight on handwriting): say so in the review.
+    loose_boxes = s.llm == "anthropic" or "claude" in s.model_for_provider().lower()
+    return {"all_profiles_view": s.all_profiles_view, "version": VERSION, "diagram_warning": loose_boxes}
 
 
 @app.get("/api/lessons")

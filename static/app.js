@@ -77,6 +77,7 @@ document.addEventListener("alpine:init", () => {
     profileToApply: null,        // Anki profile switch waiting for the current task to finish
     allProfiles: false,          // "My lessons": show every Anki profile's lessons
     allProfilesAllowed: true,    // that switch can be disabled in the settings
+    diagramWarning: false,       // the AI model places diagram masks loosely: say so
     lessonOwner: "",              // Anki profile that created the open lesson ("" = nobody: shared)
     lessonShared: false,
     lessonPrompt: "",            // prompt text the open lesson was generated with          // visible from every profile (only the owner's profile can change it)
@@ -96,7 +97,9 @@ document.addEventListener("alpine:init", () => {
       await i18nReady;  // the language is needed for the first default prompts
       try {
         this.settingsHere = (await (await fetch("/api/admin")).json()).allowed;
-        this.allProfilesAllowed = (await (await api("/api/config")).json()).all_profiles_view;
+        const config = await (await api("/api/config")).json();
+        this.allProfilesAllowed = config.all_profiles_view;
+        this.diagramWarning = config.diagram_warning;
       } catch {}
       await Promise.all([this.loadPrompts(Number(storage("get")) || null), this.loadLessons()]);
       this.checkAnki();
@@ -515,6 +518,58 @@ document.addEventListener("alpine:init", () => {
 
     removeCard(card) {
       this.cards = this.cards.filter((c) => c !== card);
+    },
+
+    // --- Diagram labels (masks on a photo) ---------------------------------
+    photoFor(card) {
+      return this.photos[card.mask.page - 1]?.url ?? null;
+    },
+
+    hasMasks() {
+      return this.cards.some((c) => c.mask);
+    },
+
+    // Every mask on the same photo: all of them are hidden on the card's image.
+    masksOnPage(card) {
+      return this.cards.filter((c) => c.mask && c.mask.page === card.mask.page);
+    },
+
+    maskStyle(mask) {
+      const [x0, y0, x1, y1] = mask.box.map((v) => v * 100);
+      return `left: ${x0}%; top: ${y0}%; width: ${x1 - x0}%; height: ${y1 - y0}%`;
+    },
+
+    // Drag the mask (mode "move") or its corner ("resize"), with a finger or a mouse.
+    // Boxes are fractions of the photo, like on the server.
+    startDrag(event, card, mode) {
+      if (this.readOnly()) return;
+      event.preventDefault();
+      const frame = event.currentTarget.closest(".diagram").getBoundingClientRect();
+      const start = { x: event.clientX, y: event.clientY, box: [...card.mask.box] };
+      const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+      const move = (e) => {
+        const dx = (e.clientX - start.x) / frame.width;
+        const dy = (e.clientY - start.y) / frame.height;
+        let [x0, y0, x1, y1] = start.box;
+        if (mode === "move") {
+          const [w, h] = [x1 - x0, y1 - y0];
+          x0 = clamp(x0 + dx, 0, 1 - w);
+          y0 = clamp(y0 + dy, 0, 1 - h);
+          [x1, y1] = [x0 + w, y0 + h];
+        } else {
+          x1 = clamp(x1 + dx, x0 + 0.02, 1);
+          y1 = clamp(y1 + dy, y0 + 0.02, 1);
+        }
+        card.mask.box = [x0, y0, x1, y1].map((v) => Math.round(v * 10000) / 10000);
+      };
+      const stop = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", stop);
+        window.removeEventListener("pointercancel", stop);
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", stop);
+      window.addEventListener("pointercancel", stop);
     },
 
     subdecks() {

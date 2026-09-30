@@ -19,9 +19,9 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel
 
-from . import i18n, settings
+from . import diagrams, i18n, settings
 from .errors import AppError
-from .models import Card, Deck, Revision
+from .models import Card, Deck, Mask, Revision
 from .settings import Settings
 
 log = logging.getLogger("cartable")
@@ -47,6 +47,14 @@ the instructions don't forbid it, fill "subdeck"; otherwise leave it empty.
 - Deck name: start from the suggested template and replace the parts in braces with \
 what you read on the page (number, lesson title…). Without a template, suggest a short \
 name like "Subject::Lesson".
+- Diagrams: when the instructions ask to learn the labels of a diagram (one card per \
+label or arrow, "the diagram without the names"…), make one card per label naming a \
+part of the diagram (not titles, legends or instructions). Number the labels 1, 2, 3… \
+on each photo, in reading order. Front: a short question asking what the numbered part \
+is, e.g. "What is (2)?", in the language of the instructions. Back: the label's text. \
+Fill "mask": page = the photo's number, n = the label's number, box = the tight \
+bounding box of the label's text on that photo, in the format given with the request. \
+For every other card, "mask" is null.
 """
 
 
@@ -62,20 +70,39 @@ class ExtractionError(AppError):
     status = 502
 
 
-def _user_text(prompt: str, deck: str, photos: int) -> str:
+def _user_text(prompt: str, deck: str, photos: int, sizes: list[tuple[int, int] | None] = (), fmt: str = "") -> str:
     text = f"Instructions: {prompt.strip()}"
     if deck.strip():
         text += f"\nDeck name template: {deck.strip()}"
     if not photos:
         text += "\nThere is no photo: create the cards from these instructions alone."
+    elif fmt:
+        text += f"\nDiagram label boxes, if any: {diagrams.FORMATS[fmt]}."
+        if fmt == "pixels":
+            known = [f"photo {i}: {size[0]}x{size[1]}" for i, size in enumerate(sizes, 1) if size]
+            text += "\nPhoto sizes: " + ", ".join(known) + "."
     return text
+
+
+def _prepare(images: list[Image]) -> tuple[list[Image], list[tuple[int, int] | None]]:
+    """Photos as the model will see them, and their sizes (for boxes in pixels)."""
+    prepared, sizes = [], []
+    for img in images:
+        data, media_type, size = diagrams.prepare(img.data, img.media_type)
+        prepared.append(Image(data, media_type))
+        sizes.append(size)
+    return prepared, sizes
 
 
 async def extract_cards(images: list[Image], prompt: str, deck: str = "") -> Deck:
     s = settings.current()
     if s.llm == "fake":
         return _fake(images, prompt, deck)
-    return await _generate(s, images, _user_text(prompt, deck, len(images)), Deck)
+    fmt = diagrams.box_format(s.model_for_provider())
+    images, sizes = _prepare(images)
+    result = await _generate(s, images, _user_text(prompt, deck, len(images), sizes, fmt), Deck)
+    diagrams.normalize(result.cards, sizes, fmt)
+    return result
 
 
 def _revision_text(prompt: str, deck: Deck, instruction: str, lang: str, photos: int) -> str:
@@ -106,7 +133,24 @@ async def revise_cards(
     s = settings.current()
     if s.llm == "fake":
         return _fake_revision(deck, instruction, lang)
-    return await _generate(s, images, _revision_text(prompt, deck, instruction, lang, len(images)), Revision)
+    # Masks stay out of the conversation (their boxes are in our own format): the
+    # revised cards get back the mask of the card they were.
+    plain = Deck(deck=deck.deck, cards=[c.model_copy(update={"mask": None}) for c in deck.cards])
+    revision = await _generate(s, images, _revision_text(prompt, plain, instruction, lang, len(images)), Revision)
+    _keep_masks(revision.cards, deck.cards)
+    return revision
+
+
+def _keep_masks(revised: list[Card], before: list[Card]) -> None:
+    """Give each revised card the mask of the same card before (same front and back,
+    else same front; a changed answer keeps its place on the diagram)."""
+    masked = [c for c in before if c.mask]
+    for card in revised:
+        match = next((c for c in masked if (c.front, c.back) == (card.front, card.back)), None)
+        match = match or next((c for c in masked if c.front == card.front), None)
+        card.mask = match.mask if match else None
+        if match:
+            masked.remove(match)
 
 
 async def _generate[T: BaseModel](s: Settings, images: list[Image], text: str, schema: type[T]) -> T:
@@ -390,6 +434,8 @@ async def _openai[T: BaseModel](s: Settings, images: list[Image], text: str, sch
 
 
 def _fake(images: list[Image], prompt: str, deck: str) -> Deck:
+    if images and any(w in prompt.lower() for w in ("diagram", "schéma", "schema")):
+        return _fake_diagram()
     return Deck(
         deck="Espagnol::Leçon 5 - La famille",
         cards=[
@@ -403,6 +449,22 @@ def _fake(images: list[Image], prompt: str, deck: str) -> Deck:
                 back="demo mode (fake provider)",
                 info=prompt[:80],
             ),
+        ],
+    )
+
+
+def _fake_diagram() -> Deck:
+    """Demo mode, diagram prompt: three labels hidden on the first photo."""
+    labels = [
+        ("la bouche", [0.1, 0.1, 0.35, 0.2]),
+        ("le cœur", [0.55, 0.4, 0.85, 0.5]),
+        ("l'estomac", [0.2, 0.7, 0.5, 0.8]),
+    ]
+    return Deck(
+        deck="Sciences::Le corps humain",
+        cards=[
+            Card(front=f"Qu'est-ce que ({n}) ?", back=text, mask=Mask(page=1, n=n, box=box))
+            for n, (text, box) in enumerate(labels, 1)
         ],
     )
 

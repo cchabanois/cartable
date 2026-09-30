@@ -166,9 +166,28 @@
         <button class="icon-btn muted" @click="clearRevision()" :aria-label="$t('common.close')">✕</button>
       </div>
 
+      <div class="diagram-hints" x-show="hasMasks()">
+        <p class="hint" x-show="!readOnly()" x-text="$t('app.review.diagramHint')"></p>
+        <p class="hint warn" x-show="diagramWarning" x-text="$t('app.review.diagramWarning')"></p>
+      </div>
+
       <div class="cards">
         <template x-for="card in cards" :key="card.key">
-          <article class="flash" :class="{ changed: card._state }">
+          <article class="flash" :class="{ changed: card._state, 'has-diagram': card.mask }">
+            <!-- Diagram label: the photo with every label hidden, this card's mask highlighted and movable -->
+            <template x-if="card.mask && photoFor(card)">
+              <div class="diagram">
+                <img :src="photoFor(card)" alt="" draggable="false">
+                <template x-for="other in masksOnPage(card)" :key="other.key">
+                  <div class="mask" :class="{ target: other === card, editable: other === card && !readOnly() }"
+                       :style="maskStyle(other.mask)" @pointerdown="other === card && startDrag($event, card, 'move')">
+                    <span x-text="'(' + other.mask.n + ')'"></span>
+                    <i class="handle" x-show="other === card && !readOnly()"
+                       @pointerdown.stop="startDrag($event, card, 'resize')"></i>
+                  </div>
+                </template>
+              </div>
+            </template>
             <div class="flash-body">
               <span class="flash-badge" x-show="card._state"
                     x-text="card._state === 'new' ? $t('app.review.badgeNew') : $t('app.review.badgeModified')"></span>

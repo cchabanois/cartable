@@ -3,6 +3,17 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class Mask(BaseModel):
+    """Where a diagram label is, to hide it on the photo (image occlusion).
+
+    From the AI, `box` is in the format its instructions give (depends on the model);
+    once saved, it is [x_min, y_min, x_max, y_max] as fractions of the photo's size."""
+
+    page: int = Field(description="Number of the photo showing the label (1 = first photo).")
+    n: int = Field(description="Number drawn in place of the label: 1, 2, 3… on each photo.")
+    box: list[float] = Field(description="Bounding box of the label's text, in the format of the instructions.")
+
+
 class Card(BaseModel):
     front: str = Field(description="Front: what is shown first (e.g. the word in the pupil's language).")
     back: str = Field(description="Back: the answer (e.g. the translation in the language being learned).")
@@ -11,6 +22,7 @@ class Card(BaseModel):
         default="", description='Sub-deck (e.g. "Vocabulary", "Conjugation"). Empty for a single deck.'
     )
     tags: list[str] = Field(default_factory=list)
+    mask: Mask | None = Field(default=None, description="Only for a diagram label (see the rules); otherwise null.")
 
 
 class Deck(BaseModel):

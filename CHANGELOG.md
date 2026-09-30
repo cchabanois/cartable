@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Diagrams: with a prompt like "one card per label, the diagram without the names", the AI finds each label of a diagram and hides it behind a number. Each card shows the diagram with every label hidden and asks "What is (2)?"; the back shows that label again. Masks can be moved and resized in the review; Anki gets the images (direct send and .apkg), and a corrected lesson updates its notes instead of duplicating them.
+
 - The review shows the prompt a lesson was generated with ("📝 Prompt used for this lesson"), and reopening a lesson puts that prompt back, so "Generate again" starts from it.
 
 - A 🗑 button on each prompt in the list of all prompts, to delete it without opening it.

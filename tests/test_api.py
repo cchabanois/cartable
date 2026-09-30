@@ -1,6 +1,7 @@
 import base64
 import json
 import sqlite3
+import sys
 import zipfile
 
 import httpx
@@ -276,7 +277,7 @@ def test_one_folder_per_lesson(client, tmp_path):
     assert lesson["id"].endswith("-espagnol-lecon-5-la-famille")
     assert sorted(p.name for p in folder.iterdir()) == ["lesson.json", "page-1.jpg", "page-2.jpg"]
 
-    saved = json.loads((folder / "lesson.json").read_text())
+    saved = json.loads((folder / "lesson.json").read_text(encoding="utf-8"))
     assert saved["deck"] == lesson["deck"]
     assert saved["prompt"] == "FR → ES"
     assert "id" not in saved  # the folder name is the id
@@ -293,7 +294,7 @@ def test_invalid_lesson_id(client):
 
 def test_prompts_in_a_file(client, tmp_path):
     client.post("/api/prompts", json={"name": "Anglais", "text": "FR → EN"})
-    saved = json.loads((tmp_path / "data" / "prompts.json").read_text())
+    saved = json.loads((tmp_path / "data" / "prompts.json").read_text(encoding="utf-8"))
     assert [p["name"] for p in saved][-1] == "Anglais"
     assert [p["id"] for p in saved] == [1, 2, 3, 4]
 
@@ -342,7 +343,8 @@ def test_admin_keys_never_sent_back(admin, monkeypatch, tmp_path):
 
     s = settings.current()
     assert (s.llm, s.model, s.anthropic_api_key) == ("anthropic", "claude-sonnet-5", "sk-ant-SECRET9876")
-    assert (tmp_path / "data" / "settings.json").stat().st_mode & 0o777 == 0o600
+    if sys.platform != "win32":  # Windows: no Unix permissions (the user profile protects the file)
+        assert (tmp_path / "data" / "settings.json").stat().st_mode & 0o777 == 0o600
 
     # Omitted key: unchanged; empty string: cleared
     admin.put("/api/admin/settings", headers=ADMIN, json={"model": ""})
@@ -661,7 +663,10 @@ def test_all_error_codes_translated():
     codes = set()
     for path in Path("app").glob("*.py"):
         codes |= set(
-            re.findall(r'(?:AppError|ExtractionError|AnkiConnectError)\(\s*"([a-z_]+\.[a-z_]+)"', path.read_text())
+            re.findall(
+                r'(?:AppError|ExtractionError|AnkiConnectError)\(\s*"([a-z_]+\.[a-z_]+)"',
+                path.read_text(encoding="utf-8"),
+            )
         )
     codes |= set(ankiconnect.KNOWN_ERRORS.values())
     assert codes, "no error code found"
@@ -837,7 +842,7 @@ def test_legacy_openai_key_moved_to_its_service(client, tmp_path):
     assert settings.current().openai_key() == "sk-old-9999"
     settings.save({"openai_base_url": "https://openrouter.ai/api/v1"})
     assert settings.current().openai_key() == ""  # not reused for OpenRouter
-    saved = json.loads(path.read_text())
+    saved = json.loads(path.read_text(encoding="utf-8"))
     assert "openai_api_key" not in saved  # migrated on save
     assert saved["openai_keys"] == {"https://api.openai.com/v1": "sk-old-9999"}
 
@@ -1037,7 +1042,7 @@ def test_version_from_pyproject(client):
     import tomllib
     from pathlib import Path
 
-    version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+    version = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
     assert client.get("/api/config").json()["version"] == version
 
 

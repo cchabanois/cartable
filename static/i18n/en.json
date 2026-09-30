@@ -75,7 +75,8 @@
       "badgeModified": "changed",
       "noCards": "No cards found: check the photos or the instructions.",
       "owner": "👤 <strong>{owner}</strong>'s lesson",
-      "sharedSwitch": "Shared with the other profiles"
+      "sharedSwitch": "Shared with the other profiles",
+      "readOnly": "🔒 Read only: only {owner}'s profile can change it. You can still add it to your Anki."
     },
     "revise": {
       "label": "Correct the cards with AI",
@@ -296,7 +297,7 @@
     },
     "lesson": {
       "not_found": "Lesson not found.",
-      "not_owner": "Only the “{owner}” profile can change this lesson's sharing."
+      "read_only": "Read only: only {owner}'s Anki profile can change this lesson."
     },
     "photo": {
       "not_found": "Photo not found."

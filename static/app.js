@@ -85,7 +85,7 @@ document.addEventListener("alpine:init", () => {
       // Any change to the open lesson is saved automatically.
       Alpine.effect(() => {
         const snapshot = this.snapshot();
-        if (this.lessonId && snapshot !== this.lastSaved) this.scheduleSave();
+        if (this.lessonId && !this.readOnly() && snapshot !== this.lastSaved) this.scheduleSave();
       });
       // Phone locked or tab closed: don't wait for the delay.
       document.addEventListener("visibilitychange", () => {
@@ -285,6 +285,16 @@ document.addEventListener("alpine:init", () => {
       return Boolean(this.lessonOwner) && this.anki.profile === this.lessonOwner;
     },
 
+    // Someone else's lesson (shared, or seen with "All profiles"): it can be read,
+    // sent to Anki and exported, not changed. Lessons without owner are everyone's.
+    readOnly() {
+      return Boolean(this.lessonOwner) && this.anki.profile !== this.lessonOwner;
+    },
+
+    canDelete(l) {
+      return !l.owner || l.owner === this.anki.profile;
+    },
+
     // Shows a lesson coming from the server (fresh generation or reopened).
     show(lesson) {
       clearTimeout(this.saveTimer);
@@ -377,8 +387,11 @@ document.addEventListener("alpine:init", () => {
     async saveNow(keepalive = false) {
       clearTimeout(this.saveTimer);
       this.saveTimer = null;
-      if (!this.lessonId) return;
+      if (!this.lessonId || this.readOnly()) return;
       const body = this.snapshot();
+      // Before the request: otherwise clearing saveTimer re-runs the autosave effect,
+      // which would see an unsaved snapshot and schedule the same save again.
+      this.lastSaved = body;
       this.saveState = "saving";
       try {
         await api(`/api/lessons/${this.lessonId}`, {
@@ -387,18 +400,22 @@ document.addEventListener("alpine:init", () => {
           body,
           keepalive,  // lets the request complete even if the page closes
         });
-        this.lastSaved = body;
         this.saveState = this.snapshot() === body ? "saved" : "pending";
         this.loadLessons();
-      } catch {
-        this.saveState = "error";
+      } catch (e) {
+        if (e.detail?.code === "lesson.read_only") {
+          // Another Anki profile was opened just before this save: show the saved lesson.
+          await this.openLesson(this.lessonId);
+          return;
+        }
+        this.saveState = "error";  // not retried in a loop; the next edit saves again
       }
     },
 
     // --- AI correction --------------------------------------------------
     async revise() {
       const instruction = this.revision.text.trim();
-      if (!instruction || this.revision.busy || !this.lessonId) return;
+      if (!instruction || this.revision.busy || !this.lessonId || this.readOnly()) return;
       this.error = "";
       this.revision.busy = true;
       const before = { deck: this.deck, cards: this.cards.map((c) => ({ ...c, _state: undefined })) };

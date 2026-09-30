@@ -161,14 +161,28 @@ async def _lesson(id: str | None) -> Lesson | None:
     return lesson
 
 
+async def _is_owner(lesson: Lesson) -> bool:
+    """Only the profile that created a lesson changes it; lessons without owner are everyone's."""
+    return not lesson.owner or await ankiconnect.active_profile() == lesson.owner
+
+
+async def _editable(id: str) -> Lesson:
+    """The lesson, if the open Anki profile may change it: for the others, it's read-only
+    (they can still read it, send it to their own Anki and export it)."""
+    lesson = await _lesson(id)
+    if not await _is_owner(lesson):
+        raise AppError("lesson.read_only", 403, owner=lesson.owner)
+    return lesson
+
+
 @app.post("/api/export")
 async def export(req: ExportRequest, background: BackgroundTasks) -> FileResponse:
-    await _lesson(req.lesson_id)
+    lesson = await _lesson(req.lesson_id)
     audio, failures = await _card_audio(req, background)
     path = build_apkg(req, audio)
     background.add_task(os.remove, path)
-    if req.lesson_id is not None:
-        lessons.update(req.lesson_id, req, exported=True)
+    if lesson and await _is_owner(lesson):  # someone else's lesson: exported, not changed
+        lessons.update(lesson.id, req, exported=True)
     return FileResponse(
         path,
         media_type="application/octet-stream",
@@ -200,11 +214,12 @@ async def anki_send(req: ExportRequest, background: BackgroundTasks) -> dict:
         if active and active != lesson.owner:
             # Don't write one child's lesson into another child's collection by mistake.
             raise AppError("anki.profile_mismatch", 409, lesson_profile=lesson.owner, active_profile=active)
+    save = lesson and await _is_owner(lesson)  # someone else's lesson: sent, not changed
     audio, failures = await _card_audio(req, background)
     nt = note_type(req.voice, req.reverse)
     result = await ankiconnect.send(nt, notes(req, nt, audio))
-    if req.lesson_id is not None:
-        lessons.update(req.lesson_id, req, exported=True)
+    if save:
+        lessons.update(lesson.id, req, exported=True)
     return {**result.__dict__, "audio_failures": failures}
 
 
@@ -233,26 +248,22 @@ async def get_lesson(id: str) -> Lesson:
 
 @app.put("/api/lessons/{id}")
 async def update_lesson(id: str, lesson: LessonIn) -> Lesson:
-    current = await _lesson(id)
-    share = None
-    if lesson.shared is not None and lesson.shared != current.shared and current.owner:
-        # Only the lesson's creator decides to share it (or to stop sharing it).
-        if await ankiconnect.active_profile() != current.owner:
-            raise AppError("lesson.not_owner", 403, owner=current.owner)
-        share = lesson.shared
+    current = await _editable(id)
+    # Sharing only changes when asked, and only for a lesson that has an owner.
+    share = lesson.shared if lesson.shared is not None and current.owner else None
     return lessons.update(id, lesson, share=share)
 
 
 @app.delete("/api/lessons/{id}", status_code=204)
 async def delete_lesson(id: str) -> None:
-    await _lesson(id)
+    await _editable(id)
     lessons.delete(id)
 
 
 @app.post("/api/lessons/{id}/revise")
 async def revise_lesson(id: str, req: RevisionRequest, lang: str = Depends(page_lang)) -> dict:
     """Apply a natural-language correction to the cards, using the lesson photos."""
-    lesson = await _lesson(id)
+    lesson = await _editable(id)
     photos = [Image(lessons.photo_path(id, n).read_bytes(), "image/jpeg") for n in range(1, lesson.photo_count + 1)]
     revision = await revise_cards(photos, lesson.prompt, Deck(deck=req.deck, cards=req.cards), req.instruction, lang)
     updated = lessons.update(

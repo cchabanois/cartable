@@ -75,7 +75,8 @@
       "badgeModified": "modifiée",
       "noCards": "Aucune carte trouvée : vérifie les photos ou la consigne.",
       "owner": "👤 Leçon de <strong>{owner}</strong>",
-      "sharedSwitch": "Partagée avec les autres profils"
+      "sharedSwitch": "Partagée avec les autres profils",
+      "readOnly": "🔒 Lecture seule : seul le profil de {owner} peut la modifier. Tu peux quand même l'ajouter à ton Anki."
     },
     "revise": {
       "label": "Corriger les cartes avec l'IA",
@@ -296,7 +297,7 @@
     },
     "lesson": {
       "not_found": "Leçon introuvable.",
-      "not_owner": "Seul le profil « {owner} » peut changer le partage de cette leçon."
+      "read_only": "Lecture seule : seul le profil Anki de {owner} peut modifier cette leçon."
     },
     "photo": {
       "not_found": "Photo introuvable."

@@ -101,6 +101,14 @@ class SettingsUpdate(BaseModel):
     all_profiles_view: bool | None = None
 
 
+class LessonAccess(BaseModel):
+    """Settings page: who a lesson belongs to. None leaves a field unchanged;
+    owner "" = no owner (the lesson is everyone's)."""
+
+    owner: str | None = Field(default=None, max_length=200)
+    shared: bool | None = None
+
+
 class AdminPassword(BaseModel):
     current: str | None = None
     new: str = Field(min_length=4)

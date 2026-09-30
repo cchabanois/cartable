@@ -7,12 +7,17 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ## [Unreleased]
 
+### Added
+
+- Settings page (⚙️), "Lessons" section: every lesson with its owner; give a lesson to another Anki profile or to nobody, share it or not, delete it. Lessons whose owner no longer exists in Anki are flagged.
+
 ### Changed
 
 - A lesson is read-only for the other Anki profiles: only the profile that created it can edit, correct with the AI, share or delete it. The others can still read it, send it to their own Anki and export it (without changing it).
 
 ### Fixed
 
+- After an update, browsers could keep old copies of the page's files (untranslated texts, missing styles): they are now checked on every load.
 - Every automatic save of a lesson was sent twice.
 
 - Anki add-on on Anki 26.08 and later (and on 25.02 and earlier), which don't provide uv: the add-on now downloads a pinned uv release from GitHub, checked against its SHA-256, after asking the user. Python 3.13 is installed inside the add-on's folder, never shared with the system's Python.

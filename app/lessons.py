@@ -123,6 +123,19 @@ def update(id: str, changes: LessonIn, exported: bool = False, share: bool | Non
     return lesson
 
 
+def set_access(id: str, owner: str | None = None, shared: bool | None = None) -> Lesson | None:
+    """Change who a lesson belongs to (settings page). Not a content change: the
+    lesson keeps its place in the list."""
+    changes = {k: v for k, v in {"owner": owner, "shared": shared}.items() if v is not None}
+    with storage.lock:
+        path = folder(id)
+        if not path:
+            return None
+        lesson = _read(path).model_copy(update=changes)
+        _write(path, lesson)
+    return lesson
+
+
 def delete(id: str) -> bool:
     with storage.lock:
         path = folder(id)

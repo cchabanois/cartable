@@ -60,6 +60,7 @@ document.addEventListener("alpine:init", () => {
     testResult: null,
     testingAnki: false,
     ankiResult: null,
+    lessons: null,   // { lessons, profiles } from /api/admin/lessons (profiles: null = Anki closed)
     error: "",
     notice: "",
 
@@ -104,6 +105,7 @@ document.addEventListener("alpine:init", () => {
         this.show(await this.request("/api/admin/settings"));
         this.unlocked = true;
         if (password) session("set", password);
+        this.loadLessons();
       } catch (e) {
         this.error = e.message;
       }
@@ -253,6 +255,54 @@ document.addEventListener("alpine:init", () => {
       } finally {
         this.testingAnki = false;
       }
+    },
+
+    // --- Lessons: who they belong to ------------------------------------------
+    async loadLessons() {
+      try {
+        this.lessons = await this.request("/api/admin/lessons");
+      } catch (e) {
+        this.error = e.message;
+      }
+    },
+
+    // Owner not among Anki's profiles (renamed or deleted): nobody can change the lesson.
+    ownerMissing(l) {
+      return Boolean(l.owner && this.lessons.profiles && !this.lessons.profiles.includes(l.owner));
+    },
+
+    ownerChoices(l) {
+      const profiles = this.lessons.profiles ?? [];
+      return l.owner && !profiles.includes(l.owner) ? [l.owner, ...profiles] : profiles;
+    },
+
+    async setAccess(l, changes) {
+      this.error = this.notice = "";
+      try {
+        Object.assign(l, await this.request(`/api/admin/lessons/${l.id}`, {
+          method: "PUT", body: JSON.stringify(changes),
+        }));
+        this.notice = t("admin.lessons.changed", { deck: l.deck });
+      } catch (e) {
+        this.error = e.message;
+        await this.loadLessons();  // show what is really saved
+      }
+    },
+
+    async deleteLesson(l) {
+      if (!confirm(t("admin.lessons.confirmDelete", { deck: l.deck }))) return;
+      this.error = this.notice = "";
+      try {
+        await this.request(`/api/admin/lessons/${l.id}`, { method: "DELETE" });
+        this.lessons.lessons = this.lessons.lessons.filter((x) => x.id !== l.id);
+      } catch (e) {
+        this.error = e.message;
+      }
+    },
+
+    formatDate(iso) {
+      Alpine.store("i18n").version;  // re-render when the language changes
+      return new Date(iso).toLocaleDateString(I18N.lang, { day: "numeric", month: "short", year: "numeric" });
     },
 
     async setPassword(current) {

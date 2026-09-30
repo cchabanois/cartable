@@ -26,6 +26,7 @@ from .models import (
     Deck,
     ExportRequest,
     Lesson,
+    LessonAccess,
     LessonIn,
     LessonSummary,
     Prompt,
@@ -393,6 +394,27 @@ async def admin_test() -> dict:
     return {"llm": s.llm, "model": s.model_for_provider(), "seconds": round(time.monotonic() - start, 1), **result}
 
 
+@app.get("/api/admin/lessons", dependencies=[Depends(require_admin)])
+async def admin_lessons() -> dict:
+    """Every lesson, whoever owns it, and Anki's profiles (None: Anki not reachable)."""
+    return {"lessons": lessons.list_all(), "profiles": await ankiconnect.profiles()}
+
+
+@app.put("/api/admin/lessons/{id}", dependencies=[Depends(require_admin)])
+def admin_lesson_access(id: str, access: LessonAccess) -> LessonSummary:
+    """Give a lesson to another profile (or to nobody), share it or not."""
+    lesson = lessons.set_access(id, access.owner, access.shared)
+    if lesson is None:
+        raise AppError("lesson.not_found", 404)
+    return LessonSummary(card_count=len(lesson.cards), **lesson.model_dump(exclude={"cards"}))
+
+
+@app.delete("/api/admin/lessons/{id}", status_code=204, dependencies=[Depends(require_admin)])
+def admin_delete_lesson(id: str) -> None:
+    if not lessons.delete(id):
+        raise AppError("lesson.not_found", 404)
+
+
 @app.get("/api/qr")
 def qr(text: str) -> Response:
     """QR code (PNG) of a text, e.g. the address to open on the phone."""
@@ -403,4 +425,15 @@ def qr(text: str) -> Response:
     return Response(out.getvalue(), media_type="image/png")
 
 
-app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+class PageFiles(StaticFiles):
+    """The page's files, revalidated on every load (ETag: a cheap 304 when unchanged).
+    Without it, browsers keep old copies after an update: new HTML with old
+    translations or styles."""
+
+    def file_response(self, *args, **kwargs) -> Response:
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
+app.mount("/", PageFiles(directory=STATIC_DIR, html=True), name="static")

@@ -157,7 +157,8 @@
       "title": "Consignes",
       "label": "Toutes les consignes",
       "search": "🔍 Rechercher (anglais, verbes…)",
-      "none": "Aucune consigne ne correspond."
+      "none": "Aucune consigne ne correspond.",
+      "delete": "Supprimer la consigne « {name} »"
     },
     "editor": {
       "new": "Nouvelle consigne",

@@ -305,6 +305,7 @@
             <strong x-text="c.name"></strong>
             <small x-text="c.text"></small>
           </button>
+          <button class="icon-btn muted" @click="deletePrompt(c)" :aria-label="$t('app.picker.delete', { name: c.name })">🗑</button>
         </li>
       </template>
       <li class="empty" x-show="!filteredPrompts().length" x-text="$t('app.picker.none')"></li>

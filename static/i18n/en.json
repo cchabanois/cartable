@@ -157,7 +157,8 @@
       "title": "Instructions",
       "label": "All instructions",
       "search": "🔍 Search (Spanish, verbs…)",
-      "none": "No instructions match."
+      "none": "No instructions match.",
+      "delete": "Delete the instructions “{name}”"
     },
     "editor": {
       "new": "New instructions",

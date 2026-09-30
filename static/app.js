@@ -219,15 +219,19 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
-    async deletePrompt() {
-      const { id, name } = this.editor;
-      if (!id || !confirm(t("app.editor.confirmDelete", { name: name }))) return;
+    // From the editor (the prompt being edited) or from the list of all prompts.
+    async deletePrompt(prompt = null) {
+      const inEditor = prompt === null;
+      const { id, name } = inEditor ? this.editor : prompt;
+      if (!id || !confirm(t("app.editor.confirmDelete", { name }))) return;
       try {
         await api(`/api/prompts/${id}`, { method: "DELETE" });
-        this.editor.open = false;
-        await this.loadPrompts(null);
+        if (inEditor) this.editor.open = false;
+        await this.loadPrompts(id === this.selectedId ? null : this.selectedId);
       } catch (e) {
-        this.editor.error = t("common.failed", { message: e.message });
+        const message = t("common.failed", { message: e.message });
+        if (inEditor) this.editor.error = message;
+        else this.error = message;
       }
     },
 

@@ -232,14 +232,20 @@ def test_lesson_saved(client):
 
 def test_lesson_updated(client):
     lesson = _extract(client)
-    edit = {"deck": "Espagnol::Leçon 6", "cards": [{"front": "le chat", "back": "el gato"}], "reverse": True}
+    edit = {
+        "deck": "Espagnol::Leçon 6",
+        "cards": [{"front": "le chat", "back": "el gato"}],
+        "reverse": True,
+        "typing": True,
+        "dictation": True,
+    }
     res = client.put(f"/api/lessons/{lesson['id']}", json=edit)
     assert res.status_code == 200
 
     reloaded = client.get(f"/api/lessons/{lesson['id']}").json()
     assert reloaded["deck"] == "Espagnol::Leçon 6"
     assert [c["back"] for c in reloaded["cards"]] == ["el gato"]
-    assert reloaded["reverse"] is True
+    assert reloaded["reverse"] is True and reloaded["typing"] is True and reloaded["dictation"] is True
     assert reloaded["prompt"] == "FR → ES"  # unchanged
     assert client.put("/api/lessons/999", json=edit).status_code == 404
 
@@ -1274,3 +1280,42 @@ def test_line_breaks_kept_in_anki(client, tmp_path):
         "Les 3 couleurs :<br>bleu, blanc, rouge",
         "Vers 1 : {{c1::Maître corbeau}}<br>Vers 2 : sur un arbre perché",
     ]
+
+
+def test_typed_answer_and_dictation(client, tmp_path):
+    export = {
+        "deck": "Espagnol",
+        "voice": "es-ES-ElviraNeural",
+        "typing": True,
+        "dictation": True,
+        "cards": [
+            {"front": "la mère", "back": "la madre"},
+            {"front": "aire du disque", "back": r"\(\pi r^2\)"},  # a formula: neither typed nor heard
+        ],
+    }
+    res = client.post("/api/export", json=export)
+    _, models, _, _ = _notes(res.content, tmp_path)
+    by_name = {m["name"]: m for m in models.values()}
+    typed = by_name["Cartable recto/verso à taper + dictée (audio)"]
+    recto, dictation = typed["tmpls"]
+    assert recto["qfmt"].endswith("{{type:Back}}") and "{{type:Back}}" in recto["afmt"]
+    assert "{{FrontSide}}" not in recto["afmt"]  # the box shown once
+    assert dictation["qfmt"] == '<div class="dictation">🎧</div>{{Audio}}{{type:Back}}'
+    assert "Cartable recto/verso (audio)" in by_name  # the formula's note type, as before
+    conn = sqlite3.connect(tmp_path / "collection.anki2")
+    assert conn.execute("SELECT count(*) FROM cards").fetchone()[0] == 2 + 1
+
+    # Without a voice, nothing to hear: no dictation card
+    res = client.post("/api/export", json={**export, "voice": "", "cards": export["cards"][:1]})
+    _, models, _, _ = _notes(res.content, tmp_path)
+    assert [m["name"] for m in models.values()] == ["Cartable recto/verso à taper (audio)"]
+
+
+def test_plain_note_types_keep_their_ids(client):
+    """Users already have these note types in Anki: the new options mustn't change them."""
+    from app import anki
+
+    assert anki._model(anki.note_type("es_ES", False)).model_id == anki._stable_id("model", "TTS Anki es_ES", "False")
+    assert anki._model(anki.note_type("", True)).model_id == anki._stable_id("model", "audio", "True")
+    typed = anki._model(anki.note_type("", False, typing=True)).model_id
+    assert typed != anki._model(anki.note_type("", False)).model_id

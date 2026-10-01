@@ -333,7 +333,15 @@ async def revise_lesson(id: str, req: RevisionRequest, lang: str = Depends(page_
             lessons.add_ai_calls(id, calls)  # an answer that couldn't be used is paid for too
             usage.add(calls, id, req.deck)
     updated = lessons.update(
-        id, LessonIn(deck=revision.deck, cards=revision.cards, voice=req.voice, reverse=req.reverse)
+        id,
+        LessonIn(
+            deck=revision.deck,
+            cards=revision.cards,
+            voice=req.voice,
+            reverse=req.reverse,
+            typing=req.typing,
+            dictation=req.dictation,
+        ),
     )
     return {"lesson": updated, "summary": revision.summary}
 

@@ -292,3 +292,22 @@ def test_cloze_lesson_on_a_real_collection(bridged, col, tmp_path):
         assert other.card_count() == 5
     finally:
         other.close()
+
+
+def test_typed_answer_and_dictation_on_a_real_collection(bridged, col):
+    client, _ = bridged
+    lesson = extract(client)
+    body = {**lesson, "voice": VOICE, "typing": True, "dictation": True, "lesson_id": lesson["id"]}
+    res = client.post("/api/anki/send", json=body).json()
+    cards = [c for c in lesson["cards"] if c["front"].strip() and c["back"].strip()]
+    assert res["added"] == len(cards)
+
+    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Cartable")]
+    assert note_type.name == "Cartable recto/verso à taper + dictée (audio)"
+    mother = col.find_notes('"Front:la mère"')
+    recto, dictation = col.get_note(mother[0]).cards()  # a dictation card on top of the usual one
+    assert "[[type:Back]]" in recto.question() and "[[type:Back]]" in recto.answer()  # Anki's box, then its check
+    assert "la mère" not in dictation.question()  # only heard
+    assert "[anki:play:q:0]" in dictation.question() and "[[type:Back]]" in dictation.question()  # heard, typed
+    assert dictation.question_av_tags()[0].filename == tts.filename("la madre", VOICE)
+    assert "la mère" in dictation.answer()

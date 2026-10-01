@@ -84,6 +84,8 @@ document.addEventListener("alpine:init", () => {
     deck: "",
     cards: [],
     reverse: false,
+    typing: false,               // the answer is typed in Anki
+    dictation: false,            // a dictation card: hear the back, type it
     lessons: [],         // saved lesson summaries
     lessonId: null,       // open lesson (null = new lesson, not generated yet)
     saveState: "",       // "", "pending", "saving", "saved", "error"
@@ -398,6 +400,8 @@ document.addEventListener("alpine:init", () => {
       this.deck = lesson.deck;
       this.cards = lesson.cards.map(withKey);
       this.reverse = lesson.reverse;
+      this.typing = lesson.typing ?? false;
+      this.dictation = lesson.dictation ?? false;
       this.form.voice = lesson.voice;
       this.lastSaved = this.snapshot();
       this.saveState = "saved";
@@ -449,6 +453,8 @@ document.addEventListener("alpine:init", () => {
       this.deck = "";
       this.cards = [];
       this.reverse = false;
+      this.typing = false;
+      this.dictation = false;
       this.saveState = "";
       this.lessonPrompt = "";
       this.frames = [];
@@ -489,6 +495,8 @@ document.addEventListener("alpine:init", () => {
           Object.fromEntries(Object.entries(card).filter(([k]) => k !== "key" && !k.startsWith("_")))),
         voice: this.form.voice,
         reverse: this.reverse,
+        typing: this.typing,
+        dictation: this.dictation,
         shared: this.lessonShared,
         frames: this.frames,
       };

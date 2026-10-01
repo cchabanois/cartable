@@ -155,7 +155,7 @@ def test_bridge_on_a_real_collection(bridged, col):
     # Profile screen (no collection open): refused with a clear error
     mw.col = None
     assert client.get("/api/anki/status").json()["profile"] is None
-    res = client.post("/api/anki/send", json={**body, "force": True})
+    res = client.post("/api/anki/send", json=body)
     assert res.json()["detail"]["code"] == "anki.no_profile"
 
 

@@ -30,7 +30,7 @@ const KEYS = {
 };
 
 const EDITABLE = ["llm", "model", "fallback_models", "openai_base_url", "tts_rate", "ankiconnect_url", "anki_sync",
-                  "all_profiles_view", "instructions", "profile_instructions"];
+                  "instructions", "profile_instructions"];
 
 function session(action, value) {
   try {

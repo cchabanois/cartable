@@ -17,7 +17,7 @@ from pathlib import Path
 from PIL import Image as PILImage
 from PIL import ImageOps
 
-from . import llm, settings
+from . import llm, settings, storage
 from .errors import AppError
 from .models import Card
 from .settings import Settings
@@ -137,17 +137,42 @@ async def _openai(s: Settings, name: str, prompt: str) -> bytes:
     return base64.b64decode(response.data[0].b64_json)
 
 
-def save(folder: Path, card: Card, data: bytes) -> str:
-    """The picture as a card shows it (square, light), in the lesson's images/ folder;
-    returns its file name."""
+def card_size(data: bytes) -> bytes:
+    """A picture (from a model, or a photo) as a card shows it: upright, light JPEG."""
     image = ImageOps.exif_transpose(PILImage.open(io.BytesIO(data))).convert("RGB")
     image.thumbnail((SIDE, SIDE))
     out = io.BytesIO()
     image.save(out, "JPEG", quality=QUALITY, optimize=True)
+    return out.getvalue()
+
+
+def save(folder: Path, card: Card, data: bytes) -> str:
+    """The picture in the lesson's images/ folder (card size); returns its file name."""
+    jpeg = card_size(data)
     folder.mkdir(parents=True, exist_ok=True)
-    name = f"picture-{card.id}-{hashlib.sha1(out.getvalue()).hexdigest()[:8]}.jpg"
-    (folder / name).write_bytes(out.getvalue())
+    name = f"picture-{card.id}-{hashlib.sha1(jpeg).hexdigest()[:8]}.jpg"
+    (folder / name).write_bytes(jpeg)
     return name
+
+
+# --- Cache: a subject drawn once is reused by the next lessons, for free ----------
+
+
+def _cache_path(s: Settings, subject: str) -> Path:
+    key = hashlib.sha1(f"{model(s)}|{STYLE}|{subject.strip().lower()}".encode()).hexdigest()
+    return storage.data_dir() / "cache" / "pictures" / f"{key}.jpg"
+
+
+async def picture(s: Settings, subject: str, fresh: bool = False) -> bytes:
+    """The card-size picture of a subject: from the cache, or drawn (then cached).
+    `fresh`: draw it again (the user didn't like it); the new one replaces it in the cache."""
+    path = _cache_path(s, subject)
+    if not fresh and path.is_file():
+        return path.read_bytes()
+    jpeg = card_size(await draw(s, subject))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(jpeg)
+    return jpeg
 
 
 async def draw_all(folder: Path, cards: list[Card]) -> tuple[int, dict | None]:
@@ -162,7 +187,7 @@ async def draw_all(folder: Path, cards: list[Card]) -> tuple[int, dict | None]:
     async def one(card: Card) -> None:
         async with sem:
             try:
-                card.picture = save(folder, card, await draw(s, card.picture_prompt))
+                card.picture = save(folder, card, await picture(s, card.picture_prompt))
             except AppError as e:
                 failures.append(e.detail())
                 log.warning("Picture for %r: %s", card.picture_prompt, e)

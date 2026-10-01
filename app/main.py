@@ -29,6 +29,7 @@ from .models import (
     LessonAccess,
     LessonIn,
     LessonSummary,
+    PictureRequest,
     Prompt,
     PromptIn,
     RevisionRequest,
@@ -352,6 +353,67 @@ async def draw_pictures(id: str) -> dict:
     pictures.prune(folder, cards)
     content = LessonIn(**{**lesson.model_dump(include=set(LessonIn.model_fields)), "cards": cards})
     return {"lesson": lessons.update(id, content), "failures": failures, "error": error}
+
+
+def _card(lesson: Lesson, card_id: str) -> int:
+    index = next((i for i, c in enumerate(lesson.cards) if c.id == card_id), None)
+    if index is None:
+        raise AppError("card.not_found", 404)
+    return index
+
+
+def _save_card(lesson: Lesson, cards: list) -> dict:
+    folder = lessons.folder(lesson.id) / "images"
+    pictures.prune(folder, cards)
+    content = LessonIn(**{**lesson.model_dump(include=set(LessonIn.model_fields)), "cards": cards})
+    return lessons.update(lesson.id, content).model_dump()
+
+
+@app.post("/api/lessons/{id}/cards/{card_id}/picture/draw")
+async def redraw_picture(id: str, card_id: str, req: PictureRequest) -> dict:
+    """Draw a card's picture (again): the AI's subject, or one the user wrote. Never
+    from the cache: this is asked when the picture didn't suit."""
+    lesson = await _editable(id)
+    cards = [card.model_copy(deep=True) for card in lesson.cards]
+    card = cards[_card(lesson, card_id)]
+    subject = (req.subject if req.subject is not None else card.picture_prompt).strip()
+    if not subject:
+        raise AppError("picture.no_subject")
+    s = settings.current()
+    with llm.recording("picture") as calls:
+        try:
+            jpeg = await pictures.picture(s, subject, fresh=True)
+        finally:
+            lessons.add_ai_calls(id, calls)
+            usage.add(calls, id, lesson.deck)
+    card.picture_prompt = subject
+    card.picture = pictures.save(lessons.folder(id) / "images", card, jpeg)
+    return {"card": card, "lesson": _save_card(lessons.get(id), cards)}
+
+
+@app.post("/api/lessons/{id}/cards/{card_id}/picture", status_code=201)
+async def upload_picture(id: str, card_id: str, photo: UploadFile) -> dict:
+    """The user's own photo as the card's picture."""
+    lesson = await _editable(id)
+    if photo.content_type not in IMAGE_TYPES:
+        raise AppError("extract.bad_format", format=photo.content_type)
+    cards = [card.model_copy(deep=True) for card in lesson.cards]
+    card = cards[_card(lesson, card_id)]
+    try:
+        card.picture = pictures.save(lessons.folder(id) / "images", card, await photo.read())
+    except (OSError, ValueError) as e:
+        raise AppError("extract.bad_format", format=photo.content_type) from e
+    return {"card": card, "lesson": _save_card(lesson, cards)}
+
+
+@app.delete("/api/lessons/{id}/cards/{card_id}/picture")
+async def remove_picture(id: str, card_id: str) -> dict:
+    """No picture on the card any more: it becomes a text card."""
+    lesson = await _editable(id)
+    cards = [card.model_copy(deep=True) for card in lesson.cards]
+    card = cards[_card(lesson, card_id)]
+    card.picture = card.picture_prompt = ""
+    return {"card": card, "lesson": _save_card(lesson, cards)}
 
 
 @app.get("/api/lessons/{id}/pictures/{name}")

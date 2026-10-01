@@ -151,3 +151,59 @@ def test_image_model_from_the_keys():
     assert pictures.model(both) == "google/gemini-3.1-flash-lite-image"
     assert pictures.model(Settings(llm="anthropic", gemini_api_key="k")) == "gemini-3.1-flash-lite-image"
     assert pictures.model(Settings(picture_model="openai/gpt-5-image-mini")) == "openai/gpt-5-image-mini"
+
+
+def test_cache_reused_by_the_next_lessons(client, drawn):
+    first = lesson_with_pictures(client)
+    client.post(f"/api/lessons/{first['id']}/pictures")
+    assert sorted(drawn) == ["a dog", "an apple", "an umbrella"]
+    drawn.clear()
+    second = lesson_with_pictures(client)  # the same subjects
+    cards = client.post(f"/api/lessons/{second['id']}/pictures").json()["lesson"]["cards"]
+    assert drawn == ["an umbrella"]  # only the one that failed: the others come from the cache, free
+    assert [bool(c["picture"]) for c in cards] == [True, True, False, False]
+    calls = client.get(f"/api/lessons/{second['id']}").json()["ai_calls"]
+    assert [c["kind"] for c in calls] == ["extract"]  # nothing paid for the pictures
+
+
+def test_redraw_with_another_subject(client, drawn):
+    lesson = lesson_with_pictures(client)
+    cards = client.post(f"/api/lessons/{lesson['id']}/pictures").json()["lesson"]["cards"]
+    apple = cards[0]
+    url = f"/api/lessons/{lesson['id']}/cards/{apple['id']}/picture/draw"
+
+    drawn.clear()
+    res = client.post(url, json={}).json()  # again, the same subject: drawn anew, not from the cache
+    assert drawn == ["an apple"] and res["card"]["picture"] and res["card"]["id"] == apple["id"]
+    res = client.post(url, json={"subject": "a green apple"}).json()
+    assert res["card"]["picture_prompt"] == "a green apple"
+    saved = client.get(f"/api/lessons/{lesson['id']}").json()
+    assert saved["cards"][0]["picture"] == res["card"]["picture"]
+    assert [c["kind"] for c in saved["ai_calls"]].count("picture") == 4  # 2 at first + 2 redrawn
+
+    # A card without a picture gets one ("tomorrow"), with a subject written by the user
+    tomorrow = cards[3]
+    res = client.post(f"/api/lessons/{lesson['id']}/cards/{tomorrow['id']}/picture/draw", json={"subject": " "})
+    assert res.json()["detail"]["code"] == "picture.no_subject"
+    url = f"/api/lessons/{lesson['id']}/cards/{tomorrow['id']}/picture/draw"
+    assert client.post(url, json={"subject": "a calendar"}).json()["card"]["picture"]
+    assert client.post(f"/api/lessons/{lesson['id']}/cards/nope/picture/draw", json={}).status_code == 404
+
+
+def test_own_photo_then_no_picture(client, drawn, tmp_path):
+    lesson = lesson_with_pictures(client)
+    cards = client.post(f"/api/lessons/{lesson['id']}/pictures").json()["lesson"]["cards"]
+    dog = cards[1]
+    out = io.BytesIO()
+    Image.new("RGB", (1600, 1200), "blue").save(out, "JPEG")
+    url = f"/api/lessons/{lesson['id']}/cards/{dog['id']}/picture"
+    res = client.post(url, files={"photo": ("p.jpg", out.getvalue(), "image/jpeg")}).json()
+    assert res["card"]["picture"] != dog["picture"]
+    folder = tmp_path / "data" / "lessons" / lesson["id"] / "images"
+    assert not (folder / dog["picture"]).exists()  # the replaced picture is removed
+    assert Image.open(folder / res["card"]["picture"]).size == (pictures.SIDE, 384)
+    assert client.post(url, files={"photo": ("p.txt", b"x", "text/plain")}).status_code == 400
+
+    res = client.delete(url).json()
+    assert (res["card"]["picture"], res["card"]["picture_prompt"]) == ("", "")  # a text card now
+    assert not any(folder.glob(f"picture-{dog['id']}-*"))

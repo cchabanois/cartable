@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- A 🖼️ panel on each card: what to draw, 🎨 draw / draw again, 📷 your own photo (free), ✕ no picture. A subject drawn once is reused by the next lessons for free (cache).
+
 - Pictures on cards: with a prompt like "front: the picture of the word, back: the English word", an image model draws each card's picture (Gemini Flash Lite Image by default, settable in ⚙️; about 3 to 7 US¢ each, in the cost tracking). The cards show at once, their pictures when drawn; Anki gets them in a "Cartable image" note type.
 - Every card has a stable id, so Anki recognises it even when its front changes or is the same as others'.
 

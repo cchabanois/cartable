@@ -187,7 +187,15 @@
       "failed": {
         "one": "{count} picture couldn't be drawn: that card has none.",
         "other": "{count} pictures couldn't be drawn: those cards have none."
-      }
+      },
+      "panel": "Picture",
+      "subject": "What to draw (in English)",
+      "subjectPlaceholder": "e.g. a red apple",
+      "draw": "🎨 Draw",
+      "redraw": "🎨 Draw again",
+      "photo": "📷 My photo",
+      "remove": "✕ No picture",
+      "cost": "A drawing costs about 3 to 7 US¢; your own photo is free."
     }
   },
   "admin": {
@@ -431,7 +439,11 @@
       "missing_key": "No {service} key for the image model.",
       "failed": "The picture couldn't be drawn: {detail}",
       "empty": "The image model gave no picture.",
-      "quota": "{service} refuses: quota exceeded for the image model (a free key can't draw). Choose an image model through another service in the settings."
+      "quota": "{service} refuses: quota exceeded for the image model (a free key can't draw). Choose an image model through another service in the settings.",
+      "no_subject": "Write what to draw first."
+    },
+    "card": {
+      "not_found": "This card no longer exists: reload the lesson."
     }
   },
   "demo": {

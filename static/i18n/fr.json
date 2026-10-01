@@ -187,7 +187,15 @@
       "failed": {
         "one": "{count} image n'a pas pu être dessinée : sa carte n'en a pas.",
         "other": "{count} images n'ont pas pu être dessinées : ces cartes n'en ont pas."
-      }
+      },
+      "panel": "Image",
+      "subject": "Ce qu'il faut dessiner (en anglais)",
+      "subjectPlaceholder": "ex. : a red apple",
+      "draw": "🎨 Dessiner",
+      "redraw": "🎨 Refaire",
+      "photo": "📷 Ma photo",
+      "remove": "✕ Pas d'image",
+      "cost": "Un dessin coûte environ 3 à 7 ¢ US ; ta propre photo est gratuite."
     }
   },
   "admin": {
@@ -431,7 +439,11 @@
       "missing_key": "Pas de clé {service} pour le modèle d'images.",
       "failed": "L'image n'a pas pu être dessinée : {detail}",
       "empty": "Le modèle d'images n'a renvoyé aucune image.",
-      "quota": "{service} refuse : quota dépassé pour le modèle d'images (une clé gratuite ne permet pas les images). Choisis un modèle d'images d'un autre service dans les réglages."
+      "quota": "{service} refuse : quota dépassé pour le modèle d'images (une clé gratuite ne permet pas les images). Choisis un modèle d'images d'un autre service dans les réglages.",
+      "no_subject": "Écris d'abord ce qu'il faut dessiner."
+    },
+    "card": {
+      "not_found": "Cette carte n'existe plus : recharge la leçon."
     }
   },
   "demo": {

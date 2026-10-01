@@ -99,6 +99,7 @@ document.addEventListener("alpine:init", () => {
     frames: [],                  // diagram frames of the open lesson: what Anki shows of each photo          // visible from every profile (only the owner's profile can change it)
     sending: false,
     drawing: false,              // the pictures the cards ask for are being drawn
+    pictureJobs: 0,              // a card's picture being redrawn, uploaded or removed
 
     async init() {
       // Any change to the open lesson is saved automatically.
@@ -441,7 +442,9 @@ document.addEventListener("alpine:init", () => {
     payload() {
       return {
         deck: this.deck,
-        cards: this.cards.map(({ key, _state, ...card }) => card),
+        // Without the page's own fields: key, and _state, _panel, _subject, _drawing…
+        cards: this.cards.map((card) =>
+          Object.fromEntries(Object.entries(card).filter(([k]) => k !== "key" && !k.startsWith("_")))),
         voice: this.form.voice,
         reverse: this.reverse,
         shared: this.lessonShared,
@@ -463,7 +466,7 @@ document.addEventListener("alpine:init", () => {
       clearTimeout(this.saveTimer);
       this.saveTimer = null;
       if (!this.lessonId || this.readOnly()) return;
-      if (this.drawing) return this.scheduleSave();  // after: the server is adding the pictures
+      if (this.drawing || this.pictureJobs) return this.scheduleSave();  // after: the server is changing pictures
       const body = this.snapshot();
       // Before the request: otherwise clearing saveTimer re-runs the autosave effect,
       // which would see an unsaved snapshot and schedule the same save again.
@@ -683,6 +686,53 @@ document.addEventListener("alpine:init", () => {
     // --- Pictures ("front: the picture of the word") ------------------------
     pictureUrl(card) {
       return `/api/lessons/${this.lessonId}/pictures/${card.picture}`;
+    },
+
+    // A card's picture panel: what to draw (the AI's subject, else the answer), redraw,
+    // the user's own photo, or no picture.
+    togglePicturePanel(card) {
+      card._panel = !card._panel;
+      if (card._panel) card._subject = card.picture_prompt || card.back;
+    },
+
+    async pictureAction(card, request) {
+      if (this.saveTimer) await this.saveNow();  // the server must know the card
+      card._drawing = true;
+      this.pictureJobs++;
+      this.error = "";
+      try {
+        const res = await (await api(`/api/lessons/${this.lessonId}/cards/${card.id}/picture${request.path ?? ""}`, request)).json();
+        card.picture = res.card.picture;
+        card.picture_prompt = res.card.picture_prompt;
+        if (!card.picture) card._panel = false;
+      } catch (e) {
+        this.error = e.message;
+      } finally {
+        card._drawing = false;
+        this.pictureJobs--;
+      }
+    },
+
+    redrawPicture(card) {
+      return this.pictureAction(card, {
+        path: "/draw",
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject: card._subject ?? null }),
+      });
+    },
+
+    async uploadPicture(card, event) {
+      const file = event.target.files[0];
+      event.target.value = "";
+      if (!file) return;
+      const body = new FormData();
+      body.append("photo", await resize(file), "photo.jpg");
+      return this.pictureAction(card, { method: "POST", body });
+    },
+
+    removePicture(card) {
+      return this.pictureAction(card, { method: "DELETE" });
     },
 
     async drawPictures() {

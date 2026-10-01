@@ -674,6 +674,13 @@ h2 {
   background: var(--surface-2); color: var(--muted); font-size: .85rem; animation: pulse 1.4s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .55; } }
 .flash.has-picture { flex-wrap: wrap; }
+.picture-panel { flex: 1 0 100%; margin-top: .5rem; padding-top: .6rem; border-top: 1px dashed var(--border); }
+.picture-panel .field { margin-bottom: .5rem; }
+.picture-actions { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .3rem; }
+.picture-actions .btn { padding: .45rem .8rem; font-size: .9rem; }
+.picture-actions label.btn { cursor: pointer; }
+.picture-actions .disabled { opacity: .5; pointer-events: none; }
+.flash-actions .icon-btn.active { background: var(--primary-soft); }
 .from-prompt { margin-top: .8rem; }
 .from-prompt .hint { margin: .4rem 0 0; }
 .page-footer { display: flex; flex-direction: column; align-items: center; gap: .4rem; margin: .5rem 0 1rem; }

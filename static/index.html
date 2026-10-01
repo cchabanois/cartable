@@ -175,7 +175,7 @@
 
       <div class="cards">
         <template x-for="card in cards" :key="card.key">
-          <article class="flash" :class="{ changed: card._state, 'has-diagram': card.mask, 'has-picture': card.picture || card.picture_prompt }">
+          <article class="flash" :class="{ changed: card._state, 'has-diagram': card.mask, 'has-picture': card.picture || card.picture_prompt || card._panel }">
             <!-- Diagram label: the photo with every label hidden, this card's mask highlighted and movable -->
             <template x-if="card.mask && photoFor(card)">
               <div class="diagram">
@@ -197,9 +197,9 @@
               </div>
             </template>
             <!-- Picture card: the picture shows with the front text -->
-            <div class="card-picture" x-show="card.picture || (card.picture_prompt && drawing)">
-              <img x-show="card.picture" :src="card.picture && pictureUrl(card)" :alt="card.picture_prompt">
-              <span class="drawing" x-show="!card.picture" x-text="$t('app.pictures.drawing')"></span>
+            <div class="card-picture" x-show="card.picture || card._drawing || (card.picture_prompt && drawing)">
+              <img x-show="card.picture && !card._drawing" :src="card.picture && pictureUrl(card)" :alt="card.picture_prompt">
+              <span class="drawing" x-show="!card.picture || card._drawing" x-text="$t('app.pictures.drawing')"></span>
             </div>
             <div class="flash-body">
               <span class="flash-badge" x-show="card._state"
@@ -215,7 +215,28 @@
             </div>
             <div class="flash-actions">
               <button class="icon-btn" x-show="hasAudio()" @click="play(card.back)" :aria-label="$t('app.review.listen')">🔊</button>
+              <button class="icon-btn" x-show="!readOnly() && !card.mask && lessonId" @click="togglePicturePanel(card)"
+                      :class="{ active: card._panel }" :aria-label="$t('app.pictures.panel')">🖼️</button>
               <button class="icon-btn muted" x-show="!readOnly()" @click="removeCard(card)" :aria-label="$t('app.review.removeCard')">✕</button>
+            </div>
+            <!-- The card's picture: what to draw, redraw, own photo, none -->
+            <div class="picture-panel" x-show="card._panel">
+              <label class="field">
+                <span x-text="$t('app.pictures.subject')"></span>
+                <input x-model="card._subject" :placeholder="$t('app.pictures.subjectPlaceholder')"
+                       @keydown.enter.prevent="redrawPicture(card)">
+              </label>
+              <div class="picture-actions">
+                <button type="button" class="btn soft" @click="redrawPicture(card)" :disabled="card._drawing || !card._subject?.trim()"
+                        x-text="card.picture ? $t('app.pictures.redraw') : $t('app.pictures.draw')"></button>
+                <label class="btn soft" :class="{ disabled: card._drawing }">
+                  <span x-text="$t('app.pictures.photo')"></span>
+                  <input type="file" accept="image/*" hidden :disabled="card._drawing" @change="uploadPicture(card, $event)">
+                </label>
+                <button type="button" class="btn danger-soft" x-show="card.picture" @click="removePicture(card)"
+                        :disabled="card._drawing" x-text="$t('app.pictures.remove')"></button>
+              </div>
+              <small class="muted" x-text="$t('app.pictures.cost')"></small>
             </div>
           </article>
         </template>

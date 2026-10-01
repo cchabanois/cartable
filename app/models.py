@@ -168,6 +168,12 @@ class SettingsUpdate(BaseModel):
     picture_model: str | None = None
 
 
+class PictureRequest(BaseModel):
+    """Draw a card's picture again, with what to draw (None: the card's own)."""
+
+    subject: str | None = Field(default=None, max_length=300)
+
+
 class LessonAccess(BaseModel):
     """Settings page: who a lesson belongs to. None leaves a field unchanged;
     owner "" = no owner (the lesson is everyone's)."""

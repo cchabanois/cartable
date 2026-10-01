@@ -61,6 +61,7 @@ document.addEventListener("alpine:init", () => {
     testingAnki: false,
     ankiResult: null,
     lessons: null,   // { lessons, profiles } from /api/admin/lessons (profiles: null = Anki closed)
+    ankiStatus: null,  // /api/anki/status: profile, logged in to AnkiWeb (sync: null = unknown)
     saveState: "saved",  // "saved", "pending", "saving", "error": settings are saved as they change
     saveTimer: null,
     error: "",
@@ -116,6 +117,7 @@ document.addEventListener("alpine:init", () => {
         this.unlocked = true;
         if (password) session("set", password);
         this.loadLessons();
+        this.loadAnkiStatus();
       } catch (e) {
         this.error = e.message;
       }
@@ -290,6 +292,14 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
+    async loadAnkiStatus() {
+      try {
+        this.ankiStatus = await (await fetch("/api/anki/status")).json();
+      } catch {
+        this.ankiStatus = null;
+      }
+    },
+
     // In the add-on, Cartable talks to its own bridge (which mimics AnkiConnect):
     // don't mention AnkiConnect there. The open profile tells it's the right one.
     ankiOk(r) {
@@ -303,6 +313,7 @@ document.addEventListener("alpine:init", () => {
       this.testingAnki = true;
       try {
         const r = await (await fetch("/api/anki/status")).json();
+        this.ankiStatus = r;
         this.ankiResult = r.available
           ? { ok: true, text: this.ankiOk(r) }
           : { ok: false, text: `✗ ${errorMessage(r.error)}` };

@@ -276,7 +276,9 @@
       "test": "🔌 Tester la connexion avec Anki",
       "testOk": "✓ Anki répond (AnkiConnect version {version}, profil « {profile} »).",
       "testOkAddon": "✓ Anki répond (greffon Cartable, profil « {profile} »).",
-      "testNoProfile": "Anki répond, mais aucun profil n'est ouvert : ouvre-en un dans Anki."
+      "testNoProfile": "Anki répond, mais aucun profil n'est ouvert : ouvre-en un dans Anki.",
+      "syncOn": "✓ « {profile} » est connecté à AnkiWeb.",
+      "syncOff": "« {profile} » n'est pas connecté à AnkiWeb : pas de synchro après l'envoi. Pour synchroniser, connecte-toi dans Anki (bouton Synchroniser)."
     },
     "lessons": {
       "title": "Leçons",

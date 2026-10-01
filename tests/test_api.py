@@ -458,11 +458,19 @@ def test_anki_unavailable(client, monkeypatch):
 
 
 def test_direct_send_to_anki(anki, client):
-    assert client.get("/api/anki/status").json() == {"available": True, "version": 6, "profile": "Léa"}
+    # AnkiConnect doesn't say whether the profile is logged in to AnkiWeb: unknown
+    assert client.get("/api/anki/status").json() == {"available": True, "version": 6, "profile": "Léa", "sync": None}
     lesson = _extract(client)
     res = client.post("/api/anki/send", json={**SEND, "lesson_id": lesson["id"]})
     assert res.status_code == 200
-    assert res.json() == {"added": 2, "updated": 0, "synced": True, "sync_error": None, "audio_failures": 0}
+    assert res.json() == {
+        "added": 2,
+        "updated": 0,
+        "synced": True,
+        "sync_error": None,
+        "sync_skipped": False,
+        "audio_failures": 0,
+    }
 
     (model,) = anki.models.values()
     assert model["inOrderFields"] == ["Front", "Back", "Info", "Audio"]
@@ -1094,3 +1102,15 @@ def test_prompt_only_tells_the_ai_there_is_no_photo():
     assert "no photo" in llm._user_text("Cards with: le chat", "", photos=0)
     assert "no photo" not in llm._user_text("Vocabulary", "", photos=2)
     assert "these instructions (no photo)" in llm._revision_text("p", Deck(deck="D", cards=[]), "x", "en", photos=0)
+
+
+def test_no_sync_when_the_profile_is_not_logged_in(anki, client, monkeypatch):
+    from app import ankiconnect
+
+    async def not_logged_in():
+        return False
+
+    monkeypatch.setattr(ankiconnect, "sync_configured", not_logged_in)  # what the add-on says
+    res = client.post("/api/anki/send", json=SEND).json()
+    assert (res["synced"], res["sync_error"], res["sync_skipped"]) == (False, None, True)
+    assert "sync" not in anki.calls

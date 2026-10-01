@@ -116,7 +116,8 @@ def fields(col, note_id) -> dict:
 
 def test_bridge_on_a_real_collection(bridged, col):
     client, mw = bridged
-    assert client.get("/api/anki/status").json() == {"available": True, "version": 6, "profile": "Léa"}
+    # The add-on knows the profile isn't logged in to AnkiWeb
+    assert client.get("/api/anki/status").json() == {"available": True, "version": 6, "profile": "Léa", "sync": False}
 
     lesson = extract(client)
     assert lesson["owner"] == "Léa"  # the bridge reported the open profile
@@ -124,8 +125,8 @@ def test_bridge_on_a_real_collection(bridged, col):
     res = client.post("/api/anki/send", json=body).json()
     cards = [c for c in lesson["cards"] if c["front"].strip() and c["back"].strip()]
     assert (res["added"], res["updated"], res["audio_failures"]) == (len(cards), 0, 0)
-    # Not logged in to AnkiWeb: reported, never a login dialog in the middle of a send
-    assert (res["synced"], res["sync_error"]["code"]) == (False, "anki.sync_not_logged_in")
+    # Not logged in to AnkiWeb: no sync tried (no warning at each send, no login dialog)
+    assert (res["synced"], res["sync_error"], res["sync_skipped"]) == (False, None, True)
 
     # What landed in the collection
     (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Cartable")]

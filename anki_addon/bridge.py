@@ -148,6 +148,12 @@ def _sync(p: dict) -> None:
     mw.on_sync_button_clicked()
 
 
+def _sync_configured(p: dict) -> bool:
+    """Whether the open profile is logged in to AnkiWeb (not an AnkiConnect action):
+    Cartable then doesn't try to sync a profile that can't."""
+    return bool(mw.pm.sync_auth())
+
+
 def _active_profile(p: dict) -> str | None:
     """Name of the open profile (same action as AnkiConnect), None on the profile screen."""
     return mw.pm.name if mw.col else None
@@ -161,6 +167,7 @@ def _profiles(p: dict) -> list[str]:
 ACTIONS: dict[str, Callable[[dict], Any]] = {
     "getActiveProfile": _active_profile,
     "getProfiles": _profiles,
+    "isSyncConfigured": _sync_configured,
     "modelNames": _model_names,
     "createModel": _create_model,
     "createDeck": _create_deck,

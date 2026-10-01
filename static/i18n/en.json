@@ -276,7 +276,9 @@
       "test": "🔌 Test the connection with Anki",
       "testOk": "✓ Anki answers (AnkiConnect version {version}, profile “{profile}”).",
       "testOkAddon": "✓ Anki answers (Cartable add-on, profile “{profile}”).",
-      "testNoProfile": "Anki answers, but no profile is open: open one in Anki."
+      "testNoProfile": "Anki answers, but no profile is open: open one in Anki.",
+      "syncOn": "✓ “{profile}” is logged in to AnkiWeb.",
+      "syncOff": "“{profile}” isn't logged in to AnkiWeb: no sync after sending. To sync, log in in Anki (Sync button)."
     },
     "lessons": {
       "title": "Lessons",

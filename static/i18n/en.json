@@ -335,6 +335,16 @@
         "other": "+ {count} calls whose price is unknown"
       },
       "cents": "{cents} US¢"
+    },
+    "instructions": {
+      "title": "📝 Instructions for the AI",
+      "hint": "Added to every generation and correction, on top of the prompt chosen for the lesson. The prompt of the lesson wins if they disagree.",
+      "general": "For every profile",
+      "generalPlaceholder": "e.g. Spanish from Spain; always the article with nouns",
+      "profile": "For {profile}",
+      "missingProfile": "For {profile} (not in Anki any more)",
+      "profilePlaceholder": "e.g. in year 8; short answers",
+      "noProfiles": "Open Anki to set instructions for each of its profiles."
     }
   },
   "errors": {

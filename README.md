@@ -61,6 +61,7 @@ The ⚙️ page chooses:
 - the AI provider and model;
 - API keys, which are stored in `data/settings.json` (readable only by the server's user) and never sent back to the browser;
 - the voice speed;
+- standing instructions for the AI, for every profile and for each Anki profile (e.g. "in year 8"), added to the prompt of each lesson;
 - AnkiConnect and syncing options;
 - whether a profile may see the other profiles' private lessons.
 

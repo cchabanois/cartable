@@ -126,6 +126,20 @@ class ExtractionError(AppError):
     status = 502
 
 
+def standing_instructions(s: Settings, profile: str | None) -> str:
+    """What the parent set in the settings, for everyone and for this Anki profile:
+    added before the request, never replacing the fixed rules."""
+    parts = []
+    if s.instructions.strip():
+        parts.append(f"Standing instructions, for every lesson:\n{s.instructions.strip()}")
+    own = s.profile_instructions.get(profile or "", "").strip()
+    if own:
+        parts.append(f"Standing instructions for this pupil ({profile}):\n{own}")
+    if not parts:
+        return ""
+    return "\n\n".join(parts) + "\n(The request below wins if it says otherwise.)\n\n"
+
+
 def _user_text(prompt: str, deck: str, photos: int, sizes: list[tuple[int, int] | None] = (), fmt: str = "") -> str:
     text = f"Instructions: {prompt.strip()}"
     if deck.strip():
@@ -157,14 +171,16 @@ class Extracted:
     frames: list[Frame]  # diagram frames, as fractions of the photos (not turned yet)
 
 
-async def extract_cards(images: list[Image], prompt: str, deck: str = "") -> Extracted:
+async def extract_cards(images: list[Image], prompt: str, deck: str = "", profile: str | None = None) -> Extracted:
+    """`profile`: the open Anki profile, for its standing instructions."""
     s = settings.current()
     if s.llm == "fake":
         await _record(s, "fake", "fake", 0, 0, cost=0.0)
         return Extracted(_fake(images, prompt, deck), [0] * len(images), [])
     fmt = diagrams.box_format(s.model_for_provider())
     images, sizes = _prepare(images)
-    result = await _generate(s, images, _user_text(prompt, deck, len(images), sizes, fmt), Extraction)
+    text = standing_instructions(s, profile) + _user_text(prompt, deck, len(images), sizes, fmt)
+    result = await _generate(s, images, text, Extraction)
     diagrams.normalize(result.cards, sizes, fmt)
     return Extracted(
         Deck(deck=result.deck, cards=result.cards),
@@ -215,7 +231,12 @@ are, in the same order. {add} In "summary", describe in one short sentence, in \
 
 
 async def revise_cards(
-    images: list[Image], prompt: str, deck: Deck, instruction: str, lang: str = i18n.DEFAULT
+    images: list[Image],
+    prompt: str,
+    deck: Deck,
+    instruction: str,
+    lang: str = i18n.DEFAULT,
+    profile: str | None = None,
 ) -> Revision:
     """Apply a natural-language correction ("remove…", "you forgot…") to the cards.
 
@@ -234,7 +255,9 @@ async def revise_cards(
         if card.mask:
             labels.setdefault(card.mask.page, []).append(card.mask.n)
     plain = Deck(deck=deck.deck, cards=[c.model_copy(update={"mask": None}) for c in deck.cards])
-    text = _revision_text(prompt, plain, instruction, lang, len(images), sizes, fmt, labels)
+    text = standing_instructions(s, profile) + _revision_text(
+        prompt, plain, instruction, lang, len(images), sizes, fmt, labels
+    )
     revision = await _generate(s, images, text, Revision)
     _keep_masks(revision.cards, deck.cards, sizes, fmt)
     return revision

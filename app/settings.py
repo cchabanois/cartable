@@ -56,6 +56,10 @@ class Settings(BaseModel):
     # "All profiles" toggle in "My lessons": off = a profile never sees another
     # profile's private lessons (enforced by the server, not only hidden).
     all_profiles_view: bool = True
+    # Added to the AI's fixed rules (never replacing them): for everyone, and per Anki
+    # profile, e.g. "Bastien is in year 8", "short answers, with the article".
+    instructions: str = ""
+    profile_instructions: dict[str, str] = {}
 
     def model_for_provider(self) -> str:
         return self.model.strip() or DEFAULT_MODELS.get(self.llm, "")
@@ -120,6 +124,10 @@ def save(changes: dict) -> Settings:
             else:
                 keys.pop(service_id(url), None)
             stored["openai_keys"] = keys
+        if changes.get("profile_instructions") is not None:  # empty ones aren't kept
+            changes["profile_instructions"] = {
+                profile: text.strip() for profile, text in changes["profile_instructions"].items() if text.strip()
+            }
         stored.update(
             {
                 k: v.strip() if isinstance(v, str) else v

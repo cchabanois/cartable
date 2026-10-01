@@ -6,7 +6,7 @@ import zipfile
 
 import httpx
 import pytest
-from conftest import synthesized
+from conftest import ADMIN, synthesized
 from fastapi.testclient import TestClient
 
 from app import ankiconnect, i18n, lessons, settings, storage, tts
@@ -282,15 +282,6 @@ def test_slugify():
 
 
 # --- Admin -------------------------------------------------------------------
-
-ADMIN = {"X-Admin-Password": "secret"}
-
-
-@pytest.fixture
-def admin(client):
-    assert client.get("/api/admin").json()["password_set"] is False
-    assert client.post("/api/admin/password", json={"new": "secret"}).status_code == 204
-    return client
 
 
 def test_admin_password_protected(admin):

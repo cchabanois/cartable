@@ -9,7 +9,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
-- Each lesson keeps its AI calls (generation and corrections): provider, model, tokens and cost. Exact with OpenRouter, estimated from public prices otherwise. The settings page shows the cost of each lesson, the details of its calls and the total.
+- Each lesson keeps its AI calls (generation and corrections): provider, model, tokens and cost. Exact with OpenRouter, estimated from public prices otherwise. The settings page shows the cost of each lesson, the details of its calls and the total, which comes from a journal of every call (`data/ai-calls.json`): deleting a lesson doesn't lower it, and generations that failed after the model answered are counted.
 
 - An AI correction can add a diagram label ("add a mask for the title"): the new card gets its mask, with the next free number; existing masks never move.
 

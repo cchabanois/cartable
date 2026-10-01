@@ -45,3 +45,13 @@ def client(tmp_path, monkeypatch):
     synthesized.clear()
     with TestClient(app) as c:
         yield c
+
+
+ADMIN = {"X-Admin-Password": "secret"}
+
+
+@pytest.fixture
+def admin(client):
+    assert client.get("/api/admin").json()["password_set"] is False
+    assert client.post("/api/admin/password", json={"new": "secret"}).status_code == 204
+    return client

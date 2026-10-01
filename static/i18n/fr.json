@@ -327,6 +327,12 @@
       "kind": {
         "extract": "génération",
         "revise": "correction"
+      },
+      "deleted": "dont {cost} pour des leçons supprimées depuis",
+      "failed": "dont {cost} pour des générations échouées (sans leçon)",
+      "unknownCount": {
+        "one": "+ {count} appel dont le prix est inconnu",
+        "other": "+ {count} appels dont le prix est inconnu"
       }
     }
   },

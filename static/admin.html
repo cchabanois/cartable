@@ -218,9 +218,16 @@
           <p class="hint warn" x-show="lessons && !lessons.profiles" x-text="$t('admin.lessons.ankiClosed')"></p>
           <p class="hint" x-show="lessons && !lessons.lessons.length" x-text="$t('admin.lessons.none')"></p>
           <!-- What the AI cost, all lessons together -->
-          <div class="cost-total" x-show="lessons?.lessons.some((l) => l.ai_calls.length)">
-            <strong x-text="$t('admin.costs.total', { cost: formatCost(totalCost()) })"></strong>
-            <small class="muted" x-show="hasEstimates()" x-text="$t('admin.costs.estimated')"></small>
+          <!-- From the journal of every AI call: deleting a lesson doesn't change it -->
+          <div class="cost-total" x-show="lessons?.costs && (lessons.costs.total || lessons.costs.unknown)">
+            <strong x-text="$t('admin.costs.total', { cost: formatCost(lessons?.costs.total) })"></strong>
+            <small class="muted" x-show="lessons?.costs.deleted"
+                   x-text="$t('admin.costs.deleted', { cost: formatCost(lessons?.costs.deleted) })"></small>
+            <small class="muted" x-show="lessons?.costs.failed"
+                   x-text="$t('admin.costs.failed', { cost: formatCost(lessons?.costs.failed) })"></small>
+            <small class="muted" x-show="lessons?.costs.unknown"
+                   x-text="$t('admin.costs.unknownCount', { count: lessons?.costs.unknown })"></small>
+            <small class="muted" x-show="lessons?.costs.estimated" x-text="$t('admin.costs.estimated')"></small>
           </div>
           <ul class="admin-lesson-list">
             <template x-for="l in lessons?.lessons ?? []" :key="l.id">

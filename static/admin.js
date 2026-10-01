@@ -322,14 +322,6 @@ document.addEventListener("alpine:init", () => {
       return known.length ? known.reduce((sum, c) => sum + c.cost, 0) : null;
     },
 
-    totalCost() {
-      return (this.lessons?.lessons ?? []).reduce((sum, l) => sum + (this.lessonCost(l) ?? 0), 0);
-    },
-
-    hasEstimates() {
-      return (this.lessons?.lessons ?? []).some((l) => l.ai_calls.some((c) => !c.exact && c.cost));
-    },
-
     // "1.4 ¢ · gemini-3.8-flash · 1 generation + 2 corrections"
     costLine(l) {
       const models = [...new Set(l.ai_calls.map((c) => c.model))].join(", ");

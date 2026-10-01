@@ -50,8 +50,9 @@ the instructions don't forbid it, fill "subdeck"; otherwise leave it empty.
 - Deck name: start from the suggested template and replace the parts in braces with \
 what you read on the page (number, lesson title…). Without a template, suggest a short \
 name like "Subject::Lesson".
-- Diagrams: when the instructions ask to learn the labels of a diagram (one card per \
-label or arrow, "the diagram without the names"…), make one card per label naming a \
+- Diagrams: when the instructions ask to learn the labels of a diagram (a diagram to \
+complete, its labels hidden, one card per label or arrow, "the diagram without the \
+names"…), make one card per label naming a \
 part of the diagram (not titles, legends or instructions). Number the labels 1, 2, 3… \
 on each photo, in reading order. Front: a short question asking what the numbered part \
 is, e.g. "What is (2)?", in the language of the instructions. Back: the label's text. \

@@ -512,8 +512,8 @@
       "deck": "{subject}::{lesson title}"
     },
     "diagram": {
-      "name": "Diagram: one card per label",
-      "text": "The diagram without the names: one card per label (per arrow). Front: \"What is (n)?\". Back: the label's name.",
+      "name": "Diagram to complete",
+      "text": "The photo shows a diagram with labels (names linked to the drawing by an arrow or a line). Hide the text of each label behind a number and make one card per label. Front: the diagram, with the question \"What is (n)?\". Back: the text of the label.",
       "deck": "{subject}::{diagram title}"
     },
     "pictures": {

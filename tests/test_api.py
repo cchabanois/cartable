@@ -17,7 +17,7 @@ def test_cartable_prompts(client):
     """Cartable's prompts: in the page's language, read-only, before the user's."""
     fr = client.get("/api/prompts", headers={"X-Cartable-Lang": "fr-FR"}).json()
     assert [p["id"] for p in fr] == [f"cartable:{k}" for k in prompts.BUILTIN]
-    assert all(p["builtin"] for p in fr) and fr[3]["name"] == "Schéma : une carte par légende"
+    assert all(p["builtin"] for p in fr) and fr[3]["name"] == "Schéma à compléter"
     en = client.get("/api/prompts", headers={"X-Cartable-Lang": "en"}).json()
     assert en[0]["name"] == "Vocabulary of a language"  # the same prompts, in English
     de = client.get("/api/prompts", headers={"X-Cartable-Lang": "de"}).json()

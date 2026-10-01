@@ -43,6 +43,10 @@ which languages.
 of words, sentences…), use exactly that content; when they ask you to provide it (a \
 topic, "the most common irregular verbs"…), make it accurate and suited to a pupil.
 - Fix obvious spelling mistakes from the lesson (missing accents or letters).
+- Maths: write formulas, equations and symbols plain text shows badly (fractions, \
+powers, roots, indices, Greek letters, vectors…) in MathJax, as Anki displays it: \
+\\( … \\) within a sentence, \\[ … \\] for a formula on its own (e.g. \
+"\\(\\frac{a+b}{2}\\)", "\\(x^2\\)"). Keep plain text for simple things ("2 + 3 = 5").
 - One idea per card; keep front and back short.
 - The "info" field is optional: leave it empty when there is nothing useful to add.
 - If the lesson naturally splits into parts (vocabulary, conjugation, sentences…) and \

@@ -678,6 +678,9 @@ h2 {
   background: var(--surface-2); color: var(--muted); font-size: .85rem; animation: pulse 1.4s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .55; } }
 .flash.has-picture { flex-wrap: wrap; }
+.math-preview { margin: .1rem 0 .4rem; padding: .35rem .6rem; border-radius: var(--radius-sm); background: var(--surface-2); font-size: 1.05rem; overflow-x: auto; }
+.math-preview.back { color: var(--accent, inherit); }
+.math-preview .katex-display { margin: .2rem 0; }
 .picture-panel { flex: 1 0 100%; margin-top: .5rem; padding-top: .6rem; border-top: 1px dashed var(--border); }
 .picture-panel .field { margin-bottom: .5rem; }
 .picture-actions { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .3rem; }

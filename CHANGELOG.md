@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Formulas: the AI writes them in MathJax (`\(…\)`, `\[…\]`), which Anki displays natively; the review shows them drawn (KaTeX) under the text. A back with a formula isn't read aloud. New Cartable prompt ⭐ "Formulas (maths, physics…)".
+
 - Cartable's own prompts (⭐): vocabulary and sentences of a language, questions / answers, diagram to complete, words in pictures, word list. In the page's language, read-only, never deleted, improved with the app. Any prompt can be duplicated (⧉) to be adapted. Their language prompts use the voice "auto": the AI tells the language of the backs ("es-ES"), and Cartable picks its voice; "auto" works in any prompt.
 
 - A 🖼️ panel on each card: what to draw, 🎨 draw / draw again, 📷 your own photo (free), ✕ no picture. A subject drawn once is reused by the next lessons for free (cache).

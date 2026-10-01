@@ -59,6 +59,11 @@ const PROFILE_POLL = 3000;  // ms: follow Anki profile switches (local request, 
 const formatDate = (iso) =>
   new Date(iso).toLocaleString(I18N.lang, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
+// Formulas: MathJax syntax, \( … \) within text, \[ … \] on their own (as in Anki)
+const MATH = /\\\((.+?)\\\)|\\\[(.+?)\\\]/gs;
+const HAS_MATH = /\\\(|\\\[/;  // as app/tts.py: no read-aloud for these
+const escapeHtml = (text) => text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
 let nextKey = 0;
 const withKey = (card) => ({ info: "", subdeck: "", tags: [], picture: "", picture_prompt: "", ...card, key: nextKey++ });
 
@@ -100,6 +105,7 @@ document.addEventListener("alpine:init", () => {
     sending: false,
     drawing: false,              // the pictures the cards ask for are being drawn
     pictureJobs: 0,              // a card's picture being redrawn, uploaded or removed
+    katexReady: false,           // the formula previews can be drawn (KaTeX loaded)
 
     async init() {
       // Any change to the open lesson is saved automatically.
@@ -111,6 +117,11 @@ document.addEventListener("alpine:init", () => {
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden" && this.saveTimer) this.saveNow(true);
       });
+
+      // KaTeX loads after the page (deferred): the previews redraw once it's there
+      const katexLoaded = () => { this.katexReady = typeof katex !== "undefined"; };
+      if (document.readyState === "complete") katexLoaded();
+      else window.addEventListener("load", katexLoaded);
 
       await i18nReady;  // the language is needed for the first default prompts
       try {
@@ -708,6 +719,24 @@ document.addEventListener("alpine:init", () => {
     addCard() {
       const last = this.cards.at(-1);
       this.cards.push(withKey({ id: newId(), front: "", back: "", subdeck: last?.subdeck ?? "" }));
+    },
+
+    // --- Formulas --------------------------------------------------------
+    hasMath(text) {
+      return HAS_MATH.test(text ?? "");
+    },
+
+    // The text with its formulas drawn (KaTeX), the rest escaped: what Anki will show.
+    mathHtml(text) {
+      if (!this.katexReady) return escapeHtml(text ?? "");
+      let html = "", last = 0;
+      for (const m of (text ?? "").matchAll(MATH)) {
+        html += escapeHtml(text.slice(last, m.index));
+        const display = m[2] !== undefined;
+        html += katex.renderToString(m[1] ?? m[2], { displayMode: display, throwOnError: false });
+        last = m.index + m[0].length;
+      }
+      return html + escapeHtml((text ?? "").slice(last));
     },
 
     // --- Pictures ("front: the picture of the word") ------------------------

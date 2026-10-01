@@ -32,6 +32,14 @@ def cache_dir() -> Path:
     return path
 
 
+MATH = re.compile(r"\\\(|\\\[")  # MathJax: \( … \) or \[ … \]
+
+
+def has_math(text: str) -> bool:
+    """A formula (MathJax) in the text: not read aloud (a voice would read the code)."""
+    return bool(MATH.search(text))
+
+
 def is_anki_locale(voice: str) -> bool:
     return bool(ANKI_LOCALE.match(voice))
 

@@ -1260,3 +1260,17 @@ def test_extract_fake_cloze(client):
     assert res.status_code == 201
     fronts = [c["front"] for c in res.json()["cards"]]
     assert all("{{c1::" in f for f in fronts)
+
+
+def test_line_breaks_kept_in_anki(client, tmp_path):
+    cards = [
+        {"front": "Les 3 couleurs :\nbleu, blanc, rouge", "back": "le drapeau <français>"},
+        {"id": "c1", "front": "Vers 1 : {{c1::Maître corbeau}}\nVers 2 : sur un arbre perché", "back": ""},
+    ]
+    res = client.post("/api/export", json={"deck": "Test", "cards": cards, "voice": ""})
+    notes, _, _, _ = _notes(res.content, tmp_path)
+    fields = sorted(f.split("\x1f")[0] for _, f in notes)
+    assert fields == [
+        "Les 3 couleurs :<br>bleu, blanc, rouge",
+        "Vers 1 : {{c1::Maître corbeau}}<br>Vers 2 : sur un arbre perché",
+    ]

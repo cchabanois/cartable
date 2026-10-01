@@ -211,7 +211,7 @@
               <span class="flash-badge" x-show="card._state"
                     x-text="card._state === 'new' ? $t('app.review.badgeNew') : $t('app.review.badgeModified')"></span>
               <textarea class="front" rows="1" x-model="card.front" :readonly="readOnly()" :placeholder="$t('app.review.front')" :aria-label="$t('app.review.front')"
-                        x-init="watchHeight($el)" x-effect="card.front; fitHeight($el)" @keydown.enter.prevent></textarea>
+                        x-init="watchHeight($el)" x-effect="card.front; fitHeight($el)"></textarea>
               <div class="math-preview" x-show="hasMath(card.front) || isCloze(card.front)" x-html="previewHtml(card.front)"></div>
               <input class="back" x-model="card.back" :readonly="readOnly()"
                      :placeholder="isCloze(card.front) ? $t('app.review.extra') : $t('app.review.back')" :aria-label="$t('app.review.back')">

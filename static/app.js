@@ -747,13 +747,14 @@ document.addEventListener("alpine:init", () => {
     },
 
     // The text as Anki will show it: formulas drawn (KaTeX), gaps marked with their
-    // number (each number is a card), the rest escaped.
+    // number (each number is a card), line breaks kept, the rest escaped.
     previewHtml(text) {
       text = text ?? "";
       const plain = (t) =>
         escapeHtml(t)
           .replace(GAP_START, (_, n) => `<span class="gap"><sup>${n}</sup>`)
-          .replace(GAP_END, "</span>");
+          .replace(GAP_END, "</span>")
+          .replaceAll("\n", "<br>");
       if (!this.katexReady) return plain(text);
       let html = "", last = 0;
       for (const m of text.matchAll(MATH)) {

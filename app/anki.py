@@ -199,9 +199,9 @@ def notes(
                     nt=cloze_nt,
                     deck=_deck_name(req.deck, card.subdeck),
                     fields={
-                        "Text": html.escape(front),
-                        "Extra": html.escape(back),
-                        "Info": html.escape(card.info.strip()),
+                        "Text": _html(front),
+                        "Extra": _html(back),
+                        "Info": _html(card.info.strip()),
                         "Id": card.id or f"{req.lesson_id or ''}:{i}",
                     },
                     tags=[_tag(t) for t in card.tags if t.strip()],
@@ -212,7 +212,7 @@ def notes(
         if not back or not (front or i in pictures):  # a picture card may have no front text
             continue
         nt = diagram_nt if i in images else picture_nt if i in pictures else text_nt
-        values = {"Front": html.escape(front), "Back": html.escape(back), "Info": html.escape(card.info.strip())}
+        values = {"Front": _html(front), "Back": _html(back), "Info": _html(card.info.strip())}
         media = []
         if "Audio" in nt.fields:
             mp3 = audio.get(back)
@@ -242,6 +242,11 @@ def notes(
     if not result:
         raise AppError("export.no_cards")
     return result
+
+
+def _html(text: str) -> str:
+    """A card's text as an Anki field: escaped, its line breaks kept."""
+    return html.escape(text).replace("\n", "<br>")
 
 
 def _model(nt: NoteType) -> genanki.Model:

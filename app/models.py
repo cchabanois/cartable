@@ -145,7 +145,8 @@ class PromptIn(BaseModel):
 
 
 class Prompt(PromptIn):
-    id: int
+    id: int | str  # the user's: a number; Cartable's: "cartable:<key>"
+    builtin: bool = False  # Cartable's own: read-only, can be duplicated
     used_at: str | None = None  # last generation that used this prompt
 
 

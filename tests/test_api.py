@@ -9,21 +9,59 @@ import pytest
 from conftest import ADMIN, synthesized
 from fastapi.testclient import TestClient
 
-from app import ankiconnect, i18n, lessons, settings, storage, tts
+from app import ankiconnect, i18n, lessons, prompts, settings, storage, tts
 from app.main import app
 
 
-def test_default_prompts(client):
-    # Seeded once, in the language of the first page asking for them
-    names = [c["name"] for c in client.get("/api/prompts", headers={"X-Cartable-Lang": "fr-FR"}).json()]
-    assert "Vocabulaire FR → ES" in names
-    assert len(names) == 3
-    assert [c["name"] for c in client.get("/api/prompts", headers={"X-Cartable-Lang": "en"}).json()] == names
+def test_cartable_prompts(client):
+    """Cartable's prompts: in the page's language, read-only, before the user's."""
+    fr = client.get("/api/prompts", headers={"X-Cartable-Lang": "fr-FR"}).json()
+    assert [p["id"] for p in fr] == [f"cartable:{k}" for k in prompts.BUILTIN]
+    assert all(p["builtin"] for p in fr) and fr[3]["name"] == "Schéma : une carte par légende"
+    en = client.get("/api/prompts", headers={"X-Cartable-Lang": "en"}).json()
+    assert en[0]["name"] == "Vocabulary of a language"  # the same prompts, in English
+    de = client.get("/api/prompts", headers={"X-Cartable-Lang": "de"}).json()
+    assert de[0]["name"] == "Vocabulary of a language"  # no German file: English
+
+    for method in ("PUT", "DELETE"):
+        r = client.request(method, "/api/prompts/cartable:questions", json={"name": "x", "text": "y"})
+        assert (r.status_code, r.json()["detail"]["code"]) == (403, "prompt.builtin")
 
 
-def test_default_prompts_in_english(client):
-    names = [c["name"] for c in client.get("/api/prompts", headers={"X-Cartable-Lang": "de"}).json()]
-    assert "Vocabulary EN → ES" in names  # no German file: English
+def test_duplicate_a_prompt_to_adapt_it(client):
+    copy = client.post("/api/prompts/cartable:vocabulary/duplicate", headers={"X-Cartable-Lang": "fr"}).json()
+    assert (copy["name"], copy["builtin"]) == ("Vocabulaire d'une langue (copie)", False)
+    changed = client.put(f"/api/prompts/{copy['id']}", json={**copy, "text": "FR → ES", "voice": "es-ES-ElviraNeural"})
+    assert changed.json()["voice"] == "es-ES-ElviraNeural"
+    again = client.post(f"/api/prompts/{copy['id']}/duplicate", headers={"X-Cartable-Lang": "fr"}).json()
+    assert (again["name"], again["text"]) == ("Vocabulaire d'une langue (copie) (copie)", "FR → ES")
+    assert client.post("/api/prompts/cartable:nope/duplicate").status_code == 404
+    names = [p["name"] for p in client.get("/api/prompts", headers={"X-Cartable-Lang": "fr"}).json()]
+    assert names[-2:] == ["Vocabulaire d'une langue (copie)", "Vocabulaire d'une langue (copie) (copie)"]
+
+
+def test_cartable_prompt_used(client):
+    data = {"prompt": "words: le chat", "prompt_id": "cartable:wordlist"}
+    client.post("/api/extract", data=data)
+    wordlist = next(p for p in client.get("/api/prompts").json() if p["id"] == "cartable:wordlist")
+    assert wordlist["used_at"] is not None
+
+
+def test_old_prompts_file_converted(client, tmp_path):
+    """Before, the file was a list seeded with the default prompts."""
+    old = [
+        {"id": 1, "name": "Vocabulaire FR → ES", "text": "Crée des cartes…", "voice": "es-ES-ElviraNeural"},
+        {"id": 3, "name": "Questions / réponses", "text": next(iter(sorted(prompts.REPLACED)))},
+        {"id": 6, "name": "Formules de maths", "text": "Les formules de 5e"},
+    ]
+    path = tmp_path / "data" / "prompts.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(old), encoding="utf-8")
+    user = [p for p in client.get("/api/prompts").json() if not p["builtin"]]
+    assert [(p["id"], p["name"]) for p in user] == [(1, "Vocabulaire FR → ES"), (6, "Formules de maths")]
+    client.post("/api/prompts", json={"name": "Anglais", "text": "FR → EN"})  # written in the new format
+    saved = json.loads(path.read_text(encoding="utf-8"))
+    assert [p["id"] for p in saved["user"]] == [1, 6, 7]
 
 
 def test_prompt_crud(client):
@@ -271,8 +309,7 @@ def test_invalid_lesson_id(client):
 def test_prompts_in_a_file(client, tmp_path):
     client.post("/api/prompts", json={"name": "Anglais", "text": "FR → EN"})
     saved = json.loads((tmp_path / "data" / "prompts.json").read_text(encoding="utf-8"))
-    assert [p["name"] for p in saved][-1] == "Anglais"
-    assert [p["id"] for p in saved] == [1, 2, 3, 4]
+    assert [(p["id"], p["name"]) for p in saved["user"]] == [(1, "Anglais")]  # Cartable's aren't copied
 
 
 def test_slugify():
@@ -609,7 +646,7 @@ def test_all_languages_have_the_same_keys():
     for lang in i18n.available():
         keys = _keys(i18n.messages(lang))
         assert keys == reference, f"{lang}: missing {sorted(reference - keys)}, extra {sorted(keys - reference)}"
-        assert len(i18n.get(lang, "defaultPrompts")) >= 1
+        assert set(i18n.get(lang, "builtinPrompts")) == set(prompts.BUILTIN)
 
 
 def test_all_error_codes_translated():

@@ -52,7 +52,8 @@
       "fromPrompt": "✨ Generate from the prompt alone",
       "fromPromptHint": "No photo? The AI creates the cards from your prompt: put the words in it, or ask for a topic. Check the cards carefully.",
       "regenerateHint": "(new lesson)",
-      "unavailable": "Instructions unavailable: {message}"
+      "unavailable": "Instructions unavailable: {message}",
+      "builtin": "Cartable's prompt: read-only, improved with the app"
     },
     "review": {
       "title": "Review",
@@ -161,7 +162,8 @@
       "label": "All instructions",
       "search": "🔍 Search (Spanish, verbs…)",
       "none": "No instructions match.",
-      "delete": "Delete the instructions “{name}”"
+      "delete": "Delete the instructions “{name}”",
+      "duplicate": "Duplicate the prompt “{name}”"
     },
     "editor": {
       "new": "New instructions",
@@ -180,7 +182,12 @@
       "male": "male",
       "create": "Create instructions",
       "required": "A name and a text are required.",
-      "confirmDelete": "Delete the instructions “{name}”?"
+      "confirmDelete": "Delete the instructions “{name}”?",
+      "copyName": "{name} (copy)",
+      "builtin": "⭐ Cartable's prompt",
+      "builtinHint": "This prompt is part of Cartable and is improved with it: duplicate it to adapt it (language, voice, deck…).",
+      "duplicate": "⧉ Duplicate",
+      "duplicateToChange": "⧉ Duplicate to change"
     },
     "pictures": {
       "drawing": "🎨 Drawing…",
@@ -378,7 +385,8 @@
     "invalid": "Invalid value.",
     "unreachable": "Server unreachable.",
     "prompt": {
-      "not_found": "Instructions not found."
+      "not_found": "Instructions not found.",
+      "builtin": "This prompt is part of Cartable: duplicate it to change it."
     },
     "lesson": {
       "not_found": "Lesson not found.",
@@ -476,24 +484,36 @@
     "installConfirm": "Before it can start, Cartable must install its components:\n\n• uv (from GitHub), Python 3.13 and its Python libraries (from PyPI): about 300 MB on disk;\n• only in the add-on's own folder: nothing changes on the rest of the computer, and removing the add-on removes them.\n\nThis takes a minute or two, the first time and after some updates. Install now?",
     "installDeclined": "Cartable isn't started. To install it later: Tools → Cartable → Open Cartable."
   },
-  "defaultPrompts": [
-    {
-      "name": "Vocabulary EN → ES",
-      "text": "Create English → Spanish Anki cards with the vocabulary of the lesson. One word or expression per card. Front in English, back in Spanish with the article for nouns (el/la). In \"info\", give the gender, the plural when it is irregular, and a short example if the lesson has one.",
-      "deck": "Spanish::Lesson {n}",
-      "voice": "es-ES-ElviraNeural"
+  "builtinPrompts": {
+    "vocabulary": {
+      "name": "Vocabulary of a language",
+      "text": "Create Anki cards with the vocabulary of the language lesson. One word or expression per card. Front in my language, back in the language being learned, with the article for nouns. In \"info\", give the gender, the plural when it is irregular, and a short example if the lesson has one.",
+      "deck": "{language}::Lesson {n}"
     },
-    {
-      "name": "Sentences EN → ES",
-      "text": "Create English → Spanish Anki cards with the complete sentences of the lesson. Front: the sentence in English. Back: the sentence in Spanish.",
-      "deck": "Spanish::Lesson {n}::Sentences",
-      "voice": "es-ES-ElviraNeural"
+    "sentences": {
+      "name": "Sentences of a language",
+      "text": "Create Anki cards with the complete sentences of the language lesson. Front: the sentence in my language. Back: the sentence in the language being learned.",
+      "deck": "{language}::Lesson {n}::Sentences"
     },
-    {
+    "questions": {
       "name": "Questions / answers",
       "text": "Create question → answer cards to review the content of the lesson (dates, definitions, key ideas). Short, precise questions and brief answers, in English.",
-      "deck": "{subject}::{lesson title}",
-      "voice": ""
+      "deck": "{subject}::{lesson title}"
+    },
+    "diagram": {
+      "name": "Diagram: one card per label",
+      "text": "The diagram without the names: one card per label (per arrow). Front: \"What is (n)?\". Back: the label's name.",
+      "deck": "{subject}::{diagram title}"
+    },
+    "pictures": {
+      "name": "Words in pictures",
+      "text": "Create cards with the words of the lesson (without a photo: 10 common words of the topic I add here). Front: the picture of the word, with the question \"How do you say it?\". Back: the word in the language being learned, with the article. Info: the word in English.",
+      "deck": "{language}::Pictures"
+    },
+    "wordlist": {
+      "name": "Word list (no photo)",
+      "text": "Create one card per word of the list below. Front: the word in English. Back: its translation into Spanish, with the article.\nList: ",
+      "deck": "{language}::Words"
     }
-  ]
+  }
 }

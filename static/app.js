@@ -118,7 +118,7 @@ document.addEventListener("alpine:init", () => {
         const config = await (await api("/api/config")).json();
         this.diagramWarning = config.diagram_warning;
       } catch {}
-      await Promise.all([this.loadPrompts(Number(storage("get")) || null), this.loadLessons()]);
+      await Promise.all([this.loadPrompts(storage("get")), this.loadLessons()]);
       this.checkAnki();
       // Anki may be started later: check again when coming back to the app.
       document.addEventListener("visibilitychange", () => {
@@ -180,7 +180,8 @@ document.addEventListener("alpine:init", () => {
         this.error = t("app.prompt.unavailable", { message: e.message });
         return;
       }
-      const found = this.prompts.find((c) => c.id === selectId) ?? this.prompts[0];
+      // Ids: the user's are numbers, Cartable's "cartable:…" (stored as text in the browser)
+      const found = this.prompts.find((c) => String(c.id) === String(selectId)) ?? this.prompts[0];
       this.selectedId = found?.id ?? null;
       this.selectPrompt();
     },
@@ -244,7 +245,10 @@ document.addEventListener("alpine:init", () => {
       const c = this.current();
       const base = mode === "new" ? { name: "", text: "", deck: "", voice: c?.voice ?? "" } : { ...this.form };
       if (mode === "copy") base.name = "";
-      this.editor = { open: true, id: mode === "edit" ? c.id : null, error: "", ...base };
+      // Cartable's prompts open read-only: "Duplicate" makes a copy to change
+      const builtin = mode === "edit" && Boolean(c?.builtin);
+      if (builtin) Object.assign(base, { name: c.name, text: c.text, deck: c.deck, voice: c.voice });
+      this.editor = { open: true, id: mode === "edit" ? c.id : null, builtin, error: "", ...base };
       this.$nextTick(() => {
         if (!this.editor.name) this.$refs.editorName.focus();
       });
@@ -266,6 +270,18 @@ document.addEventListener("alpine:init", () => {
         await this.loadPrompts(saved.id);
       } catch (e) {
         this.editor.error = t("common.failed", { message: e.message });
+      }
+    },
+
+    // A copy of any prompt (Cartable's included), opened in the editor to be changed.
+    async duplicatePrompt(prompt) {
+      try {
+        const copy = await (await api(`/api/prompts/${encodeURIComponent(prompt.id)}/duplicate`, { method: "POST" })).json();
+        this.picker.open = false;
+        await this.loadPrompts(copy.id);
+        this.openEditor("edit");
+      } catch (e) {
+        this.error = t("common.failed", { message: e.message });
       }
     },
 
@@ -413,7 +429,9 @@ document.addEventListener("alpine:init", () => {
       this.lessonPrompt = "";
       this.frames = [];
       // Back to the saved prompt picked last (a reopened lesson may have left its own text)
-      if (!this.current()) this.selectedId = (this.prompts.find((c) => c.id === Number(storage("get"))) ?? this.prompts[0])?.id ?? null;
+      if (!this.current()) {
+        this.selectedId = (this.prompts.find((c) => String(c.id) === storage("get")) ?? this.prompts[0])?.id ?? null;
+      }
       this.selectPrompt();  // restores the selected prompt's text and voice
       window.scrollTo({ top: 0, behavior: "smooth" });
     },

@@ -92,7 +92,8 @@
         <template x-for="c in recentPrompts()" :key="c.id">
           <button class="chip" role="radio" :aria-checked="c.id === selectedId"
                   :class="{ active: c.id === selectedId }"
-                  @click="choose(c.id)" x-text="c.name"></button>
+                  @click="choose(c.id)" x-text="(c.builtin ? '⭐ ' : '') + c.name"
+                  :title="c.builtin ? $t('app.prompt.builtin') : ''"></button>
         </template>
         <button class="chip more" x-show="prompts.length > recentPrompts().length" @click="openPicker()">
           <span x-text="$t('app.prompt.all')"></span> <span class="count" x-text="prompts.length"></span>
@@ -355,10 +356,11 @@
       <template x-for="c in filteredPrompts()" :key="c.id">
         <li>
           <button class="picker-item" :class="{ current: c.id === selectedId }" @click="choose(c.id)">
-            <strong x-text="c.name"></strong>
+            <strong x-text="(c.builtin ? '⭐ ' : '') + c.name"></strong>
             <small x-text="c.text"></small>
           </button>
-          <button class="icon-btn muted" @click="deletePrompt(c)" :aria-label="$t('app.picker.delete', { name: c.name })">🗑</button>
+          <button class="icon-btn muted" @click="duplicatePrompt(c)" :aria-label="$t('app.picker.duplicate', { name: c.name })">⧉</button>
+          <button class="icon-btn muted" x-show="!c.builtin" @click="deletePrompt(c)" :aria-label="$t('app.picker.delete', { name: c.name })">🗑</button>
         </li>
       </template>
       <li class="empty" x-show="!filteredPrompts().length" x-text="$t('app.picker.none')"></li>
@@ -373,27 +375,28 @@
          @keydown.escape.window="editor.open = false" :aria-label="$t('app.prompt.title')">
     <div class="sheet-handle"></div>
     <div class="sheet-head">
-      <h2 x-text="editor.id ? $t('app.editor.edit') : $t('app.editor.new')"></h2>
+      <h2 x-text="editor.builtin ? $t('app.editor.builtin') : editor.id ? $t('app.editor.edit') : $t('app.editor.new')"></h2>
       <button class="icon-btn" @click="editor.open = false" :aria-label="$t('common.close')">✕</button>
     </div>
-    <form class="sheet-body" @submit.prevent="saveEditor()">
+    <form class="sheet-body" @submit.prevent="editor.builtin ? duplicatePrompt(editor) : saveEditor()">
+      <p class="hint" x-show="editor.builtin" x-text="$t('app.editor.builtinHint')"></p>
       <label class="field">
         <span x-text="$t('app.editor.name')"></span>
-        <input x-model="editor.name" x-ref="editorName" :placeholder="$t('app.editor.namePlaceholder')" required>
+        <input x-model="editor.name" x-ref="editorName" :placeholder="$t('app.editor.namePlaceholder')" required :readonly="editor.builtin">
       </label>
       <label class="field">
         <span x-text="$t('app.editor.text')"></span>
-        <textarea x-model="editor.text" rows="5" required :placeholder="$t('app.editor.textPlaceholder')"></textarea>
+        <textarea x-model="editor.text" rows="5" required :placeholder="$t('app.editor.textPlaceholder')" :readonly="editor.builtin"></textarea>
       </label>
       <label class="field">
         <span><span x-text="$t('app.editor.deck')"></span> <small class="muted" x-text="$t('common.optional')"></small></span>
-        <input x-model="editor.deck" :placeholder="$t('app.editor.deckPlaceholder')">
+        <input x-model="editor.deck" :placeholder="$t('app.editor.deckPlaceholder')" :readonly="editor.builtin">
         <small x-text="$t('app.editor.deckHint')"></small>
       </label>
       <label class="field">
         <span><span x-text="$t('app.editor.voice')"></span> <small class="muted" x-text="$t('common.optional')"></small></span>
         <div class="with-action">
-          <input x-model="editor.voice" placeholder="en-GB-SoniaNeural" list="voices">
+          <input x-model="editor.voice" placeholder="en-GB-SoniaNeural" list="voices" :readonly="editor.builtin">
           <button type="button" class="icon-btn" x-show="isVoice(editor.voice)"
                   @click="play(sampleText(editor.voice), editor.voice)" :aria-label="$t('app.editor.listenVoice')">▶</button>
         </div>
@@ -407,9 +410,12 @@
       </datalist>
       <p class="hint error-text" x-show="editor.error" x-text="editor.error"></p>
       <div class="sheet-actions">
-        <button type="button" class="btn danger-soft" x-show="editor.id" @click="deletePrompt()"
+        <button type="button" class="btn danger-soft" x-show="editor.id && !editor.builtin" @click="deletePrompt()"
                 x-text="$t('common.delete')"></button>
-        <button type="submit" class="btn primary" x-text="editor.id ? $t('common.save') : $t('app.editor.create')"></button>
+        <button type="button" class="btn soft" x-show="editor.id && !editor.builtin" @click="duplicatePrompt(editor)"
+                x-text="$t('app.editor.duplicate')"></button>
+        <button type="submit" class="btn primary"
+                x-text="editor.builtin ? $t('app.editor.duplicateToChange') : editor.id ? $t('common.save') : $t('app.editor.create')"></button>
       </div>
     </form>
   </aside>

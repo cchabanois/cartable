@@ -730,3 +730,7 @@ h2 {
 .lesson-owner .switch { font-size: .88rem; }
 .lesson-owner .warn { flex-basis: 100%; margin: 0; font-size: .85rem; color: var(--danger); font-weight: 700; }
 .badge.shared { background: var(--primary-soft); color: var(--primary); }
+
+/* Cloze: the gaps, numbered like the Anki cards they make */
+.math-preview .gap { padding: 0 .25rem; border-radius: 4px; background: var(--primary-soft); color: var(--primary); font-weight: 700; }
+.math-preview .gap sup { margin-right: .15rem; font-size: .65em; color: var(--muted); }

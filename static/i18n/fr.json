@@ -64,6 +64,7 @@
       "otherProfileOpen": "— mais « {profile} » est ouvert dans Anki",
       "front": "Recto",
       "back": "Verso",
+      "extra": "Verso (facultatif)",
       "info": "+ info (genre, pluriel…)",
       "infoLabel": "Info",
       "subdeck": "sous-paquet",
@@ -81,6 +82,7 @@
       "owner": "👤 Leçon de <strong>{owner}</strong>",
       "sharedSwitch": "Partagée avec les autres profils",
       "promptUsed": "📝 Consigne utilisée pour cette leçon",
+      "clozeHint": "Texte à trous : {{c1::…}} cache ce qui est entre les accolades. Chaque numéro donne une carte dans Anki ; le même numéro cache plusieurs trous ensemble.",
       "diagramHint": "Schéma : fais glisser un masque rouge pour le déplacer, et son coin rond pour l'agrandir, afin qu'il cache tout le nom. Le cadre en pointillés est ce qu'Anki montrera de la photo : fais glisser ses coins bleus pour le recadrer.",
       "diagramWarning": "Avec ce modèle d'IA (Claude), les masques sont parfois trop petits sur l'écriture manuscrite : vérifie qu'ils cachent bien tout le nom.",
       "cropFrame": "Ce qu'Anki montre de la photo",
@@ -510,6 +512,12 @@
       "name": "Questions / réponses",
       "text": "Crée des cartes question → réponse pour réviser le contenu de la leçon (dates, définitions, notions clés). Questions courtes et précises, réponses brèves, en français.",
       "deck": "{matière}::{titre de la leçon}"
+    },
+    "cloze": {
+      "name": "Texte à trous",
+      "text": "Crée des cartes texte à trous avec les phrases importantes de la leçon : dans chaque phrase, cache ce qu'il faut retenir (dates, noms, mots-clés), un trou par notion, trois au plus par phrase. Verso : vide.",
+      "deck": "{matière}::{titre de la leçon}",
+      "voice": ""
     },
     "formulas": {
       "name": "Formules (maths, physique…)",

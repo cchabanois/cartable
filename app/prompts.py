@@ -16,7 +16,17 @@ from .errors import AppError
 from .models import Prompt, PromptIn
 
 PREFIX = "cartable:"
-BUILTIN = ("vocabulary", "sentences", "questions", "formulas", "school_formulas", "diagram", "pictures", "wordlist")
+BUILTIN = (
+    "vocabulary",
+    "sentences",
+    "questions",
+    "cloze",
+    "formulas",
+    "school_formulas",
+    "diagram",
+    "pictures",
+    "wordlist",
+)
 
 # Old default prompts that a Cartable prompt covers: dropped when left unchanged.
 # (The old "FR → ES" ones carry a Spanish voice and deck name: kept as the user's.)

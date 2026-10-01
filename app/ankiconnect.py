@@ -107,7 +107,7 @@ async def send(notes: list[Note]) -> SendResult:
                     modelName=nt.name,
                     inOrderFields=list(nt.fields),
                     css=nt.css,
-                    isCloze=False,
+                    isCloze=nt.cloze,
                     cardTemplates=[{"Name": t["name"], "Front": t["qfmt"], "Back": t["afmt"]} for t in nt.templates],
                 )
         for path in dict.fromkeys(p for n in notes for p in n.media):

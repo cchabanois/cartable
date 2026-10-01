@@ -33,6 +33,20 @@ DIAGRAM_CSS = """\
 .cartable-mask.revealed { background: transparent; border: 3px solid #1b873f; }
 """
 
+CLOZE_CSS = """\
+.cloze { font-weight: 700; color: #0b5cad; }
+.extra { margin-top: 12px; }
+"""
+
+# A gap in a text: {{c1::1789}}, {{c2::la Bastille::lieu}} (Anki's cloze syntax)
+CLOZE = re.compile(r"\{\{c\d+::")
+
+
+def is_cloze(text: str) -> bool:
+    """A text with gaps: a cloze card, one Anki card per gap number."""
+    return bool(CLOZE.search(text))
+
+
 PICTURE_CSS = """\
 .cartable-picture img { max-width: min(100%, 320px); max-height: 50vh; border-radius: 12px; }
 """
@@ -52,6 +66,7 @@ class NoteType:
     templates: tuple[dict, ...]  # {"name", "qfmt", "afmt"}
     css: str = CSS
     key: str = "Front"  # field telling which note an update is for
+    cloze: bool = False  # Anki makes one card per gap number
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -133,6 +148,23 @@ def picture_note_type(voice: str) -> NoteType:
     return NoteType(name, kind, tuple(fields), templates, css=CSS + PICTURE_CSS, key="Id")
 
 
+def cloze_note_type() -> NoteType:
+    """A text with gaps ("{{c1::1789}}"): Anki makes one card per gap number, the
+    others shown. "Extra" (the card's back, often empty) shows with the answer. Not
+    read aloud. "Id" (the card's own id) tells which note an update is for: the text
+    is what gets corrected."""
+    info = '{{#Info}}<div class="info">{{Info}}</div>{{/Info}}'
+    templates = (
+        {
+            "name": "Texte à trous",
+            "qfmt": "{{cloze:Text}}",
+            "afmt": '{{cloze:Text}}{{#Extra}}<div class="extra">{{Extra}}</div>{{/Extra}}' + info,
+        },
+    )
+    fields = ("Text", "Extra", "Info", "Id")
+    return NoteType("Cartable texte à trous", "cloze", fields, templates, css=CSS + CLOZE_CSS, key="Id", cloze=True)
+
+
 @dataclass
 class Note:
     nt: NoteType
@@ -157,10 +189,26 @@ def notes(
     `pictures`, the index of a picture card to its picture."""
     audio, images, pictures = audio or {}, images or {}, pictures or {}
     text_nt, diagram_nt = note_type(req.voice, req.reverse), diagram_note_type(req.voice)
-    picture_nt = picture_note_type(req.voice)
+    picture_nt, cloze_nt = picture_note_type(req.voice), cloze_note_type()
     result = []
     for i, card in enumerate(req.cards):
         front, back = card.front.strip(), card.back.strip()
+        if is_cloze(front):  # the gaps are the answers: the back is optional
+            result.append(
+                Note(
+                    nt=cloze_nt,
+                    deck=_deck_name(req.deck, card.subdeck),
+                    fields={
+                        "Text": html.escape(front),
+                        "Extra": html.escape(back),
+                        "Info": html.escape(card.info.strip()),
+                        "Id": card.id or f"{req.lesson_id or ''}:{i}",
+                    },
+                    tags=[_tag(t) for t in card.tags if t.strip()],
+                    media=[],
+                )
+            )
+            continue
         if not back or not (front or i in pictures):  # a picture card may have no front text
             continue
         nt = diagram_nt if i in images else picture_nt if i in pictures else text_nt
@@ -203,6 +251,7 @@ def _model(nt: NoteType) -> genanki.Model:
         fields=[{"name": f} for f in nt.fields],
         templates=list(nt.templates),
         css=nt.css,
+        model_type=genanki.Model.CLOZE if nt.cloze else genanki.Model.FRONT_BACK,
     )
 
 

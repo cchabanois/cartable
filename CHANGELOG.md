@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Cloze cards (text with gaps): with a prompt asking for gaps, each card is a sentence like "La Révolution française commence en {{c1::1789}} avec la prise de {{c2::la Bastille}}."; Anki makes one card per gap number ("Cartable texte à trous" note type, through the add-on, AnkiConnect or the .apkg). The review shows the gaps, numbered; the back becomes an optional extra; not read aloud. New Cartable prompt ⭐ "Texte à trous".
+
 - Formulas: the AI writes them in MathJax (`\(…\)`, `\[…\]`), which Anki displays natively; the review shows them drawn (KaTeX) under the text. A back with a formula isn't read aloud. New Cartable prompts ⭐ "Formulas (maths, physics…)" (from the lesson) and "Middle school maths formulas" (no photo needed).
 
 - Cartable's own prompts (⭐): vocabulary and sentences of a language, questions / answers, diagram to complete, words in pictures, word list. In the page's language, read-only, never deleted, improved with the app. Any prompt can be duplicated (⧉) to be adapted. Their language prompts use the voice "auto": the AI tells the language of the backs ("es-ES"), and Cartable picks its voice; "auto" works in any prompt.

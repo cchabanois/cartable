@@ -82,6 +82,8 @@ def _model_names(p: dict) -> list[str]:
 def _create_model(p: dict) -> int:
     mm = _col().models
     model = mm.new(p["modelName"])
+    if p.get("isCloze"):
+        model["type"] = 1  # MODEL_CLOZE: one card per gap number
     for name in p["inOrderFields"]:
         mm.add_field(model, mm.new_field(name))
     for t in p["cardTemplates"]:

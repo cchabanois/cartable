@@ -199,7 +199,6 @@
     "confirm": "Confirmation",
     "mismatch": "The two passwords don't match.",
     "changed": "Password changed.",
-    "saved": "Settings saved.",
     "savedButton": "✓ Saved",
     "saving": "Saving…",
     "testing": "Testing…",
@@ -242,7 +241,7 @@
       "clear": "Delete {label}",
       "apiAddress": "API address",
       "ollamaHint": "OpenAI-compatible service: its address usually ends with <code>/v1</code> (local Ollama: <code>http://localhost:11434/v1</code>).",
-      "test": "🔌 Save and test (image reading + JSON)",
+      "test": "🔌 Test (reading an image + JSON)",
       "testOk": "✓ {model} reads images and answers in the right format ({seconds} s).",
       "testNoVision": "⚠ {model} answers, but doesn't seem to see the image (it said “{answer}” for a red square). Pick a model that accepts images.",
       "testNoJson": "⚠ {model} doesn't answer in the requested JSON format: pick another model.",
@@ -267,7 +266,7 @@
       "clearKey": "Delete the AnkiConnect key",
       "sync": "Sync with AnkiWeb after sending",
       "syncHint": "(to get the cards on the phone)",
-      "test": "🔌 Save and test Anki",
+      "test": "🔌 Test the connection with Anki",
       "testOk": "✓ Anki answers (AnkiConnect version {version})."
     },
     "lessons": {
@@ -341,7 +340,8 @@
       "missingProfile": "For {profile} (not in Anki any more)",
       "profilePlaceholder": "e.g. in year 8; short answers",
       "noProfiles": "Open Anki to set instructions for each of its profiles."
-    }
+    },
+    "notSaved": "Not saved"
   },
   "errors": {
     "unknown": "Unexpected error ({code}).",

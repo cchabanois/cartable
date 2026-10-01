@@ -79,6 +79,19 @@ class LessonIn(Deck):
     frames: list[Frame] | None = None
 
 
+class AiCall(BaseModel):
+    """One request to the AI for a lesson: what it used and cost."""
+
+    at: str
+    kind: Literal["extract", "revise"]
+    provider: str  # gemini, anthropic, openai (service host for OpenAI-compatible: "openrouter.ai")
+    model: str  # the model that answered (a fallback, if the main one was overloaded)
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    cost: float | None = None  # US dollars; None: unknown
+    exact: bool = False  # cost given by the service (OpenRouter), not estimated from public prices
+
+
 class Lesson(LessonIn):
     id: str  # folder name, e.g. "2026-09-28-spanish-lesson-5"
     prompt: str
@@ -86,6 +99,7 @@ class Lesson(LessonIn):
     shared: bool = False
     photo_count: int
     frames: list[Frame] = []  # fractions of the photos: from the AI, then as the user set them
+    ai_calls: list[AiCall] = []  # generation, then corrections
     created_at: str
     updated_at: str
     exported_at: str | None = None
@@ -103,6 +117,7 @@ class LessonSummary(BaseModel):
     card_count: int
     photo_count: int
     frames: list[Frame] = []  # fractions of the photos: from the AI, then as the user set them
+    ai_calls: list[AiCall] = []  # generation, then corrections
     created_at: str
     updated_at: str
     exported_at: str | None = None

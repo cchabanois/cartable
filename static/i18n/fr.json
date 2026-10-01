@@ -309,6 +309,32 @@
         "other": "{count} modèles proposés : le service ne dit pas lesquels acceptent les images, vérifie avec « Tester »."
       },
       "noVisionModels": "Aucun modèle de ce service n'accepte les images : il en faut un pour lire les photos des leçons."
+    },
+    "costs": {
+      "total": "💰 IA : {cost} au total",
+      "estimated": "≈ estimé d'après les tarifs publics (OpenRouter : coût exact). Avec une clé Gemini gratuite, rien n'est réellement facturé.",
+      "none": "Coût IA : non enregistré (leçon antérieure)",
+      "unknown": "prix inconnu",
+      "tokens": "{input} tokens en entrée, {output} en sortie",
+      "extracts": {
+        "one": "{count} génération",
+        "other": "{count} générations"
+      },
+      "revisions": {
+        "one": "{count} correction",
+        "other": "{count} corrections"
+      },
+      "kind": {
+        "extract": "génération",
+        "revise": "correction"
+      },
+      "deleted": "dont {cost} pour des leçons supprimées depuis",
+      "failed": "dont {cost} pour des générations échouées (sans leçon)",
+      "unknownCount": {
+        "one": "+ {count} appel dont le prix est inconnu",
+        "other": "+ {count} appels dont le prix est inconnu"
+      },
+      "cents": "{cents} ¢ US"
     }
   },
   "errors": {

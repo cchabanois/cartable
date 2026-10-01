@@ -623,8 +623,14 @@ h2 {
 
 /* ---- Language picker ------------------------------------------------------ */
 .admin-lesson-list { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .6rem; }
-.admin-lesson-list li { border: 1px solid var(--border); border-radius: 14px; padding: .7rem .8rem; display: grid; gap: .35rem; min-width: 0; }
+.admin-lesson-list li { border: 1px solid var(--border); border-radius: 14px; padding: .7rem .8rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: .35rem; min-width: 0; }
 .admin-lesson-list li.orphan { border-color: #c77700; }
+.cost-total { display: flex; flex-direction: column; gap: .15rem; margin: .4rem 0 .2rem; }
+.ai-calls summary { cursor: pointer; font-size: .85rem; color: var(--muted); }
+.ai-calls ul { margin: .3rem 0 0; padding-left: 1.1rem; font-size: .8rem; color: var(--muted); }
+.admin-lesson-list .ai-calls li { display: list-item; border: none; border-radius: 0; padding: 0; margin: .15rem 0; }
+.admin-lesson-access .owner-pick { flex: 1 1 12rem; }
+.admin-lesson-access .owner-pick select { flex: 1; }
 .admin-lesson-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-width: 0; }
 .admin-lesson-head strong { overflow-wrap: anywhere; }
 .admin-lesson-access { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }

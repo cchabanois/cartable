@@ -17,7 +17,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, Reque
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from . import ankiconnect, diagrams, i18n, lessons, prompts, settings, tts
+from . import ankiconnect, diagrams, i18n, lessons, llm, prompts, settings, tts, usage
 from .anki import build_apkg, notes
 from .errors import AppError
 from .llm import Image, check, extract_cards, list_models, revise_cards
@@ -123,14 +123,21 @@ async def extract(
             raise AppError("extract.bad_format", format=img.content_type)
 
     data = [Image(await img.read(), img.content_type) for img in images]
-    found = await extract_cards(data, prompt, deck)
+    with llm.recording("extract") as calls:  # model, tokens and cost, kept with the lesson
+        try:
+            found = await extract_cards(data, prompt, deck)
+        except Exception:
+            usage.add(calls, lesson_id=None)  # answered but unusable: paid for, no lesson
+            raise
     if prompt_id is not None:
         prompts.mark_used(prompt_id)
     # Photos taken sideways are saved upright (masks and diagram frames turn with them)
     photos = diagrams.straighten([i.data for i in data], found.deck.cards, found.turns, found.frames)
     profile = await ankiconnect.active_profile() or ""  # the lesson belongs to this Anki profile
     lesson = LessonIn(**found.deck.model_dump(), voice=voice)
-    return lessons.create(lesson, prompt, photos, profile, found.frames)
+    created = lessons.create(lesson, prompt, photos, profile, found.frames, calls)
+    usage.add(calls, created.id, created.deck)
+    return created
 
 
 def _filename(deck: str) -> str:
@@ -291,7 +298,14 @@ async def revise_lesson(id: str, req: RevisionRequest, lang: str = Depends(page_
     """Apply a natural-language correction to the cards, using the lesson photos."""
     lesson = await _editable(id)
     photos = [Image(lessons.photo_path(id, n).read_bytes(), "image/jpeg") for n in range(1, lesson.photo_count + 1)]
-    revision = await revise_cards(photos, lesson.prompt, Deck(deck=req.deck, cards=req.cards), req.instruction, lang)
+    with llm.recording("revise") as calls:
+        try:
+            revision = await revise_cards(
+                photos, lesson.prompt, Deck(deck=req.deck, cards=req.cards), req.instruction, lang
+            )
+        finally:
+            lessons.add_ai_calls(id, calls)  # an answer that couldn't be used is paid for too
+            usage.add(calls, id, req.deck)
     updated = lessons.update(
         id, LessonIn(deck=revision.deck, cards=revision.cards, voice=req.voice, reverse=req.reverse)
     )
@@ -437,7 +451,7 @@ async def admin_test() -> dict:
 @app.get("/api/admin/lessons", dependencies=[Depends(require_admin)])
 async def admin_lessons() -> dict:
     """Every lesson, whoever owns it, and Anki's profiles (None: Anki not reachable)."""
-    return {"lessons": lessons.list_all(), "profiles": await ankiconnect.profiles()}
+    return {"lessons": lessons.list_all(), "profiles": await ankiconnect.profiles(), "costs": usage.totals()}
 
 
 @app.put("/api/admin/lessons/{id}", dependencies=[Depends(require_admin)])

@@ -15,13 +15,16 @@ overloaded after a few retries.
 import base64
 import json
 import logging
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 
 from pydantic import BaseModel
 
-from . import diagrams, i18n, settings
+from . import diagrams, i18n, prices, settings, storage
 from .errors import AppError
-from .models import Card, Deck, Extraction, Frame, Mask, Revision
+from .models import AiCall, Card, Deck, Extraction, Frame, Mask, Revision
 from .settings import Settings
 
 log = logging.getLogger("cartable")
@@ -62,6 +65,53 @@ the box of its first word and the box of its last word, in reading order, in the
 format as the diagram boxes. On a photo taken sideways or upside down, the first word \
 is still the one you start reading with.
 """
+
+
+# The AI calls of the request being handled (kind, list), set by `recording`.
+_recording: ContextVar[tuple[str, list[AiCall]] | None] = ContextVar("cartable_ai_calls", default=None)
+
+
+@contextmanager
+def recording(kind: str) -> Iterator[list[AiCall]]:
+    """Collect the AI calls made inside, with their model, tokens and cost, to keep
+    them with the lesson ("extract" or "revise"). Calls that failed after the model
+    answered are kept too: they are paid for."""
+    calls: list[AiCall] = []
+    token = _recording.set((kind, calls))
+    try:
+        yield calls
+    finally:
+        _recording.reset(token)
+
+
+async def _record(
+    s: Settings,
+    provider: str,
+    model: str,
+    input_tokens: int | None,
+    output_tokens: int | None,
+    cost: float | None = None,
+) -> None:
+    """Note an answered call; without a cost from the service, estimate it."""
+    current = _recording.get()
+    if current is None:  # e.g. the settings page's connection test
+        return
+    kind, calls = current
+    exact = cost is not None
+    if cost is None and input_tokens is not None:
+        cost = await prices.estimate(s.llm, model, input_tokens, output_tokens or 0)
+    calls.append(
+        AiCall(
+            at=storage.now(),
+            kind=kind,
+            provider=provider,
+            model=model,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost=cost,
+            exact=exact,
+        )
+    )
 
 
 @dataclass
@@ -110,6 +160,7 @@ class Extracted:
 async def extract_cards(images: list[Image], prompt: str, deck: str = "") -> Extracted:
     s = settings.current()
     if s.llm == "fake":
+        await _record(s, "fake", "fake", 0, 0, cost=0.0)
         return Extracted(_fake(images, prompt, deck), [0] * len(images), [])
     fmt = diagrams.box_format(s.model_for_provider())
     images, sizes = _prepare(images)
@@ -171,6 +222,7 @@ async def revise_cards(
     `lang`: language of the page, for the one-line summary."""
     s = settings.current()
     if s.llm == "fake":
+        await _record(s, "fake", "fake", 0, 0, cost=0.0)
         return _fake_revision(deck, instruction, lang)
     # The existing masks stay out of the conversation (their boxes are in our own
     # format): the revised cards get back the mask of the card they were. New cards
@@ -272,6 +324,10 @@ async def _gemini[T: BaseModel](s: Settings, images: list[Image], text: str, sch
                 raise ExtractionError("llm.overloaded", provider="Gemini", status=e.code) from e
             log.warning("Falling back to the next model")
 
+    usage = response.usage_metadata
+    if usage:
+        output = (usage.candidates_token_count or 0) + (usage.thoughts_token_count or 0)  # thinking is billed too
+        await _record(s, "gemini", model, usage.prompt_token_count, output)
     candidate = response.candidates[0] if response.candidates else None
     if candidate is None or not response.text:
         raise ExtractionError("llm.empty_answer", provider="Gemini")
@@ -328,6 +384,8 @@ async def _anthropic[T: BaseModel](s: Settings, images: list[Image], text: str, 
     except anthropic.APIConnectionError as e:
         raise ExtractionError("llm.unreachable", provider="Anthropic") from e
 
+    if response.usage:
+        await _record(s, "anthropic", response.model, response.usage.input_tokens, response.usage.output_tokens)
     if response.stop_reason == "refusal":
         raise ExtractionError("llm.refused")
     if response.stop_reason == "max_tokens":
@@ -475,6 +533,7 @@ async def _openai[T: BaseModel](s: Settings, images: list[Image], text: str, sch
     content.append({"type": "text", "text": text})
 
     try:
+        service = _openai_service(s)
         response = await client.chat.completions.create(
             model=s.model_for_provider(),
             messages=[
@@ -485,7 +544,14 @@ async def _openai[T: BaseModel](s: Settings, images: list[Image], text: str, sch
                 "type": "json_schema",
                 "json_schema": {"name": schema.__name__.lower(), "schema": schema.model_json_schema()},
             },
+            # OpenRouter tells the exact cost of the call when asked
+            extra_body={"usage": {"include": True}} if "openrouter.ai" in service else None,
         )
+        usage = response.usage
+        if usage:
+            cost = (usage.model_extra or {}).get("cost")
+            model = response.model or s.model_for_provider()
+            await _record(s, service, model, usage.prompt_tokens, usage.completion_tokens, cost)
         return schema.model_validate(json.loads(response.choices[0].message.content or ""))
     except openai.OpenAIError as e:
         raise _openai_error(e, s) from e

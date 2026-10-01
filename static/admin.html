@@ -217,6 +217,18 @@
           <p class="hint" x-text="$t('admin.lessons.hint')"></p>
           <p class="hint warn" x-show="lessons && !lessons.profiles" x-text="$t('admin.lessons.ankiClosed')"></p>
           <p class="hint" x-show="lessons && !lessons.lessons.length" x-text="$t('admin.lessons.none')"></p>
+          <!-- What the AI cost, all lessons together -->
+          <!-- From the journal of every AI call: deleting a lesson doesn't change it -->
+          <div class="cost-total" x-show="lessons?.costs && (lessons.costs.total || lessons.costs.unknown)">
+            <strong x-text="$t('admin.costs.total', { cost: formatCost(lessons?.costs.total) })"></strong>
+            <small class="muted" x-show="lessons?.costs.deleted"
+                   x-text="$t('admin.costs.deleted', { cost: formatCost(lessons?.costs.deleted) })"></small>
+            <small class="muted" x-show="lessons?.costs.failed"
+                   x-text="$t('admin.costs.failed', { cost: formatCost(lessons?.costs.failed) })"></small>
+            <small class="muted" x-show="lessons?.costs.unknown"
+                   x-text="$t('admin.costs.unknownCount', { count: lessons?.costs.unknown })"></small>
+            <small class="muted" x-show="lessons?.costs.estimated" x-text="$t('admin.costs.estimated')"></small>
+          </div>
           <ul class="admin-lesson-list">
             <template x-for="l in lessons?.lessons ?? []" :key="l.id">
               <li :class="{ orphan: ownerMissing(l) }">
@@ -229,6 +241,16 @@
                   <span x-text="$t('common.count.cards', { count: l.card_count })"></span> ·
                   <span x-text="formatDate(l.updated_at)"></span>
                 </small>
+                <!-- AI calls: generation, then corrections -->
+                <details class="ai-calls" x-show="l.ai_calls.length">
+                  <summary x-text="costLine(l)"></summary>
+                  <ul>
+                    <template x-for="call in l.ai_calls" :key="call.at + call.kind">
+                      <li x-text="callLine(call)"></li>
+                    </template>
+                  </ul>
+                </details>
+                <small class="muted" x-show="!l.ai_calls.length" x-text="$t('admin.costs.none')"></small>
                 <div class="admin-lesson-access">
                   <label class="owner-pick">
                     <span x-text="$t('admin.lessons.owner')"></span>

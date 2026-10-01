@@ -12,7 +12,7 @@ from datetime import date
 from pathlib import Path
 
 from . import storage
-from .models import Frame, Lesson, LessonIn, LessonSummary
+from .models import AiCall, Frame, Lesson, LessonIn, LessonSummary
 
 ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")  # folder names we create; blocks "../"
 
@@ -60,7 +60,14 @@ def _new_folder(deck: str) -> Path:
     return path
 
 
-def create(lesson: LessonIn, prompt: str, photos: list[bytes], owner: str = "", frames: list[Frame] = ()) -> Lesson:
+def create(
+    lesson: LessonIn,
+    prompt: str,
+    photos: list[bytes],
+    owner: str = "",
+    frames: list[Frame] = (),
+    ai_calls: list[AiCall] = (),
+) -> Lesson:
     with storage.lock:
         path = _new_folder(lesson.deck)
         tmp = path.with_name(f".{path.name}.tmp")
@@ -73,6 +80,7 @@ def create(lesson: LessonIn, prompt: str, photos: list[bytes], owner: str = "", 
                 tmp,
                 Lesson(
                     **{**lesson.model_dump(), "owner": owner, "shared": False, "frames": list(frames)},
+                    ai_calls=list(ai_calls),
                     id=path.name,
                     prompt=prompt,
                     photo_count=len(photos),
@@ -121,6 +129,17 @@ def update(id: str, changes: LessonIn, exported: bool = False, share: bool | Non
         )
         _write(path, lesson)
     return lesson
+
+
+def add_ai_calls(id: str, calls: list[AiCall]) -> None:
+    """Keep the AI calls of a correction with the lesson (not a content change)."""
+    if not calls:
+        return
+    with storage.lock:
+        path = folder(id)
+        if path:
+            lesson = _read(path)
+            _write(path, lesson.model_copy(update={"ai_calls": [*lesson.ai_calls, *calls]}))
 
 
 def set_access(id: str, owner: str | None = None, shared: bool | None = None) -> Lesson | None:

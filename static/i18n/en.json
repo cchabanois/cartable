@@ -309,6 +309,32 @@
         "other": "{count} models suggested: the service doesn't say which accept images, check with “Test”."
       },
       "noVisionModels": "None of this service's models accepts images: one is needed to read the lesson photos."
+    },
+    "costs": {
+      "total": "💰 AI: {cost} in total",
+      "estimated": "≈ estimated from public prices (OpenRouter: exact cost). With a free Gemini key, nothing is actually charged.",
+      "none": "AI cost: not recorded (lesson made before)",
+      "unknown": "price unknown",
+      "tokens": "{input} tokens in, {output} out",
+      "extracts": {
+        "one": "{count} generation",
+        "other": "{count} generations"
+      },
+      "revisions": {
+        "one": "{count} correction",
+        "other": "{count} corrections"
+      },
+      "kind": {
+        "extract": "generation",
+        "revise": "correction"
+      },
+      "deleted": "of which {cost} for lessons deleted since",
+      "failed": "of which {cost} for generations that failed (no lesson)",
+      "unknownCount": {
+        "one": "+ {count} call whose price is unknown",
+        "other": "+ {count} calls whose price is unknown"
+      },
+      "cents": "{cents} US¢"
     }
   },
   "errors": {

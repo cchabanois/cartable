@@ -143,6 +143,8 @@ async def extract(
         prompts.mark_used(prompt_id)
     # Photos taken sideways are saved upright (masks and diagram frames turn with them)
     photos = diagrams.straighten([i.data for i in data], found.deck.cards, found.turns, found.frames)
+    if voice.strip().lower() == "auto":  # the voice of the language the backs are in
+        voice = await tts.voice_for(found.back_language)
     lesson = LessonIn(**found.deck.model_dump(), voice=voice)
     created = lessons.create(lesson, prompt, photos, profile, found.frames, calls)
     usage.add(calls, created.id, created.deck)

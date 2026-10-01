@@ -1151,3 +1151,33 @@ def test_no_sync_when_the_profile_is_not_logged_in(anki, client, monkeypatch):
     res = client.post("/api/anki/send", json=SEND).json()
     assert (res["synced"], res["sync_error"], res["sync_skipped"]) == (False, None, True)
     assert "sync" not in anki.calls
+
+
+def test_voice_for_a_language(monkeypatch):
+    import asyncio
+
+    available = [
+        {"voice": "es-MX-JorgeNeural", "locale": "es-MX", "gender": "Male"},
+        {"voice": "de-AT-IngridNeural", "locale": "de-AT", "gender": "Female"},
+        {"voice": "ja-JP-KeitaNeural", "locale": "ja-JP", "gender": "Male"},
+        {"voice": "ja-JP-NanamiNeural", "locale": "ja-JP", "gender": "Female"},
+    ]
+
+    async def voices():
+        return available
+
+    monkeypatch.setattr(tts, "voices", voices)
+    voice = lambda language: asyncio.run(tts.voice_for(language))  # noqa: E731
+    assert voice("es-ES") == voice("es") == "es-ES-ElviraNeural"  # preferred
+    assert voice("es-MX") == "es-MX-DaliaNeural"
+    assert voice("de-AT") == "de-AT-IngridNeural"  # that variety, not the preferred German one
+    assert voice("ja-JP") == voice("ja") == "ja-JP-NanamiNeural"  # a female voice first
+    assert voice("xx") == voice("") == ""
+
+
+def test_auto_voice_follows_the_language_of_the_backs(client):
+    lesson = client.post("/api/extract", data={"prompt": "FR → ES", "voice": "auto"}).json()
+    assert lesson["voice"] == "es-ES-ElviraNeural"  # the fake AI says the backs are es-ES
+    voices = {p["id"]: p["voice"] for p in client.get("/api/prompts").json()}
+    assert voices["cartable:sentences"] == voices["cartable:vocabulary"] == "auto"
+    assert voices["cartable:questions"] == ""

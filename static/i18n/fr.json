@@ -176,7 +176,7 @@
       "deckPlaceholder": "Anglais::Leçon {n}",
       "deckHint": "Les parties entre accolades sont remplies d'après la leçon.",
       "voice": "Voix du verso",
-      "voiceHint": "Tape le début de la langue (« en-GB », « es-ES »…) pour voir les voix. Vide = pas de son.",
+      "voiceHint": "Tape le début de la langue (« en-GB », « es-ES »…) pour voir les voix. Vide = pas de son ; « auto » = la voix de la langue du verso, trouvée par l'IA.",
       "listenVoice": "Écouter la voix",
       "female": "femme",
       "male": "homme",
@@ -488,12 +488,14 @@
     "vocabulary": {
       "name": "Vocabulaire d'une langue",
       "text": "Crée des cartes Anki avec le vocabulaire de la leçon de langue. Un mot ou une expression par carte. Recto dans ma langue, verso dans la langue étudiée, avec l'article pour les noms. Dans « info », indique le genre, le pluriel s'il est irrégulier, et un court exemple si la leçon en donne un.",
-      "deck": "{langue}::Leçon {n}"
+      "deck": "{langue}::Leçon {n}",
+      "voice": "auto"
     },
     "sentences": {
       "name": "Phrases d'une langue",
       "text": "Crée des cartes Anki avec les phrases complètes de la leçon de langue. Recto : la phrase dans ma langue. Verso : la phrase dans la langue étudiée.",
-      "deck": "{langue}::Leçon {n}::Phrases"
+      "deck": "{langue}::Leçon {n}::Phrases",
+      "voice": "auto"
     },
     "questions": {
       "name": "Questions / réponses",
@@ -508,12 +510,14 @@
     "pictures": {
       "name": "Mots en images",
       "text": "Crée des cartes avec les mots de la leçon (sans photo : 10 mots courants du thème que j'ajoute ici). Recto : l'image du mot, avec la question « Comment dit-on ? ». Verso : le mot dans la langue étudiée, avec l'article. Info : le mot en français.",
-      "deck": "{langue}::Images"
+      "deck": "{langue}::Images",
+      "voice": "auto"
     },
     "wordlist": {
       "name": "Liste de mots (sans photo)",
       "text": "Crée une carte par mot de la liste ci-dessous. Recto : le mot en français. Verso : sa traduction en espagnol, avec l'article.\nListe : ",
-      "deck": "{langue}::Mots"
+      "deck": "{langue}::Mots",
+      "voice": "auto"
     }
   }
 }

@@ -67,6 +67,11 @@ class Extraction(Deck):
     frames: list[Frame] = Field(
         default_factory=list, description="For each photo with diagram cards: the frame of the diagram."
     )
+    back_language: str = Field(
+        default="",
+        description="Language of the card backs as a BCP 47 code, in the variety the lesson teaches "
+        '(e.g. "es-ES", "en-GB", "de-DE"); empty when the backs aren\'t in a language being learned.',
+    )
 
 
 class Revision(Deck):

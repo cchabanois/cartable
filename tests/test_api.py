@@ -17,7 +17,7 @@ def test_cartable_prompts(client):
     """Cartable's prompts: in the page's language, read-only, before the user's."""
     fr = client.get("/api/prompts", headers={"X-Cartable-Lang": "fr-FR"}).json()
     assert [p["id"] for p in fr] == [f"cartable:{k}" for k in prompts.BUILTIN]
-    assert all(p["builtin"] for p in fr) and fr[3]["name"] == "Schéma à compléter"
+    assert all(p["builtin"] for p in fr) and fr[5]["name"] == "Schéma à compléter"
     en = client.get("/api/prompts", headers={"X-Cartable-Lang": "en"}).json()
     assert en[0]["name"] == "Vocabulary of a language"  # the same prompts, in English
     de = client.get("/api/prompts", headers={"X-Cartable-Lang": "de"}).json()
@@ -1181,3 +1181,23 @@ def test_auto_voice_follows_the_language_of_the_backs(client):
     voices = {p["id"]: p["voice"] for p in client.get("/api/prompts").json()}
     assert voices["cartable:sentences"] == voices["cartable:vocabulary"] == "auto"
     assert voices["cartable:questions"] == ""
+
+
+def test_formulas_shown_by_anki_not_read_aloud(client, tmp_path):
+    assert tts.has_math(r"aire : \(\pi r^2\)") and tts.has_math(r"\[\frac{a}{b}\]")
+    assert not tts.has_math("a² + b² = c²") and not tts.has_math("(a + b) / 2")
+    export = {
+        "deck": "Maths",
+        "voice": "es-ES-ElviraNeural",
+        "cards": [
+            {"front": "aire du disque", "back": r"\(\pi r^2\)"},  # a formula: no sound
+            {"front": "la madre", "back": "la madre"},
+        ],
+    }
+    synthesized.clear()
+    res = client.post("/api/export", json=export)
+    assert synthesized == ["la madre"]
+    notes, _, _, _ = _notes(res.content, tmp_path)
+    (disc,) = [fields for _, fields in notes if "pi r" in fields]
+    assert r"\(\pi r^2\)" in disc  # kept as is: Anki draws it (MathJax)
+    assert "[sound:" not in disc

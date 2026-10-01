@@ -511,6 +511,18 @@
       "text": "Crée des cartes question → réponse pour réviser le contenu de la leçon (dates, définitions, notions clés). Questions courtes et précises, réponses brèves, en français.",
       "deck": "{matière}::{titre de la leçon}"
     },
+    "formulas": {
+      "name": "Formules (maths, physique…)",
+      "text": "Crée une carte par formule de la leçon. Recto : ce que la formule permet de calculer (ou son nom). Verso : la formule. Info : ce que représente chaque lettre.",
+      "deck": "{matière}::Formules",
+      "voice": ""
+    },
+    "school_formulas": {
+      "name": "Formules de maths du collège",
+      "text": "Crée des cartes pour les principales formules de maths du collège (6e à 3e) : aires et périmètres (carré, rectangle, triangle, disque), volumes (cube, pavé, cylindre, cône, sphère), Pythagore, Thalès, trigonométrie (cos, sin, tan), identités remarquables, puissances, proportionnalité et pourcentages, vitesse moyenne. Recto : ce que la formule permet de calculer. Verso : la formule. Info : ce que représente chaque lettre, avec l'unité si besoin.",
+      "deck": "Maths::Formules du collège",
+      "voice": ""
+    },
     "diagram": {
       "name": "Schéma à compléter",
       "text": "La photo montre un schéma avec des légendes (des noms reliés au dessin par une flèche ou un trait). Cache le texte de chaque légende derrière un numéro et crée une carte par légende. Recto : le schéma, avec la question « Qu'est-ce que (n) ? ». Verso : le texte de la légende.",

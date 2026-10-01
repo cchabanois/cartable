@@ -511,6 +511,18 @@
       "text": "Create question → answer cards to review the content of the lesson (dates, definitions, key ideas). Short, precise questions and brief answers, in English.",
       "deck": "{subject}::{lesson title}"
     },
+    "formulas": {
+      "name": "Formulas (maths, physics…)",
+      "text": "Create one card per formula of the lesson. Front: what the formula calculates (or its name). Back: the formula. Info: what each letter stands for.",
+      "deck": "{subject}::Formulas",
+      "voice": ""
+    },
+    "school_formulas": {
+      "name": "Middle school maths formulas",
+      "text": "Create cards for the main maths formulas of middle school (ages 11 to 15): areas and perimeters (square, rectangle, triangle, circle), volumes (cube, cuboid, cylinder, cone, sphere), Pythagoras, Thales (intercept theorem), trigonometry (cos, sin, tan), special products, powers, proportionality and percentages, average speed. Front: what the formula calculates. Back: the formula. Info: what each letter stands for, with its unit when useful.",
+      "deck": "Maths::Middle school formulas",
+      "voice": ""
+    },
     "diagram": {
       "name": "Diagram to complete",
       "text": "The photo shows a diagram with labels (names linked to the drawing by an arrow or a line). Hide the text of each label behind a number and make one card per label. Front: the diagram, with the question \"What is (n)?\". Back: the text of the label.",

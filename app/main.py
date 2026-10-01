@@ -165,7 +165,8 @@ async def _card_audio(req: ExportRequest, background: BackgroundTasks) -> tuple[
     if directory is None:
         directory = Path(tempfile.mkdtemp(prefix="cartable-audio-"))
         background.add_task(shutil.rmtree, directory, ignore_errors=True)
-    backs = [c.back.strip() for c in req.cards if c.front.strip() and c.back.strip()]
+    # A back with a formula isn't read aloud: the voice would read the MathJax code
+    backs = [c.back.strip() for c in req.cards if c.front.strip() and c.back.strip() and not tts.has_math(c.back)]
     audio, failures = await tts.tts_many(backs, req.voice, directory)
     tts.prune(directory, set(audio.values()))
     return audio, failures

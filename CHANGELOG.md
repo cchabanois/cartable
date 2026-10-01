@@ -9,6 +9,9 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Pictures on cards: with a prompt like "front: the picture of the word, back: the English word", an image model draws each card's picture (Gemini Flash Lite Image by default, settable in ⚙️; about 3 to 7 US¢ each, in the cost tracking). The cards show at once, their pictures when drawn; Anki gets them in a "Cartable image" note type.
+- Every card has a stable id, so Anki recognises it even when its front changes or is the same as others'.
+
 - Standing instructions for the AI in the settings, for every profile and for each Anki profile ("in year 8", "Spanish from Spain"): added to every generation and correction, on top of the lesson's prompt, never replacing the fixed rules.
 
 - Each lesson keeps its AI calls (generation and corrections): provider, model, tokens and cost. Exact with OpenRouter, estimated from public prices otherwise. The settings page shows the cost of each lesson, the details of its calls and the total, which comes from a journal of every call (`data/ai-calls.json`): deleting a lesson doesn't lower it, and generations that failed after the model answered are counted.

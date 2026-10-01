@@ -57,6 +57,8 @@ class Settings(BaseModel):
     # profile, e.g. "Bastien is in year 8", "short answers, with the article".
     instructions: str = ""
     profile_instructions: dict[str, str] = {}
+    # Image model for card pictures ("" = one the saved keys allow, see pictures.model)
+    picture_model: str = ""
 
     def model_for_provider(self) -> str:
         return self.model.strip() or DEFAULT_MODELS.get(self.llm, "")

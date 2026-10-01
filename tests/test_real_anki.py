@@ -226,3 +226,35 @@ def test_diagram_lesson_on_a_real_collection(bridged, col):
     moved = fields(col, min(note_ids))
     assert moved["Image"] == first["Image"]  # one image per diagram
     assert moved["Masks"] != first["Masks"]
+
+
+def test_picture_lesson_on_a_real_collection(bridged, col, monkeypatch):
+    import io
+
+    from PIL import Image
+
+    from app import pictures
+
+    async def draw(s, subject):
+        out = io.BytesIO()
+        Image.new("RGB", (600, 600), "orange").save(out, "PNG")
+        return out.getvalue()
+
+    monkeypatch.setattr(pictures, "draw", draw)
+    client, _ = bridged
+    lesson = client.post("/api/extract", data={"prompt": "recto : image du mot"}).json()
+    cards = client.post(f"/api/lessons/{lesson['id']}/pictures").json()["lesson"]["cards"]
+    body = {"deck": "Anglais", "cards": cards, "lesson_id": lesson["id"]}
+    assert client.post("/api/anki/send", json=body).json()["added"] == 4
+
+    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Cartable image")]
+    note_ids = sorted(col.find_notes(f'"note:{note_type.name}"'))
+    assert len(note_ids) == 3  # the apple, the dog, the umbrella; "tomorrow" is a text card
+    first = fields(col, note_ids[0])
+    assert first["Id"] == cards[0]["id"] and first["Front"] == "Comment dit-on en anglais ?"
+    assert (Path(col.media.dir()) / cards[0]["picture"]).is_file()
+
+    # Same front on every picture card: sent again, updated through the card ids, not duplicated
+    res = client.post("/api/anki/send", json=body).json()
+    assert (res["added"], res["updated"]) == (0, 4)
+    assert sorted(col.find_notes(f'"note:{note_type.name}"')) == note_ids

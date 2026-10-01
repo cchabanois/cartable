@@ -60,6 +60,13 @@ bounding box of the label's text on that photo, in the format given with the req
 For every other card, "mask" is null. Also give, in "frames", the box of each such \
 diagram as a whole (its drawing and all its labels, nothing else of the page). Boxes \
 always refer to the photo as sent, even when it is rotated.
+- Pictures: when the instructions ask for a picture on the card (an image of the word, \
+a drawing…), fill "picture_prompt", in English, with what to draw: one concrete \
+subject a child recognises at once (e.g. "a red apple", "a dog sitting"). Leave it \
+empty for words that can't be drawn clearly (abstract words). The front is then the \
+text shown with the picture, as the instructions say (a question like "How do you say \
+it in English?", or empty if they want the picture alone). Never put the answer in \
+the picture's description. Leave "picture" and "id" empty.
 - Text lines: for each photo, its longest line of printed text (a title, a sentence): \
 the box of its first word and the box of its last word, in reading order, in the same \
 format as the diagram boxes. On a photo taken sideways or upside down, the first word \
@@ -84,7 +91,7 @@ def recording(kind: str) -> Iterator[list[AiCall]]:
         _recording.reset(token)
 
 
-async def _record(
+async def record(
     s: Settings,
     provider: str,
     model: str,
@@ -175,7 +182,7 @@ async def extract_cards(images: list[Image], prompt: str, deck: str = "", profil
     """`profile`: the open Anki profile, for its standing instructions."""
     s = settings.current()
     if s.llm == "fake":
-        await _record(s, "fake", "fake", 0, 0, cost=0.0)
+        await record(s, "fake", "fake", 0, 0, cost=0.0)
         return Extracted(_fake(images, prompt, deck), [0] * len(images), [])
     fmt = diagrams.box_format(s.model_for_provider())
     images, sizes = _prepare(images)
@@ -243,7 +250,7 @@ async def revise_cards(
     `lang`: language of the page, for the one-line summary."""
     s = settings.current()
     if s.llm == "fake":
-        await _record(s, "fake", "fake", 0, 0, cost=0.0)
+        await record(s, "fake", "fake", 0, 0, cost=0.0)
         return _fake_revision(deck, instruction, lang)
     # The existing masks stay out of the conversation (their boxes are in our own
     # format): the revised cards get back the mask of the card they were. New cards
@@ -254,13 +261,32 @@ async def revise_cards(
     for card in deck.cards:
         if card.mask:
             labels.setdefault(card.mask.page, []).append(card.mask.n)
-    plain = Deck(deck=deck.deck, cards=[c.model_copy(update={"mask": None}) for c in deck.cards])
+    plain = Deck(
+        deck=deck.deck, cards=[c.model_copy(update={"mask": None, "picture": "", "id": ""}) for c in deck.cards]
+    )
     text = standing_instructions(s, profile) + _revision_text(
         prompt, plain, instruction, lang, len(images), sizes, fmt, labels
     )
     revision = await _generate(s, images, text, Revision)
     _keep_masks(revision.cards, deck.cards, sizes, fmt)
     return revision
+
+
+def _keep_ids(revised: list[Card], before: list[Card]) -> None:
+    """A revised card keeps the id and the picture of the card it was (same front and
+    back, else same back, else same front): Anki updates its note, the picture stays."""
+    left = list(before)
+    for card in revised:
+        match = next((c for c in left if (c.front, c.back) == (card.front, card.back)), None)
+        match = match or next((c for c in left if c.back == card.back), None)
+        match = match or next((c for c in left if c.front == card.front and c.front), None)
+        if match:
+            card.id = match.id
+            if not card.picture_prompt or card.picture_prompt == match.picture_prompt:
+                card.picture, card.picture_prompt = match.picture, match.picture_prompt
+            left.remove(match)
+        else:
+            card.id, card.picture = "", ""  # a new card: its id comes when saved
 
 
 def _keep_masks(
@@ -280,6 +306,7 @@ def _keep_masks(
             masked.remove(match)
         elif card.mask:
             added.append(card)
+    _keep_ids(revised, before)
     diagrams.normalize(added, sizes, fmt)
     used = {(c.mask.page, c.mask.n) for c in revised if c.mask and c not in added}
     for card in (c for c in added if c.mask):
@@ -350,7 +377,7 @@ async def _gemini[T: BaseModel](s: Settings, images: list[Image], text: str, sch
     usage = response.usage_metadata
     if usage:
         output = (usage.candidates_token_count or 0) + (usage.thoughts_token_count or 0)  # thinking is billed too
-        await _record(s, "gemini", model, usage.prompt_token_count, output)
+        await record(s, "gemini", model, usage.prompt_token_count, output)
     candidate = response.candidates[0] if response.candidates else None
     if candidate is None or not response.text:
         raise ExtractionError("llm.empty_answer", provider="Gemini")
@@ -408,7 +435,7 @@ async def _anthropic[T: BaseModel](s: Settings, images: list[Image], text: str, 
         raise ExtractionError("llm.unreachable", provider="Anthropic") from e
 
     if response.usage:
-        await _record(s, "anthropic", response.model, response.usage.input_tokens, response.usage.output_tokens)
+        await record(s, "anthropic", response.model, response.usage.input_tokens, response.usage.output_tokens)
     if response.stop_reason == "refusal":
         raise ExtractionError("llm.refused")
     if response.stop_reason == "max_tokens":
@@ -574,7 +601,7 @@ async def _openai[T: BaseModel](s: Settings, images: list[Image], text: str, sch
         if usage:
             cost = (usage.model_extra or {}).get("cost")
             model = response.model or s.model_for_provider()
-            await _record(s, service, model, usage.prompt_tokens, usage.completion_tokens, cost)
+            await record(s, service, model, usage.prompt_tokens, usage.completion_tokens, cost)
         return schema.model_validate(json.loads(response.choices[0].message.content or ""))
     except openai.OpenAIError as e:
         raise _openai_error(e, s) from e
@@ -585,6 +612,8 @@ async def _openai[T: BaseModel](s: Settings, images: list[Image], text: str, sch
 def _fake(images: list[Image], prompt: str, deck: str) -> Deck:
     if images and any(w in prompt.lower() for w in ("diagram", "schéma", "schema")):
         return _fake_diagram()
+    if any(w in prompt.lower() for w in ("picture", "image", "dessin")):
+        return _fake_pictures()
     return Deck(
         deck="Espagnol::Leçon 5 - La famille",
         cards=[
@@ -598,6 +627,18 @@ def _fake(images: list[Image], prompt: str, deck: str) -> Deck:
                 back="demo mode (fake provider)",
                 info=prompt[:80],
             ),
+        ],
+    )
+
+
+def _fake_pictures() -> Deck:
+    """Demo mode, picture prompt: three words to draw, one that can't be drawn."""
+    words = [("an apple", "an apple"), ("a dog", "a dog"), ("an umbrella", "an umbrella"), ("", "tomorrow")]
+    return Deck(
+        deck="Anglais::Mots courants",
+        cards=[
+            Card(front="Comment dit-on en anglais ?" if subject else "demain", back=back, picture_prompt=subject)
+            for subject, back in words
         ],
     )
 

@@ -1,0 +1,148 @@
+"""Pictures on cards ("front: the picture of the word"), drawn by an image model."""
+
+import html
+import io
+import json
+import sqlite3
+import zipfile
+
+import pytest
+from PIL import Image
+
+from app import llm, pictures
+from app.models import Card
+from app.settings import Settings
+
+
+def png(color="red") -> bytes:
+    out = io.BytesIO()
+    Image.new("RGB", (1024, 1024), color).save(out, "PNG")
+    return out.getvalue()
+
+
+@pytest.fixture
+def drawn(monkeypatch):
+    """A fake image model: records each call like a real one (0.03 $ each)."""
+    subjects = []
+
+    async def draw(s, subject):
+        subjects.append(subject)
+        if "umbrella" in subject:
+            raise pictures.PictureError("picture.failed", detail="refused")
+        await llm.record(s, "openrouter.ai", "google/gemini-3.1-flash-lite-image", 20, 1300, cost=0.03)
+        return png()
+
+    monkeypatch.setattr(pictures, "draw", draw)
+    return subjects
+
+
+def lesson_with_pictures(client):
+    return client.post("/api/extract", data={"prompt": "10 mots courants, recto : image du mot"}).json()
+
+
+def test_cards_ask_for_pictures_and_get_ids(client):
+    lesson = lesson_with_pictures(client)
+    assert [c["picture_prompt"] for c in lesson["cards"]] == ["an apple", "a dog", "an umbrella", ""]
+    assert all(c["id"] and not c["picture"] for c in lesson["cards"])
+    assert len({c["id"] for c in lesson["cards"]}) == 4
+
+
+def test_pictures_drawn_and_kept(client, drawn):
+    lesson = lesson_with_pictures(client)
+    res = client.post(f"/api/lessons/{lesson['id']}/pictures").json()
+    cards = res["lesson"]["cards"]
+    assert res["failures"] == 1  # the umbrella: its card stays without a picture
+    assert sorted(drawn) == ["a dog", "an apple", "an umbrella"]  # nothing for "tomorrow"
+    assert [bool(c["picture"]) for c in cards] == [True, True, False, False]
+    assert [c["id"] for c in cards] == [c["id"] for c in lesson["cards"]]  # ids kept
+    picture = client.get(f"/api/lessons/{lesson['id']}/pictures/{cards[0]['picture']}")
+    assert picture.headers["content-type"] == "image/jpeg"
+    assert Image.open(io.BytesIO(picture.content)).size == (pictures.SIDE, pictures.SIDE)
+    calls = client.get(f"/api/lessons/{lesson['id']}").json()["ai_calls"]
+    assert [c["kind"] for c in calls] == ["extract", "picture", "picture"]
+
+    # Drawn again: only what is missing (the umbrella, failing again)
+    drawn.clear()
+    client.post(f"/api/lessons/{lesson['id']}/pictures")
+    assert drawn == ["an umbrella"]
+
+
+def test_picture_names_checked(client, drawn):
+    lesson = lesson_with_pictures(client)
+    for name in ("../lesson.json", "page-1.jpg", "picture-x-12345678.jpg"):
+        assert client.get(f"/api/lessons/{lesson['id']}/pictures/{name}").status_code == 404
+
+
+def test_picture_cards_in_anki(client, drawn, tmp_path):
+    lesson = lesson_with_pictures(client)
+    cards = client.post(f"/api/lessons/{lesson['id']}/pictures").json()["lesson"]["cards"]
+
+    def export(cards):
+        body = {"deck": "D", "cards": cards, "lesson_id": lesson["id"]}
+        with zipfile.ZipFile(io.BytesIO(client.post("/api/export", json=body).content)) as z:
+            media = sorted(json.loads(z.read("media")).values())
+            (tmp_path / "c.anki2").write_bytes(z.read("collection.anki2"))
+        con = sqlite3.connect(tmp_path / "c.anki2")
+        notes = con.execute("select guid, mid, flds from notes order by id").fetchall()
+        models = json.loads(con.execute("select models from col").fetchone()[0])
+        con.close()
+        return notes, models, media
+
+    notes, models, media = export(cards)
+    names = {int(i): m["name"] for i, m in models.items()}
+    assert sorted(names[mid] for _, mid, _ in notes) == [
+        "Cartable image (audio)",
+        "Cartable image (audio)",
+        "Cartable recto/verso (audio)",  # the umbrella without its picture: a text card
+        "Cartable recto/verso (audio)",  # "tomorrow"
+    ]
+    picture_fields = [html.unescape(f).split("\x1f") for _, mid, f in notes if names[mid].startswith("Cartable image")]
+    assert picture_fields[0][0] == "Comment dit-on en anglais ?"
+    assert picture_fields[0][-2] == f'<img src="{cards[0]["picture"]}">' and picture_fields[0][-1] == cards[0]["id"]
+    assert media == sorted([cards[0]["picture"], cards[1]["picture"]])
+
+    # Same front on every picture card, then a new picture: the same notes (GUID from the id)
+    cards[0]["picture"], cards[1]["front"] = cards[1]["picture"], ""
+    notes2, _, _ = export(cards)
+    assert [g for g, _, _ in notes2] == [g for g, _, _ in notes]
+
+
+def test_only_the_owner_draws(client, drawn, monkeypatch):
+    from app import ankiconnect
+
+    profile = {"name": "Léa"}
+
+    async def active_profile():
+        return profile["name"]
+
+    monkeypatch.setattr(ankiconnect, "active_profile", active_profile)
+    lesson = lesson_with_pictures(client)  # Léa's
+    client.put(f"/api/lessons/{lesson['id']}", json={"deck": "D", "cards": lesson["cards"], "shared": True})
+    profile["name"] = "Paul"
+    assert client.post(f"/api/lessons/{lesson['id']}/pictures").status_code == 403
+
+
+def test_correction_keeps_ids_and_pictures():
+    before = [
+        Card(front="Q", back="an apple", picture_prompt="an apple", picture="picture-a-12345678.jpg", id="a"),
+        Card(front="Q", back="a dog", picture_prompt="a dog", picture="picture-b-12345678.jpg", id="b"),
+    ]
+    revised = [
+        Card(front="Q", back="a dog", picture_prompt="a dog"),
+        Card(front="Q", back="the apple", picture_prompt="an apple"),  # answer fixed: same card
+        Card(front="Q", back="a cat", picture_prompt="a cat"),  # added
+    ]
+    llm._keep_ids(revised, before)
+    assert [(c.id, c.picture) for c in revised] == [
+        ("b", "picture-b-12345678.jpg"),
+        ("a", "picture-a-12345678.jpg"),
+        ("", ""),
+    ]
+
+
+def test_image_model_from_the_keys():
+    assert pictures.model(Settings()) == ""
+    assert pictures.model(Settings(gemini_api_key="k")) == "gemini-3.1-flash-lite-image"
+    openrouter = Settings(openai_keys={pictures.OPENROUTER: "k"})
+    assert pictures.model(openrouter) == "google/gemini-3.1-flash-lite-image"
+    assert pictures.model(Settings(picture_model="openai/gpt-5-image-mini")) == "openai/gpt-5-image-mini"

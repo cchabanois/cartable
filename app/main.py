@@ -17,7 +17,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, Reque
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from . import ankiconnect, diagrams, i18n, lessons, llm, prompts, settings, tts, usage
+from . import ankiconnect, diagrams, i18n, lessons, llm, pictures, prompts, settings, tts, usage
 from .anki import build_apkg, notes
 from .errors import AppError
 from .llm import Image, check, extract_cards, list_models, revise_cards
@@ -160,6 +160,15 @@ async def _card_audio(req: ExportRequest, background: BackgroundTasks) -> tuple[
     return audio, failures
 
 
+def _pictures(req: ExportRequest, lesson: Lesson | None) -> dict[int, Path]:
+    """The picture of each picture card (index in req.cards → file), from the saved lesson."""
+    folder = lessons.folder(lesson.id) if lesson else None
+    if folder is None:
+        return {}
+    found = {i: folder / "images" / card.picture for i, card in enumerate(req.cards) if card.picture}
+    return {i: path for i, path in found.items() if pictures.NAME.match(path.name) and path.is_file()}
+
+
 def _diagram_images(req: ExportRequest, lesson: Lesson | None) -> dict[int, tuple[Path, list[float] | None]]:
     """The diagram image of each diagram card (index in req.cards → path and crop),
     from the saved lesson's photos. Without a saved lesson, there is no photo to show."""
@@ -218,7 +227,7 @@ async def _editable(id: str) -> Lesson:
 async def export(req: ExportRequest, background: BackgroundTasks) -> FileResponse:
     lesson = await _lesson(req.lesson_id)
     audio, failures = await _card_audio(req, background)
-    path = build_apkg(req, audio, _diagram_images(req, lesson))
+    path = build_apkg(req, audio, _diagram_images(req, lesson), _pictures(req, lesson))
     background.add_task(os.remove, path)
     if lesson and await _is_owner(lesson):  # someone else's lesson: exported, not changed
         lessons.update(lesson.id, req, exported=True)
@@ -250,7 +259,7 @@ async def anki_send(req: ExportRequest, background: BackgroundTasks) -> dict:
     lesson = await _lesson(req.lesson_id)  # another profile's private lesson doesn't exist for this one
     save = lesson and await _is_owner(lesson)  # someone else's lesson: sent, not changed
     audio, failures = await _card_audio(req, background)
-    result = await ankiconnect.send(notes(req, audio, _diagram_images(req, lesson)))
+    result = await ankiconnect.send(notes(req, audio, _diagram_images(req, lesson), _pictures(req, lesson)))
     if save:
         lessons.update(lesson.id, req, exported=True)
     return {**result.__dict__, "audio_failures": failures}
@@ -326,6 +335,34 @@ async def rotate_photo(id: str, n: int) -> Lesson:
     return lessons.update(id, content)
 
 
+@app.post("/api/lessons/{id}/pictures")
+async def draw_pictures(id: str) -> dict:
+    """Draw the pictures the cards ask for and don't have yet (after a generation or a
+    correction). A picture that fails leaves its card without one: said, not fatal."""
+    lesson = await _editable(id)
+    cards = [card.model_copy(deep=True) for card in lesson.cards]
+    folder = lessons.folder(id) / "images"
+    with llm.recording("picture") as calls:
+        try:
+            failures = await pictures.draw_all(folder, cards)
+        finally:
+            lessons.add_ai_calls(id, calls)
+            usage.add(calls, id, lesson.deck)
+    pictures.prune(folder, cards)
+    content = LessonIn(**{**lesson.model_dump(include=set(LessonIn.model_fields)), "cards": cards})
+    return {"lesson": lessons.update(id, content), "failures": failures}
+
+
+@app.get("/api/lessons/{id}/pictures/{name}")
+async def get_picture(id: str, name: str) -> FileResponse:
+    await _lesson(id)
+    folder = lessons.folder(id)
+    path = folder / "images" / name if folder and pictures.NAME.match(name) else None
+    if path is None or not path.is_file():
+        raise AppError("photo.not_found", 404)
+    return FileResponse(path, media_type="image/jpeg")
+
+
 @app.get("/api/lessons/{id}/photos/{n}")
 async def get_photo(id: str, n: int) -> FileResponse:
     await _lesson(id)
@@ -397,6 +434,8 @@ def _settings_view() -> dict:
         "providers": settings.PROVIDERS,
         "default_models": settings.DEFAULT_MODELS,
         "embedded": settings.embedded(),
+        # The image model used when none is set: from the saved keys
+        "picture_default": pictures.model(current.model_copy(update={"picture_model": ""})),
     }
 
 

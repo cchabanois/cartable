@@ -182,6 +182,7 @@
       "deck": "Nom de paquet proposé",
       "deckPlaceholder": "Anglais::Leçon {n}",
       "deckHint": "Les parties entre accolades sont remplies d'après la leçon.",
+      "options": "Options des cartes",
       "voice": "Voix du verso",
       "listenVoice": "Écouter la voix",
       "female": "femme",
@@ -552,6 +553,14 @@
       "text": "Crée une carte par mot de la liste ci-dessous. Recto : le mot en français. Verso : sa traduction en espagnol, avec l'article.\nListe : ",
       "deck": "{langue}::Mots",
       "voice": "auto"
+    },
+    "dictation": {
+      "name": "Dictée de mots",
+      "text": "Crée une carte par mot à savoir écrire, pris dans la leçon ou dans la liste ci-dessous. Recto : une courte phrase qui utilise le mot, où le mot est remplacé par « … » (la définition si la phrase ne suffit pas à le deviner). Verso : le mot seul, écrit exactement comme dans la phrase. Info : une astuce d'orthographe utile (accord, lettre muette, famille du mot), sinon vide.",
+      "deck": "Français::Dictée",
+      "voice": "auto",
+      "typing": true,
+      "dictation": true
     }
   }
 }

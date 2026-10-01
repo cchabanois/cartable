@@ -26,6 +26,7 @@ BUILTIN = (
     "diagram",
     "pictures",
     "wordlist",
+    "dictation",
 )
 
 # Old default prompts that a Cartable prompt covers: dropped when left unchanged.
@@ -117,7 +118,7 @@ def duplicate(id: int | str, lang: str = i18n.DEFAULT) -> Prompt | None:
     if source is None:
         return None
     name = i18n.get(lang, "app.editor.copyName", "{name} (copy)").format(name=source.name)
-    return add(PromptIn(name=name, text=source.text, deck=source.deck, voice=source.voice))
+    return add(PromptIn(**{**source.model_dump(include=set(PromptIn.model_fields)), "name": name}))
 
 
 def mark_used(id: int | str) -> None:

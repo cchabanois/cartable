@@ -1319,3 +1319,27 @@ def test_plain_note_types_keep_their_ids(client):
     assert anki._model(anki.note_type("", True)).model_id == anki._stable_id("model", "audio", "True")
     typed = anki._model(anki.note_type("", False, typing=True)).model_id
     assert typed != anki._model(anki.note_type("", False)).model_id
+
+
+def test_dictation_prompt_starts_lessons_with_its_options(client):
+    (dictation,) = [p for p in client.get("/api/prompts").json() if p["id"] == "cartable:dictation"]
+    assert (dictation["name"], dictation["voice"]) == ("Spelling dictation", "auto")
+    assert dictation["typing"] is True and dictation["dictation"] is True
+
+    # The page sends the prompt's options with the generation: the lesson starts with them
+    data = {
+        "prompt": dictation["text"],
+        "voice": "auto",
+        "prompt_id": dictation["id"],
+        "typing": "true",
+        "dictation": "true",
+    }
+    lesson = client.post("/api/extract", data=data).json()
+    assert lesson["typing"] is True and lesson["dictation"] is True
+    assert client.post("/api/extract", data={"prompt": "FR → ES"}).json()["typing"] is False
+
+    # A copy keeps them, to be changed
+    copy = client.post("/api/prompts/cartable:dictation/duplicate").json()
+    assert copy["typing"] is True and copy["dictation"] is True and copy["builtin"] is False
+    changed = client.put(f"/api/prompts/{copy['id']}", json={**copy, "dictation": False}).json()
+    assert changed["typing"] is True and changed["dictation"] is False

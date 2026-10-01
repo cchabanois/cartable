@@ -437,6 +437,20 @@
                   x-text="v.locale + ' · ' + (v.gender === 'Female' ? $t('app.editor.female') : $t('app.editor.male'))"></option>
         </template>
       </datalist>
+      <div class="field">
+        <span x-text="$t('app.editor.options')"></span>
+        <label class="switch" :class="{ disabled: editor.builtin }">
+          <input type="checkbox" x-model="editor.typing" :disabled="editor.builtin">
+          <span class="track"><span class="knob"></span></span>
+          <span><span x-text="$t('app.review.typing')"></span> <small x-text="$t('app.review.typingHint')"></small></span>
+        </label>
+        <label class="switch" :class="{ disabled: editor.builtin || editor.voiceMode === 'none' }">
+          <input type="checkbox" x-model="editor.dictation" :disabled="editor.builtin || editor.voiceMode === 'none'">
+          <span class="track"><span class="knob"></span></span>
+          <span><span x-text="$t('app.review.dictation')"></span>
+            <small x-text="editor.voiceMode !== 'none' ? $t('app.review.dictationHint') : $t('app.review.dictationNoVoice')"></small></span>
+        </label>
+      </div>
       <p class="hint error-text" x-show="editor.error" x-text="editor.error"></p>
       <div class="sheet-actions">
         <button type="button" class="btn danger-soft" x-show="editor.id && !editor.builtin" @click="deletePrompt()"

@@ -152,6 +152,8 @@ class PromptIn(BaseModel):
     text: str
     deck: str = ""
     voice: str = ""  # see LessonIn.voice
+    typing: bool = False  # the lessons made with it start with these options (see LessonIn)
+    dictation: bool = False
 
 
 class Prompt(PromptIn):

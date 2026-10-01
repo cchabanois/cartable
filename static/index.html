@@ -382,15 +382,15 @@
       <p class="hint" x-show="editor.builtin" x-text="$t('app.editor.builtinHint')"></p>
       <label class="field">
         <span x-text="$t('app.editor.name')"></span>
-        <input x-model="editor.name" x-ref="editorName" :placeholder="$t('app.editor.namePlaceholder')" required :readonly="editor.builtin">
+        <input x-model="editor.name" x-ref="editorName" :placeholder="$t('app.editor.namePlaceholder')" required :disabled="editor.builtin">
       </label>
       <label class="field">
         <span x-text="$t('app.editor.text')"></span>
-        <textarea x-model="editor.text" rows="5" required :placeholder="$t('app.editor.textPlaceholder')" :readonly="editor.builtin"></textarea>
+        <textarea x-model="editor.text" rows="5" required :placeholder="$t('app.editor.textPlaceholder')" :disabled="editor.builtin"></textarea>
       </label>
       <label class="field">
         <span><span x-text="$t('app.editor.deck')"></span> <small class="muted" x-text="$t('common.optional')"></small></span>
-        <input x-model="editor.deck" :placeholder="$t('app.editor.deckPlaceholder')" :readonly="editor.builtin">
+        <input x-model="editor.deck" :placeholder="$t('app.editor.deckPlaceholder')" :disabled="editor.builtin">
         <small x-text="$t('app.editor.deckHint')"></small>
       </label>
       <!-- Voice of the backs: none, automatic, or a chosen one -->
@@ -399,12 +399,12 @@
         <div class="chips" role="radiogroup" :aria-label="$t('app.editor.voice')">
           <template x-for="mode in ['none', 'auto', 'pick']" :key="mode">
             <button type="button" class="chip" role="radio" :aria-checked="editor.voiceMode === mode"
-                    :class="{ active: editor.voiceMode === mode }" :disabled="editor.builtin && editor.voiceMode !== mode"
+                    :class="{ active: editor.voiceMode === mode }" :disabled="editor.builtin"
                     @click="setVoiceMode(mode)" x-text="$t(`app.editor.voiceMode.${mode}`)"></button>
           </template>
         </div>
         <div class="with-action" x-show="editor.voiceMode === 'pick'">
-          <input x-model="editor.voice" placeholder="en-GB-SoniaNeural" list="voices" :readonly="editor.builtin"
+          <input x-model="editor.voice" placeholder="en-GB-SoniaNeural" list="voices" :disabled="editor.builtin"
                  :aria-label="$t('app.editor.voice')">
           <button type="button" class="icon-btn" x-show="isVoice(editor.voice)"
                   @click="play(sampleText(editor.voice), editor.voice)" :aria-label="$t('app.editor.listenVoice')">▶</button>

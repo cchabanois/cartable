@@ -333,7 +333,8 @@
       "unknownCount": {
         "one": "+ {count} appel dont le prix est inconnu",
         "other": "+ {count} appels dont le prix est inconnu"
-      }
+      },
+      "cents": "{cents} ¢ US"
     }
   },
   "errors": {

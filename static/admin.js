@@ -312,7 +312,7 @@ document.addEventListener("alpine:init", () => {
       if (usd === null || usd === undefined) return "—";
       if (usd < 1) {  // AI calls cost cents: "2.7 ¢" says more than "$0.03"
         const cents = (usd * 100).toLocaleString(I18N.lang, { maximumSignificantDigits: 2 });
-        return `${cents} ¢`;
+        return t("admin.costs.cents", { cents });  // US cents: "¢" alone reads as euro cents
       }
       return usd.toLocaleString(I18N.lang, { style: "currency", currency: "USD" });
     },

@@ -27,6 +27,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Changed
 
+- The demo provider (canned cards, whatever the photo) is no longer offered in the settings; it stays available with `CARTABLE_LLM=fake`, for tests and development. If it is the saved choice, the settings still show it, with a warning.
 - A lesson is read-only for the other Anki profiles: only the profile that created it can edit, correct with the AI, share or delete it. The others can still read it, send it to their own Anki and export it (without changing it).
 
 ### Fixed

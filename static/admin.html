@@ -71,7 +71,7 @@
         <section class="panel">
           <h2><span class="step">1</span> <span x-text="$t('admin.provider.title')"></span></h2>
           <div class="options">
-            <template x-for="p in providers" :key="p.id">
+            <template x-for="p in shownProviders()" :key="p.id">
               <label class="option" :class="{ active: form.llm === p.id }">
                 <input type="radio" name="llm" :value="p.id" x-model="form.llm" @change="providerChanged()">
                 <strong x-text="$t(`admin.provider.${p.id}.name`)"></strong>
@@ -80,6 +80,7 @@
             </template>
           </div>
 
+          <p class="hint warn" x-show="form.llm === 'fake'" x-text="$t('admin.provider.fake.warning')"></p>
           <template x-if="form.llm !== 'fake'">
             <div>
               <!-- OpenAI-compatible: which service (fills the address and a model) -->

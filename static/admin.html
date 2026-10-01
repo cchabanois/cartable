@@ -173,6 +173,27 @@
           </label>
         </section>
 
+        <!-- Standing instructions for the AI: added to its fixed rules, for everyone and per profile -->
+        <section class="panel">
+          <h2 x-text="$t('admin.instructions.title')"></h2>
+          <p class="hint" x-text="$t('admin.instructions.hint')"></p>
+          <label class="field">
+            <span x-text="$t('admin.instructions.general')"></span>
+            <textarea x-model="form.instructions" rows="3" maxlength="4000"
+                      :placeholder="$t('admin.instructions.generalPlaceholder')"></textarea>
+          </label>
+          <template x-for="profile in instructionProfiles()" :key="profile">
+            <label class="field">
+              <span x-text="lessons?.profiles && !lessons.profiles.includes(profile)
+                ? $t('admin.instructions.missingProfile', { profile }) : $t('admin.instructions.profile', { profile })"></span>
+              <textarea rows="2" maxlength="4000" :placeholder="$t('admin.instructions.profilePlaceholder')"
+                        :value="form.profile_instructions[profile] ?? ''"
+                        @input="form.profile_instructions = { ...form.profile_instructions, [profile]: $event.target.value }"></textarea>
+            </label>
+          </template>
+          <p class="hint" x-show="!instructionProfiles().length" x-text="$t('admin.instructions.noProfiles')"></p>
+        </section>
+
         <!-- Anki -->
         <section class="panel">
           <h2 x-text="$t('admin.anki.title')"></h2>

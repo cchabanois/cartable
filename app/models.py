@@ -155,6 +155,8 @@ class SettingsUpdate(BaseModel):
     ankiconnect_url: str | None = Field(default=None, pattern=r"^https?://")
     ankiconnect_key: str | None = None
     anki_sync: bool | None = None
+    instructions: str | None = Field(default=None, max_length=4000)
+    profile_instructions: dict[str, str] | None = None  # replaces them all ("" removes one)
 
 
 class LessonAccess(BaseModel):

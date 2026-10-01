@@ -29,7 +29,8 @@ const KEYS = {
   openai: [{ field: "openai_api_key", label: "admin.access.openaiKey", help: "" }],
 };
 
-const EDITABLE = ["llm", "model", "fallback_models", "openai_base_url", "tts_rate", "ankiconnect_url", "anki_sync"];
+const EDITABLE = ["llm", "model", "fallback_models", "openai_base_url", "tts_rate", "ankiconnect_url", "anki_sync",
+                  "instructions", "profile_instructions"];
 
 function session(action, value) {
   try {
@@ -112,7 +113,8 @@ document.addEventListener("alpine:init", () => {
 
     show(saved) {
       this.saved = saved;
-      this.form = Object.fromEntries(EDITABLE.map((k) => [k, saved[k]]));
+      // A copy: editing the form (profile_instructions is an object) mustn't change `saved`
+      this.form = structuredClone(Object.fromEntries(EDITABLE.map((k) => [k, saved[k]])));
       this.keys = {};
     },
 
@@ -201,7 +203,8 @@ document.addEventListener("alpine:init", () => {
 
     changes() {
       const changes = {};
-      for (const k of EDITABLE) if (this.form[k] !== this.saved[k]) changes[k] = this.form[k];
+      const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+      for (const k of EDITABLE) if (!same(this.form[k], this.saved[k])) changes[k] = this.form[k];
       for (const [k, v] of Object.entries(this.keys)) {
         if (v === null) changes[k] = "";              // clear
         else if (v.trim()) changes[k] = v.trim();     // replace
@@ -260,6 +263,13 @@ document.addEventListener("alpine:init", () => {
       } finally {
         this.testingAnki = false;
       }
+    },
+
+    // Anki's profiles, and those that have instructions but aren't in Anki any more
+    instructionProfiles() {
+      const fromAnki = this.lessons?.profiles ?? [];
+      const saved = Object.keys(this.form?.profile_instructions ?? {});
+      return [...new Set([...fromAnki, ...saved])];
     },
 
     // --- Lessons: who they belong to ------------------------------------------

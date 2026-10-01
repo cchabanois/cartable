@@ -331,6 +331,16 @@
         "other": "+ {count} appels dont le prix est inconnu"
       },
       "cents": "{cents} ¢ US"
+    },
+    "instructions": {
+      "title": "📝 Instructions pour l'IA",
+      "hint": "Ajoutées à chaque génération et correction, en plus de la consigne choisie pour la leçon. La consigne de la leçon l'emporte en cas de désaccord.",
+      "general": "Pour tous les profils",
+      "generalPlaceholder": "ex. : espagnol d'Espagne ; toujours l'article avec les noms",
+      "profile": "Pour {profile}",
+      "missingProfile": "Pour {profile} (n'existe plus dans Anki)",
+      "profilePlaceholder": "ex. : en 5ᵉ ; réponses courtes",
+      "noProfiles": "Ouvre Anki pour régler des instructions pour chacun de ses profils."
     }
   },
   "errors": {

@@ -393,7 +393,7 @@ h2 {
 .flash-body { flex: 1; min-width: 0; }
 .flash-actions { display: flex; flex-direction: column; }
 
-.flash input {
+.flash input, .flash textarea.front {
   border: none;
   border-radius: 6px;
   padding: .15rem .25rem;
@@ -401,7 +401,8 @@ h2 {
   background: transparent;
   box-shadow: none;
 }
-.flash input:focus { background: var(--surface-2); box-shadow: none; }
+.flash input:focus, .flash textarea.front:focus { background: var(--surface-2); box-shadow: none; }
+.flash textarea.front { display: block; width: 100%; min-height: 0; resize: none; overflow: hidden; line-height: 1.3; field-sizing: content; }
 .flash .front { font-weight: 800; font-size: 1.08rem; }
 .flash .back { font-weight: 700; color: var(--accent); }
 .flash .meta { display: flex; gap: .4rem; align-items: center; margin-top: .15rem; }
@@ -730,3 +731,7 @@ h2 {
 .lesson-owner .switch { font-size: .88rem; }
 .lesson-owner .warn { flex-basis: 100%; margin: 0; font-size: .85rem; color: var(--danger); font-weight: 700; }
 .badge.shared { background: var(--primary-soft); color: var(--primary); }
+
+/* Cloze: the gaps, numbered like the Anki cards they make */
+.math-preview .gap { padding: 0 .25rem; border-radius: 4px; background: var(--primary-soft); color: var(--primary); font-weight: 700; }
+.math-preview .gap sup { margin-right: .15rem; font-size: .65em; color: var(--muted); }

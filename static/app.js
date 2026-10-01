@@ -62,6 +62,10 @@ const formatDate = (iso) =>
 // Formulas: MathJax syntax, \( … \) within text, \[ … \] on their own (as in Anki)
 const MATH = /\\\((.+?)\\\)|\\\[(.+?)\\\]/gs;
 const HAS_MATH = /\\\(|\\\[/;  // as app/tts.py: no read-aloud for these
+const CLOZE = /\{\{c\d+::/;  // a gap, as app/anki.py: {{c1::1789}}
+// Outside formulas: a gap's start ({{c2::) and its end, with an optional hint (::lieu}})
+const GAP_START = /\{\{c(\d+)::/g;
+const GAP_END = /(?:::[^{}]*?)?\}\}/g;
 const escapeHtml = (text) => text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 let nextKey = 0;
@@ -726,17 +730,40 @@ document.addEventListener("alpine:init", () => {
       return HAS_MATH.test(text ?? "");
     },
 
-    // The text with its formulas drawn (KaTeX), the rest escaped: what Anki will show.
-    mathHtml(text) {
-      if (!this.katexReady) return escapeHtml(text ?? "");
+    // A front grows with its text (a sentence with gaps is long). CSS does it where
+    // `field-sizing` is known; elsewhere, its height follows the text it holds, and
+    // is measured again when it shows or its width changes.
+    watchHeight(el) {
+      if (!CSS.supports("field-sizing", "content")) new ResizeObserver(() => this.fitHeight(el)).observe(el);
+    },
+    fitHeight(el) {
+      if (CSS.supports("field-sizing", "content") || !el.offsetParent) return; // hidden: no height to measure
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    },
+
+    isCloze(text) {
+      return CLOZE.test(text ?? "");
+    },
+
+    // The text as Anki will show it: formulas drawn (KaTeX), gaps marked with their
+    // number (each number is a card), line breaks kept, the rest escaped.
+    previewHtml(text) {
+      text = text ?? "";
+      const plain = (t) =>
+        escapeHtml(t)
+          .replace(GAP_START, (_, n) => `<span class="gap"><sup>${n}</sup>`)
+          .replace(GAP_END, "</span>")
+          .replaceAll("\n", "<br>");
+      if (!this.katexReady) return plain(text);
       let html = "", last = 0;
-      for (const m of (text ?? "").matchAll(MATH)) {
-        html += escapeHtml(text.slice(last, m.index));
+      for (const m of text.matchAll(MATH)) {
+        html += plain(text.slice(last, m.index));
         const display = m[2] !== undefined;
         html += katex.renderToString(m[1] ?? m[2], { displayMode: display, throwOnError: false });
         last = m.index + m[0].length;
       }
-      return html + escapeHtml((text ?? "").slice(last));
+      return html + plain(text.slice(last));
     },
 
     // --- Pictures ("front: the picture of the word") ------------------------

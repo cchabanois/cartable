@@ -177,6 +177,8 @@
         <p class="hint warn" x-show="diagramWarning" x-text="$t('app.review.diagramWarning')"></p>
       </div>
 
+      <p class="hint" x-show="!readOnly() && cards.some((c) => isCloze(c.front))" x-text="$t('app.review.clozeHint')"></p>
+
       <div class="cards">
         <template x-for="card in cards" :key="card.key">
           <article class="flash" :class="{ changed: card._state, 'has-diagram': card.mask, 'has-picture': card.picture || card.picture_prompt || card._panel }">
@@ -208,10 +210,12 @@
             <div class="flash-body">
               <span class="flash-badge" x-show="card._state"
                     x-text="card._state === 'new' ? $t('app.review.badgeNew') : $t('app.review.badgeModified')"></span>
-              <input class="front" x-model="card.front" :readonly="readOnly()" :placeholder="$t('app.review.front')" :aria-label="$t('app.review.front')">
-              <div class="math-preview" x-show="hasMath(card.front)" x-html="mathHtml(card.front)"></div>
-              <input class="back" x-model="card.back" :readonly="readOnly()" :placeholder="$t('app.review.back')" :aria-label="$t('app.review.back')">
-              <div class="math-preview back" x-show="hasMath(card.back)" x-html="mathHtml(card.back)"></div>
+              <textarea class="front" rows="1" x-model="card.front" :readonly="readOnly()" :placeholder="$t('app.review.front')" :aria-label="$t('app.review.front')"
+                        x-init="watchHeight($el)" x-effect="card.front; fitHeight($el)"></textarea>
+              <div class="math-preview" x-show="hasMath(card.front) || isCloze(card.front)" x-html="previewHtml(card.front)"></div>
+              <input class="back" x-model="card.back" :readonly="readOnly()"
+                     :placeholder="isCloze(card.front) ? $t('app.review.extra') : $t('app.review.back')" :aria-label="$t('app.review.back')">
+              <div class="math-preview back" x-show="hasMath(card.back)" x-html="previewHtml(card.back)"></div>
               <div class="meta">
                 <input class="info" x-model="card.info" :readonly="readOnly()" :placeholder="$t('app.review.info')" :aria-label="$t('app.review.infoLabel')">
                 <input class="subdeck" x-model="card.subdeck" :readonly="readOnly()" :placeholder="$t('app.review.subdeck')"
@@ -220,8 +224,8 @@
               </div>
             </div>
             <div class="flash-actions">
-              <button class="icon-btn" x-show="hasAudio() && !hasMath(card.back)" @click="play(card.back)" :aria-label="$t('app.review.listen')">🔊</button>
-              <button class="icon-btn" x-show="!readOnly() && !card.mask && lessonId" @click="togglePicturePanel(card)"
+              <button class="icon-btn" x-show="hasAudio() && !hasMath(card.back) && !isCloze(card.front)" @click="play(card.back)" :aria-label="$t('app.review.listen')">🔊</button>
+              <button class="icon-btn" x-show="!readOnly() && !card.mask && !isCloze(card.front) && lessonId" @click="togglePicturePanel(card)"
                       :class="{ active: card._panel }" :aria-label="$t('app.pictures.panel')">🖼️</button>
               <button class="icon-btn muted" x-show="!readOnly()" @click="removeCard(card)" :aria-label="$t('app.review.removeCard')">✕</button>
             </div>

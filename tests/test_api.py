@@ -17,7 +17,7 @@ def test_cartable_prompts(client):
     """Cartable's prompts: in the page's language, read-only, before the user's."""
     fr = client.get("/api/prompts", headers={"X-Cartable-Lang": "fr-FR"}).json()
     assert [p["id"] for p in fr] == [f"cartable:{k}" for k in prompts.BUILTIN]
-    assert all(p["builtin"] for p in fr) and fr[5]["name"] == "Schéma à compléter"
+    assert all(p["builtin"] for p in fr) and fr[6]["name"] == "Schéma à compléter"
     en = client.get("/api/prompts", headers={"X-Cartable-Lang": "en"}).json()
     assert en[0]["name"] == "Vocabulary of a language"  # the same prompts, in English
     de = client.get("/api/prompts", headers={"X-Cartable-Lang": "de"}).json()
@@ -1201,3 +1201,76 @@ def test_formulas_shown_by_anki_not_read_aloud(client, tmp_path):
     (disc,) = [fields for _, fields in notes if "pi r" in fields]
     assert r"\(\pi r^2\)" in disc  # kept as is: Anki draws it (MathJax)
     assert "[sound:" not in disc
+
+
+CLOZE = {
+    "deck": "Histoire",
+    "voice": "es-ES-ElviraNeural",
+    "cards": [
+        {
+            "id": "rev1",
+            "front": "La Révolution commence en {{c1::1789}} avec la prise de {{c2::la Bastille}}.",
+            "back": "",
+        },
+        {"id": "rev2", "front": "{{c1::Louis XVI}} est guillotiné en 1793.", "back": "place de la Révolution"},
+        {"front": "la madre", "back": "la madre"},
+    ],
+}
+
+
+def test_cloze_cards_one_anki_card_per_gap(client, tmp_path):
+    from app import anki
+
+    assert anki.is_cloze("en {{c1::1789}}") and anki.is_cloze("{{c12::x::indice}}")
+    assert not anki.is_cloze("{{Front}}") and not anki.is_cloze("une {accolade}")
+    synthesized.clear()
+    res = client.post("/api/export", json=CLOZE)
+    assert res.status_code == 200
+    assert synthesized == ["la madre"]  # a text with gaps isn't read aloud, even with a back
+
+    notes, models, _, _ = _notes(res.content, tmp_path)
+    (cloze,) = [m for m in models.values() if m["type"] == 1]  # Anki's cloze note type
+    assert cloze["name"] == "Cartable texte à trous"
+    assert [f["name"] for f in cloze["flds"]] == ["Text", "Extra", "Info", "Id"]
+    assert "{{cloze:Text}}" in cloze["tmpls"][0]["qfmt"]
+    texts = {fields.split("\x1f")[0]: fields.split("\x1f") for _, fields in notes}
+    bastille = texts[CLOZE["cards"][0]["front"]]
+    assert bastille[1:] == ["", "", "rev1"]  # no back needed; the card's id tells the note
+    conn = sqlite3.connect(tmp_path / "collection.anki2")
+    assert conn.execute("SELECT count(*) FROM cards").fetchone()[0] == 2 + 1 + 1  # one card per gap number
+
+
+def test_cloze_sent_to_anki(anki, client):
+    res = client.post("/api/anki/send", json=CLOZE).json()
+    assert (res["added"], res["updated"]) == (3, 0)
+    cloze = anki.models["Cartable texte à trous"]
+    assert cloze["isCloze"] is True and cloze["inOrderFields"] == ["Text", "Extra", "Info", "Id"]
+    assert anki.models[next(m for m in anki.models if m.startswith("Cartable recto"))]["isCloze"] is False
+    assert anki.notes[2]["fields"]["Extra"] == "place de la Révolution"
+
+    # The text corrected (a gap moved): the same note, found by the card's id
+    corrected = {**CLOZE, "cards": [{**CLOZE["cards"][0], "front": "La Révolution commence en {{c1::1789}}."}]}
+    res = client.post("/api/anki/send", json=corrected).json()
+    assert (res["added"], res["updated"]) == (0, 1)
+    assert anki.notes[1]["fields"]["Text"] == "La Révolution commence en {{c1::1789}}."
+
+
+def test_extract_fake_cloze(client):
+    res = client.post("/api/extract", data={"prompt": "Texte à trous"})
+    assert res.status_code == 201
+    fronts = [c["front"] for c in res.json()["cards"]]
+    assert all("{{c1::" in f for f in fronts)
+
+
+def test_line_breaks_kept_in_anki(client, tmp_path):
+    cards = [
+        {"front": "Les 3 couleurs :\nbleu, blanc, rouge", "back": "le drapeau <français>"},
+        {"id": "c1", "front": "Vers 1 : {{c1::Maître corbeau}}\nVers 2 : sur un arbre perché", "back": ""},
+    ]
+    res = client.post("/api/export", json={"deck": "Test", "cards": cards, "voice": ""})
+    notes, _, _, _ = _notes(res.content, tmp_path)
+    fields = sorted(f.split("\x1f")[0] for _, f in notes)
+    assert fields == [
+        "Les 3 couleurs :<br>bleu, blanc, rouge",
+        "Vers 1 : {{c1::Maître corbeau}}<br>Vers 2 : sur un arbre perché",
+    ]

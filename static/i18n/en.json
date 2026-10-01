@@ -64,6 +64,7 @@
       "otherProfileOpen": "— but “{profile}” is open in Anki",
       "front": "Front",
       "back": "Back",
+      "extra": "Back (optional)",
       "info": "+ info (gender, plural…)",
       "infoLabel": "Info",
       "subdeck": "sub-deck",
@@ -81,6 +82,7 @@
       "owner": "👤 <strong>{owner}</strong>'s lesson",
       "sharedSwitch": "Shared with the other profiles",
       "promptUsed": "📝 Instructions used for this lesson",
+      "clozeHint": "Cloze: {{c1::…}} hides what is between the braces. Each number makes one card in Anki; the same number hides several gaps together.",
       "diagramHint": "Diagram: drag a red mask to move it, its round corner to resize it, so it hides the whole label. The dashed frame is what Anki shows of the photo: drag its blue corners to crop it.",
       "diagramWarning": "With this AI model (Claude), masks are sometimes too small on handwriting: check that they hide the whole label.",
       "cropFrame": "What Anki shows of the photo",
@@ -510,6 +512,12 @@
       "name": "Questions / answers",
       "text": "Create question → answer cards to review the content of the lesson (dates, definitions, key ideas). Short, precise questions and brief answers, in English.",
       "deck": "{subject}::{lesson title}"
+    },
+    "cloze": {
+      "name": "Fill in the blanks",
+      "text": "Create cloze cards with the important sentences of the lesson: in each sentence, hide what is worth remembering (dates, names, key words), one gap per idea, three at most per sentence. Back: empty.",
+      "deck": "{subject}::{lesson title}",
+      "voice": ""
     },
     "formulas": {
       "name": "Formulas (maths, physics…)",

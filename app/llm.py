@@ -47,6 +47,15 @@ topic, "the most common irregular verbs"…), make it accurate and suited to a p
 powers, roots, indices, Greek letters, vectors…) in MathJax, as Anki displays it: \
 \\( … \\) within a sentence, \\[ … \\] for a formula on its own (e.g. \
 "\\(\\frac{a+b}{2}\\)", "\\(x^2\\)"). Keep plain text for simple things ("2 + 3 = 5").
+- Cloze (text with gaps): when the instructions ask for gaps, fill-in-the-blanks or \
+cloze cards, the front is a sentence of the lesson with the words to learn hidden in \
+Anki's cloze syntax: "{{c1::1789}}", "{{c2::la Bastille}}", e.g. "La Révolution \
+française commence en {{c1::1789}} avec la prise de {{c2::la Bastille}}." Each \
+number becomes a card (the other gaps shown); the same number hides gaps together. \
+A hint may follow: "{{c1::1789::année}}". Hide what matters (dates, names, key \
+words), not small words. The back is empty, or a short extra shown with the answer. \
+In a gap, never write "}}" inside a formula: add a space ("} }"). Other cards have no \
+gaps.
 - One idea per card; keep front and back short.
 - The "info" field is optional: leave it empty when there is nothing useful to add.
 - If the lesson naturally splits into parts (vocabulary, conjugation, sentences…) and \
@@ -621,6 +630,8 @@ def _fake(images: list[Image], prompt: str, deck: str) -> Deck:
         return _fake_diagram()
     if any(w in prompt.lower() for w in ("picture", "image", "dessin")):
         return _fake_pictures()
+    if any(w in prompt.lower() for w in ("cloze", "trous", "gaps")):
+        return _fake_cloze()
     return Deck(
         deck="Espagnol::Leçon 5 - La famille",
         cards=[
@@ -646,6 +657,23 @@ def _fake_pictures() -> Deck:
         cards=[
             Card(front="Comment dit-on en anglais ?" if subject else "demain", back=back, picture_prompt=subject)
             for subject, back in words
+        ],
+    )
+
+
+def _fake_cloze() -> Deck:
+    """Demo mode, cloze prompt: sentences with gaps."""
+    return Deck(
+        deck="Histoire::La Révolution française",
+        cards=[
+            Card(
+                front="La Révolution française commence en {{c1::1789}} avec la prise de {{c2::la Bastille}}.", back=""
+            ),
+            Card(front="Le roi {{c1::Louis XVI}} est guillotiné en {{c2::1793}}.", back="place de la Révolution"),
+            Card(
+                front="La {{c1::Déclaration des droits de l'homme et du citoyen}} est adoptée en {{c1::août}} 1789.",
+                back="",
+            ),
         ],
     )
 

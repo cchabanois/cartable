@@ -15,7 +15,10 @@ class Mask(BaseModel):
 
 
 class Card(BaseModel):
-    front: str = Field(description="Front: what is shown first (e.g. the word in the pupil's language).")
+    front: str = Field(
+        description="Front: what is shown first (e.g. the word in the pupil's language), "
+        "or the text with its gaps for a cloze card (see the rules)."
+    )
     back: str = Field(description="Back: the answer (e.g. the translation in the language being learned).")
     info: str = Field(default="", description="Useful extra info: gender, plural, example… Empty if none.")
     subdeck: str = Field(

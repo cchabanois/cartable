@@ -17,7 +17,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, Reque
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from . import ankiconnect, diagrams, i18n, lessons, llm, pictures, prompts, settings, tts, usage
+from . import anki, ankiconnect, diagrams, i18n, lessons, llm, pictures, prompts, settings, tts, usage
 from .anki import build_apkg, notes
 from .errors import AppError
 from .llm import Image, check, extract_cards, list_models, revise_cards
@@ -165,8 +165,13 @@ async def _card_audio(req: ExportRequest, background: BackgroundTasks) -> tuple[
     if directory is None:
         directory = Path(tempfile.mkdtemp(prefix="cartable-audio-"))
         background.add_task(shutil.rmtree, directory, ignore_errors=True)
-    # A back with a formula isn't read aloud: the voice would read the MathJax code
-    backs = [c.back.strip() for c in req.cards if c.front.strip() and c.back.strip() and not tts.has_math(c.back)]
+    # Not read aloud: a back with a formula (the voice would read the MathJax code),
+    # a text with gaps (its back is only an extra)
+    backs = [
+        c.back.strip()
+        for c in req.cards
+        if c.front.strip() and c.back.strip() and not tts.has_math(c.back) and not anki.is_cloze(c.front)
+    ]
     audio, failures = await tts.tts_many(backs, req.voice, directory)
     tts.prune(directory, set(audio.values()))
     return audio, failures

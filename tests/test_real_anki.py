@@ -259,3 +259,36 @@ def test_picture_lesson_on_a_real_collection(bridged, col, monkeypatch):
     res = client.post("/api/anki/send", json=body).json()
     assert (res["added"], res["updated"]) == (0, 4)
     assert sorted(col.find_notes(f'"note:{note_type.name}"')) == note_ids
+
+
+def test_cloze_lesson_on_a_real_collection(bridged, col, tmp_path):
+    client, _ = bridged
+    lesson = client.post("/api/extract", data={"prompt": "Texte à trous"}).json()
+    body = {"deck": lesson["deck"], "cards": lesson["cards"], "lesson_id": lesson["id"]}
+    assert client.post("/api/anki/send", json=body).json()["added"] == 3
+
+    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name == "Cartable texte à trous"]
+    assert col.models.get(note_type.id)["type"] == 1  # a real cloze note type
+    note_ids = sorted(col.find_notes(f'"note:{note_type.name}"'))
+    # Anki makes one card per gap number: c1 and c2, c1 and c2, c1 (twice)
+    assert [len(col.get_note(n).cards()) for n in note_ids] == [2, 2, 1]
+    question = col.get_note(note_ids[0]).cards()[0].question()
+    assert ">[...]</span> avec la prise de" in question and ">la Bastille</span>" in question  # c1 hidden
+
+    # Imported as a package too: the same note type, the same cards
+    res = client.post("/api/export", json=body)
+    path = tmp_path / "cloze.apkg"
+    path.write_bytes(res.content)
+    other = anki_collection.Collection(str(tmp_path / "anki" / "other.anki2"))
+    try:
+        other.import_anki_package(
+            anki_collection.ImportAnkiPackageRequest(
+                package_path=str(path),
+                options=anki_collection.ImportAnkiPackageOptions(
+                    with_scheduling=False, merge_notetypes=True, update_notes=IF_NEWER, update_notetypes=IF_NEWER
+                ),
+            )
+        )
+        assert other.card_count() == 5
+    finally:
+        other.close()

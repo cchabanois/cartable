@@ -337,6 +337,7 @@ h2 {
 }
 .save-pill.saved { color: var(--ok); }
 .save-pill.error { color: var(--danger); background: var(--danger-soft); }
+.appbar .save-pill { margin: 0; white-space: nowrap; }
 
 .field.deck input { font-weight: 800; }
 .count-line { margin: -.35rem 0 .6rem; color: var(--muted); font-size: .85rem; font-weight: 700; }

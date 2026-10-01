@@ -199,7 +199,6 @@
     "confirm": "Confirmation",
     "mismatch": "Les deux mots de passe ne correspondent pas.",
     "changed": "Mot de passe changé.",
-    "saved": "Réglages enregistrés.",
     "savedButton": "✓ Enregistré",
     "saving": "Enregistrement…",
     "testing": "Test en cours…",
@@ -242,7 +241,7 @@
       "clear": "Effacer {label}",
       "apiAddress": "Adresse de l'API",
       "ollamaHint": "Service compatible OpenAI : son adresse se termine en général par <code>/v1</code> (Ollama en local : <code>http://localhost:11434/v1</code>).",
-      "test": "🔌 Enregistrer et tester (lecture d'image + JSON)",
+      "test": "🔌 Tester (lecture d'image + JSON)",
       "testOk": "✓ {model} lit les images et répond au bon format ({seconds} s).",
       "testNoVision": "⚠ {model} répond, mais ne semble pas voir l'image (il a répondu « {answer} » pour un carré rouge). Choisis un modèle qui accepte les images.",
       "testNoJson": "⚠ {model} ne répond pas au format JSON demandé : choisis un autre modèle.",
@@ -267,8 +266,10 @@
       "clearKey": "Effacer la clé AnkiConnect",
       "sync": "Synchroniser avec AnkiWeb après l'envoi",
       "syncHint": "(pour retrouver les cartes sur le téléphone)",
-      "test": "🔌 Enregistrer et tester Anki",
-      "testOk": "✓ Anki répond (AnkiConnect version {version})."
+      "test": "🔌 Tester la connexion avec Anki",
+      "testOk": "✓ Anki répond (AnkiConnect version {version}, profil « {profile} »).",
+      "testOkAddon": "✓ Anki répond (greffon Cartable, profil « {profile} »).",
+      "testNoProfile": "Anki répond, mais aucun profil n'est ouvert : ouvre-en un dans Anki."
     },
     "lessons": {
       "title": "Leçons",
@@ -341,7 +342,8 @@
       "missingProfile": "Pour {profile} (n'existe plus dans Anki)",
       "profilePlaceholder": "ex. : en 5ᵉ ; réponses courtes",
       "noProfiles": "Ouvre Anki pour régler des instructions pour chacun de ses profils."
-    }
+    },
+    "notSaved": "Non enregistré"
   },
   "errors": {
     "unknown": "Erreur inattendue ({code}).",

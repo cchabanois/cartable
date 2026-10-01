@@ -24,6 +24,12 @@
       <img src="icon.svg" alt="" width="32" height="32">
       <span x-text="$t('admin.title')"></span>
     </a>
+    <!-- Settings are saved as they change -->
+    <span class="save-pill" x-cloak x-show="unlocked && form" :class="saveState">
+      <span x-show="saveState === 'saved'" x-text="$t('admin.savedButton')"></span>
+      <span x-show="saveState === 'pending' || saveState === 'saving'" x-text="$t('admin.saving')"></span>
+      <span x-show="saveState === 'error'" x-text="$t('admin.notSaved')"></span>
+    </span>
   </header>
 
   <div class="toast" x-cloak x-show="error" x-transition.opacity role="alert">
@@ -131,6 +137,7 @@
               <label :for="k.field"><span x-text="$t(k.label)"></span></label>
               <div class="with-action">
                 <input type="password" :id="k.field" x-model="keys[k.field]" autocomplete="off"
+                       @blur="commitKey(k.field)" @keydown.enter.prevent="commitKey(k.field)"
                        :placeholder="savedKey(k.field) ? $t('admin.access.keySaved', { masked: savedKey(k.field) }) : $t('admin.access.pasteKey')">
                 <button type="button" class="icon-btn muted" x-show="savedKey(k.field)"
                         @click="clearKey(k.field)" :aria-label="$t('admin.access.clear', { label: $t(k.label) })">🗑</button>
@@ -210,6 +217,7 @@
                 <small class="muted" x-text="$t('common.optional')"></small></span></label>
               <div class="with-action">
                 <input type="password" id="ankiconnect_key" x-model="keys.ankiconnect_key" autocomplete="off"
+                       @blur="commitKey('ankiconnect_key')" @keydown.enter.prevent="commitKey('ankiconnect_key')"
                        :placeholder="saved.ankiconnect_key ? $t('admin.access.keySaved', { masked: saved.ankiconnect_key }) : $t('admin.anki.keyPlaceholder')">
                 <button type="button" class="icon-btn muted" x-show="saved.ankiconnect_key"
                         @click="clearKey('ankiconnect_key')" :aria-label="$t('admin.anki.clearKey')">🗑</button>
@@ -322,11 +330,6 @@
     </footer>
   </main>
 
-  <div class="bottom-bar" x-cloak x-show="unlocked && form">
-    <button class="btn primary wide" @click="save()" :disabled="saving || !dirty()">
-      <span x-text="saving ? $t('admin.saving') : (dirty() ? $t('common.save') : $t('admin.savedButton'))"></span>
-    </button>
-  </div>
 </div>
 </body>
 </html>

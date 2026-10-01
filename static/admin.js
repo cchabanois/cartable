@@ -61,6 +61,8 @@ document.addEventListener("alpine:init", () => {
     testingAnki: false,
     ankiResult: null,
     lessons: null,   // { lessons, profiles } from /api/admin/lessons (profiles: null = Anki closed)
+    saveState: "saved",  // "saved", "pending", "saving", "error": settings are saved as they change
+    saveTimer: null,
     error: "",
     notice: "",
 
@@ -76,6 +78,14 @@ document.addEventListener("alpine:init", () => {
         return;
       }
       if (!this.status.allowed) return;  // Anki add-on, opened from a phone: see the message
+      // Settings are saved as they change, after a short pause (a model name being typed
+      // isn't saved half-way); API keys only once their field is left (see commitKey).
+      this.$watch("form", () => {
+        if (this.dirty({ keys: false })) this.scheduleSave();
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden" && this.saveTimer) this.flush();
+      });
       if (!this.status.password_needed) return this.load(null);  // add-on, on the computer
       const remembered = session("get");
       if (this.status.password_set && remembered) await this.load(remembered);
@@ -177,7 +187,7 @@ document.addEventListener("alpine:init", () => {
 
     async loadModels() {
       this.modelsInfo = "";
-      if (this.dirty() && !(await this.save(true))) return;  // the server lists with the saved address and key
+      if (!(await this.flush())) return;  // the server lists with the saved address and key
       this.loadingModels = true;
       try {
         const { models, vision_only } = await this.request("/api/admin/models", { method: "POST" });
@@ -201,30 +211,61 @@ document.addEventListener("alpine:init", () => {
       this.keys[field] = null;
     },
 
-    changes() {
+    // What differs from the saved settings. `keys: false` leaves out API keys being
+    // typed (a cleared key is always in: the 🗑 button is a deliberate action).
+    changes({ keys = true } = {}) {
       const changes = {};
       const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
       for (const k of EDITABLE) if (!same(this.form[k], this.saved[k])) changes[k] = this.form[k];
       for (const [k, v] of Object.entries(this.keys)) {
-        if (v === null) changes[k] = "";              // clear
-        else if (v.trim()) changes[k] = v.trim();     // replace
+        if (v === null) changes[k] = "";                        // clear
+        else if (keys && v.trim()) changes[k] = v.trim();       // replace
       }
       return changes;
     },
 
-    dirty() {
-      return this.form && Object.keys(this.changes()).length > 0;
+    dirty(options) {
+      return Boolean(this.form) && Object.keys(this.changes(options)).length > 0;
     },
 
-    async save(quiet = false) {
+    scheduleSave(delay = 900) {
+      this.saveState = "pending";
+      clearTimeout(this.saveTimer);
+      this.saveTimer = setTimeout(() => this.flush({ keys: false }), delay);
+    },
+
+    // Save now what changed (with the typed keys unless `keys: false`).
+    async flush({ keys = true } = {}) {
+      clearTimeout(this.saveTimer);
+      this.saveTimer = null;
+      if (!this.dirty({ keys })) {
+        if (this.saveState !== "error") this.saveState = "saved";
+        return true;
+      }
+      return this.save({ keys });
+    },
+
+    // An API key is saved when its field is left (or Enter), never half-typed.
+    commitKey(field) {
+      if (this.keys[field]?.trim()) this.flush();
+    },
+
+    async save({ keys = true } = {}) {
       this.error = "";
       this.saving = true;
+      this.saveState = "saving";
+      const typed = { ...this.keys };
       try {
-        this.show(await this.request("/api/admin/settings", { method: "PUT", body: JSON.stringify(this.changes()) }));
-        if (!quiet) this.notice = t("admin.saved");
+        const sent = this.changes({ keys });
+        this.show(await this.request("/api/admin/settings", { method: "PUT", body: JSON.stringify(sent) }));
+        if (!keys) {  // keys still being typed stay in their fields
+          for (const [k, v] of Object.entries(typed)) if (v !== null && !(k in sent)) this.keys[k] = v;
+        }
+        this.saveState = this.dirty({ keys: false }) ? "pending" : "saved";
         return true;
       } catch (e) {
-        this.error = e.message;
+        this.error = e.message;  // e.g. an address without http://: not saved, said here
+        this.saveState = "error";
         return false;
       } finally {
         this.saving = false;
@@ -233,7 +274,7 @@ document.addEventListener("alpine:init", () => {
 
     async test() {
       this.testResult = null;
-      if (this.dirty() && !(await this.save(true))) return;
+      if (!(await this.flush())) return;  // tests what is shown
       this.testing = true;
       try {
         const r = await this.request("/api/admin/test", { method: "POST" });
@@ -249,14 +290,21 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
+    // In the add-on, Cartable talks to its own bridge (which mimics AnkiConnect):
+    // don't mention AnkiConnect there. The open profile tells it's the right one.
+    ankiOk(r) {
+      if (!r.profile) return t("admin.anki.testNoProfile");
+      return t(this.saved.embedded ? "admin.anki.testOkAddon" : "admin.anki.testOk", r);
+    },
+
     async testAnki() {
       this.ankiResult = null;
-      if (this.dirty() && !(await this.save(true))) return;
+      if (!(await this.flush())) return;
       this.testingAnki = true;
       try {
         const r = await (await fetch("/api/anki/status")).json();
         this.ankiResult = r.available
-          ? { ok: true, text: t("admin.anki.testOk", r) }
+          ? { ok: true, text: this.ankiOk(r) }
           : { ok: false, text: `✗ ${errorMessage(r.error)}` };
       } catch {
         this.ankiResult = { ok: false, text: `✗ ${t("errors.unreachable")}` };

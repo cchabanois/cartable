@@ -67,6 +67,11 @@ class Extraction(Deck):
     frames: list[Frame] = Field(
         default_factory=list, description="For each photo with diagram cards: the frame of the diagram."
     )
+    back_language: str = Field(
+        default="",
+        description="Language of the card backs as a BCP 47 code, in the variety the lesson teaches "
+        '(e.g. "es-ES", "en-GB", "de-DE"); empty when the backs aren\'t in a language being learned.',
+    )
 
 
 class Revision(Deck):
@@ -145,7 +150,8 @@ class PromptIn(BaseModel):
 
 
 class Prompt(PromptIn):
-    id: int
+    id: int | str  # the user's: a number; Cartable's: "cartable:<key>"
+    builtin: bool = False  # Cartable's own: read-only, can be duplicated
     used_at: str | None = None  # last generation that used this prompt
 
 

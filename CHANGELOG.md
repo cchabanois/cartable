@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Cartable's own prompts (⭐): vocabulary and sentences of a language, questions / answers, diagram to complete, words in pictures, word list. In the page's language, read-only, never deleted, improved with the app. Any prompt can be duplicated (⧉) to be adapted. Their language prompts use the voice "auto": the AI tells the language of the backs ("es-ES"), and Cartable picks its voice; "auto" works in any prompt.
+
 - A 🖼️ panel on each card: what to draw, 🎨 draw / draw again, 📷 your own photo (free), ✕ no picture. A subject drawn once is reused by the next lessons for free (cache).
 
 - Pictures on cards: with a prompt like "front: the picture of the word, back: the English word", an image model draws each card's picture (Gemini Flash Lite Image by default, settable in ⚙️; about 3 to 7 US¢ each, in the cost tracking). The cards show at once, their pictures when drawn; Anki gets them in a "Cartable image" note type.
@@ -36,6 +38,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Changed
 
+- The default prompts are no longer copied into the user's prompts on first start; old copies left unchanged that a Cartable prompt replaces are dropped (the "FR → ES" ones, with their Spanish voice, are kept).
 - In the Anki add-on, no AnkiWeb sync is tried for a profile that isn't logged in (no more warning at each send); the settings say whether the open profile is logged in.
 - The settings page saves as you go (after a short pause in a text field; API keys once their field is left or with Enter), with a ✓ Saved pill instead of the Save button. The test buttons are "Test" and "Test the connection with Anki".
 - A profile only ever sees its own lessons, shared lessons and lessons without owner: the "see other profiles' lessons" setting and the "All profiles" switch are gone (sharing does it; the settings' Lessons section shows every lesson). With Anki closed, every lesson is listed, read-only. The "send to another profile anyway?" question is gone with it.

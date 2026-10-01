@@ -81,7 +81,7 @@ def lang() -> dict:
 
 @app.get("/api/prompts")
 def list_prompts(lang: str = Depends(page_lang)) -> list[Prompt]:
-    return prompts.list_all(lang)  # first start: default prompts in this language
+    return prompts.list_all(lang)  # Cartable's prompts in this language, then the user's
 
 
 @app.post("/api/prompts", status_code=201)
@@ -90,16 +90,24 @@ def add_prompt(c: PromptIn) -> Prompt:
 
 
 @app.put("/api/prompts/{id}")
-def update_prompt(id: int, c: PromptIn) -> Prompt:
+def update_prompt(id: str, c: PromptIn) -> Prompt:
     if updated := prompts.update(id, c):
         return updated
     raise AppError("prompt.not_found", 404)
 
 
 @app.delete("/api/prompts/{id}", status_code=204)
-def delete_prompt(id: int) -> None:
+def delete_prompt(id: str) -> None:
     if not prompts.delete(id):
         raise AppError("prompt.not_found", 404)
+
+
+@app.post("/api/prompts/{id}/duplicate", status_code=201)
+def duplicate_prompt(id: str, lang: str = Depends(page_lang)) -> Prompt:
+    """A copy of any prompt (Cartable's included), to adapt."""
+    if copy := prompts.duplicate(id, lang):
+        return copy
+    raise AppError("prompt.not_found", 404)
 
 
 # --- Extraction & export ---------------------------------------------------
@@ -111,7 +119,7 @@ async def extract(
     prompt: str = Form(...),
     deck: str = Form(""),
     voice: str = Form(""),
-    prompt_id: int | None = Form(None),
+    prompt_id: str | None = Form(None),
 ) -> Lesson:
     """Read the photos (or, without photos, work from the prompt alone), then save the
     lesson (photos + cards) so it can be reopened."""
@@ -135,6 +143,8 @@ async def extract(
         prompts.mark_used(prompt_id)
     # Photos taken sideways are saved upright (masks and diagram frames turn with them)
     photos = diagrams.straighten([i.data for i in data], found.deck.cards, found.turns, found.frames)
+    if voice.strip().lower() == "auto":  # the voice of the language the backs are in
+        voice = await tts.voice_for(found.back_language)
     lesson = LessonIn(**found.deck.model_dump(), voice=voice)
     created = lessons.create(lesson, prompt, photos, profile, found.frames, calls)
     usage.add(calls, created.id, created.deck)

@@ -50,8 +50,9 @@ the instructions don't forbid it, fill "subdeck"; otherwise leave it empty.
 - Deck name: start from the suggested template and replace the parts in braces with \
 what you read on the page (number, lesson title…). Without a template, suggest a short \
 name like "Subject::Lesson".
-- Diagrams: when the instructions ask to learn the labels of a diagram (one card per \
-label or arrow, "the diagram without the names"…), make one card per label naming a \
+- Diagrams: when the instructions ask to learn the labels of a diagram (a diagram to \
+complete, its labels hidden, one card per label or arrow, "the diagram without the \
+names"…), make one card per label naming a \
 part of the diagram (not titles, legends or instructions). Number the labels 1, 2, 3… \
 on each photo, in reading order. Front: a short question asking what the numbered part \
 is, e.g. "What is (2)?", in the language of the instructions. Back: the label's text. \
@@ -176,6 +177,7 @@ class Extracted:
     deck: Deck
     turns: list[int]  # clockwise turn that puts each photo upright
     frames: list[Frame]  # diagram frames, as fractions of the photos (not turned yet)
+    back_language: str = ""  # "es-ES": for a prompt whose voice is "auto"
 
 
 async def extract_cards(images: list[Image], prompt: str, deck: str = "", profile: str | None = None) -> Extracted:
@@ -183,7 +185,7 @@ async def extract_cards(images: list[Image], prompt: str, deck: str = "", profil
     s = settings.current()
     if s.llm == "fake":
         await record(s, "fake", "fake", 0, 0, cost=0.0)
-        return Extracted(_fake(images, prompt, deck), [0] * len(images), [])
+        return Extracted(_fake(images, prompt, deck), [0] * len(images), [], "es-ES")
     fmt = diagrams.box_format(s.model_for_provider())
     images, sizes = _prepare(images)
     text = standing_instructions(s, profile) + _user_text(prompt, deck, len(images), sizes, fmt)
@@ -193,6 +195,7 @@ async def extract_cards(images: list[Image], prompt: str, deck: str = "", profil
         Deck(deck=result.deck, cards=result.cards),
         diagrams.turns(result.text_lines, sizes, fmt),
         diagrams.frames(result.frames, sizes, fmt),
+        result.back_language.strip(),
     )
 
 

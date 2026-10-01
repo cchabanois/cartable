@@ -52,7 +52,8 @@
       "fromPrompt": "✨ Générer à partir de la consigne seule",
       "fromPromptHint": "Pas de photo ? L'IA crée les cartes à partir de ta consigne : mets-y les mots, ou demande un thème. Vérifie bien les cartes.",
       "regenerateHint": "(nouvelle leçon)",
-      "unavailable": "Consignes indisponibles : {message}"
+      "unavailable": "Consignes indisponibles : {message}",
+      "builtin": "Consigne Cartable : en lecture seule, améliorée avec l'appli"
     },
     "review": {
       "title": "Relecture",
@@ -161,7 +162,8 @@
       "label": "Toutes les consignes",
       "search": "🔍 Rechercher (anglais, verbes…)",
       "none": "Aucune consigne ne correspond.",
-      "delete": "Supprimer la consigne « {name} »"
+      "delete": "Supprimer la consigne « {name} »",
+      "duplicate": "Dupliquer la consigne « {name} »"
     },
     "editor": {
       "new": "Nouvelle consigne",
@@ -174,13 +176,27 @@
       "deckPlaceholder": "Anglais::Leçon {n}",
       "deckHint": "Les parties entre accolades sont remplies d'après la leçon.",
       "voice": "Voix du verso",
-      "voiceHint": "Tape le début de la langue (« en-GB », « es-ES »…) pour voir les voix. Vide = pas de son.",
       "listenVoice": "Écouter la voix",
       "female": "femme",
       "male": "homme",
       "create": "Créer la consigne",
       "required": "Il faut au moins un nom et un texte.",
-      "confirmDelete": "Supprimer la consigne « {name} » ?"
+      "confirmDelete": "Supprimer la consigne « {name} » ?",
+      "copyName": "{name} (copie)",
+      "builtin": "⭐ Consigne Cartable",
+      "builtinHint": "Cette consigne fait partie de Cartable et s'améliore avec lui : duplique-la pour l'adapter (langue, voix, paquet…).",
+      "duplicate": "⧉ Dupliquer",
+      "duplicateToChange": "⧉ Dupliquer pour modifier",
+      "voiceMode": {
+        "none": "Pas de son",
+        "auto": "Automatique",
+        "pick": "Choisir une voix"
+      },
+      "voiceModeHint": {
+        "none": "Le verso n'est pas lu à voix haute.",
+        "auto": "L'IA reconnaît la langue du verso et Cartable prend une voix de cette langue (espagnol → Elvira, anglais britannique → Sonia…).",
+        "pick": "Tape le début de la langue (« en-GB », « es-ES »…) pour voir les voix ; ▶ pour écouter."
+      }
     },
     "pictures": {
       "drawing": "🎨 Dessin…",
@@ -378,7 +394,8 @@
     "invalid": "Valeur invalide.",
     "unreachable": "Serveur injoignable.",
     "prompt": {
-      "not_found": "Consigne introuvable."
+      "not_found": "Consigne introuvable.",
+      "builtin": "Cette consigne fait partie de Cartable : duplique-la pour la modifier."
     },
     "lesson": {
       "not_found": "Leçon introuvable.",
@@ -476,24 +493,40 @@
     "installConfirm": "Avant de démarrer, Cartable doit installer ses composants :\n\n• uv (depuis GitHub), Python 3.13 et ses bibliothèques Python (depuis PyPI) : environ 300 Mo sur le disque ;\n• uniquement dans le dossier du greffon : rien ne change sur le reste de l'ordinateur, et désinstaller le greffon les supprime.\n\nCela prend une ou deux minutes, la première fois et après certaines mises à jour. Installer maintenant ?",
     "installDeclined": "Cartable n'est pas démarré. Pour l'installer plus tard : Outils → Cartable → Ouvrir Cartable."
   },
-  "defaultPrompts": [
-    {
-      "name": "Vocabulaire FR → ES",
-      "text": "Crée des cartes Anki français → espagnol avec le vocabulaire de la leçon. Un mot ou une expression par carte. Recto en français, verso en espagnol avec l'article pour les noms (el/la). Dans « info », indique le genre, le pluriel s'il est irrégulier, et un court exemple si la leçon en donne un.",
-      "deck": "Espagnol::Leçon {n}",
-      "voice": "es-ES-ElviraNeural"
+  "builtinPrompts": {
+    "vocabulary": {
+      "name": "Vocabulaire d'une langue",
+      "text": "Crée des cartes Anki avec le vocabulaire de la leçon de langue. Un mot ou une expression par carte. Recto dans ma langue, verso dans la langue étudiée, avec l'article pour les noms. Dans « info », indique le genre, le pluriel s'il est irrégulier, et un court exemple si la leçon en donne un.",
+      "deck": "{langue}::Leçon {n}",
+      "voice": "auto"
     },
-    {
-      "name": "Phrases FR → ES",
-      "text": "Crée des cartes Anki français → espagnol avec les phrases complètes de la leçon. Recto : la phrase en français. Verso : la phrase en espagnol.",
-      "deck": "Espagnol::Leçon {n}::Phrases",
-      "voice": "es-ES-ElviraNeural"
+    "sentences": {
+      "name": "Phrases d'une langue",
+      "text": "Crée des cartes Anki avec les phrases complètes de la leçon de langue. Recto : la phrase dans ma langue. Verso : la phrase dans la langue étudiée.",
+      "deck": "{langue}::Leçon {n}::Phrases",
+      "voice": "auto"
     },
-    {
+    "questions": {
       "name": "Questions / réponses",
       "text": "Crée des cartes question → réponse pour réviser le contenu de la leçon (dates, définitions, notions clés). Questions courtes et précises, réponses brèves, en français.",
-      "deck": "{matière}::{titre de la leçon}",
-      "voice": ""
+      "deck": "{matière}::{titre de la leçon}"
+    },
+    "diagram": {
+      "name": "Schéma à compléter",
+      "text": "La photo montre un schéma avec des légendes (des noms reliés au dessin par une flèche ou un trait). Cache le texte de chaque légende derrière un numéro et crée une carte par légende. Recto : le schéma, avec la question « Qu'est-ce que (n) ? ». Verso : le texte de la légende.",
+      "deck": "{matière}::{titre du schéma}"
+    },
+    "pictures": {
+      "name": "Mots en images",
+      "text": "Crée des cartes avec les mots de la leçon (sans photo : 10 mots courants du thème que j'ajoute ici). Recto : l'image du mot, avec la question « Comment dit-on ? ». Verso : le mot dans la langue étudiée, avec l'article. Info : le mot en français.",
+      "deck": "{langue}::Images",
+      "voice": "auto"
+    },
+    "wordlist": {
+      "name": "Liste de mots (sans photo)",
+      "text": "Crée une carte par mot de la liste ci-dessous. Recto : le mot en français. Verso : sa traduction en espagnol, avec l'article.\nListe : ",
+      "deck": "{langue}::Mots",
+      "voice": "auto"
     }
-  ]
+  }
 }

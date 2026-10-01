@@ -91,6 +91,47 @@ def prune(directory: Path, keep: set[Path]) -> None:
             mp3.unlink()
 
 
+# A natural voice per language, for prompts whose voice is "auto"
+PREFERRED = {
+    "es": "es-ES-ElviraNeural",
+    "es-mx": "es-MX-DaliaNeural",
+    "en": "en-GB-SoniaNeural",
+    "en-us": "en-US-JennyNeural",
+    "de": "de-DE-KatjaNeural",
+    "it": "it-IT-ElsaNeural",
+    "fr": "fr-FR-DeniseNeural",
+    "pt": "pt-PT-RaquelNeural",
+    "pt-br": "pt-BR-FranciscaNeural",
+    "nl": "nl-NL-ColetteNeural",
+}
+
+
+async def voice_for(language: str) -> str:
+    """The voice for a language ("es-ES", "en", "pt-BR"…): the preferred voice of that
+    variety, else one of its voices (a female one first), else the preferred voice of
+    the language, else any of its voices; "" when there is none."""
+    tag = language.strip().replace("_", "-").lower()
+    if not tag:
+        return ""
+    base = tag.split("-")[0]
+    preferred = PREFERRED.get(tag) or PREFERRED.get(base, "")
+    if preferred.lower().startswith(tag):  # "es-ES" → es-ES-ElviraNeural, "es" → es-ES-ElviraNeural
+        return preferred
+    try:
+        available = await voices()
+    except Exception:  # no network: only the preferred ones
+        available = []
+
+    def first(found: list[dict]) -> str:
+        return sorted(found, key=lambda v: (v["gender"] != "Female", v["voice"]))[0]["voice"] if found else ""
+
+    return (
+        first([v for v in available if v["locale"].lower() == tag])
+        or preferred
+        or first([v for v in available if v["locale"].lower().split("-")[0] == base])
+    )
+
+
 async def voices() -> list[dict]:
     """Available voices (short name, locale, gender), cached in memory."""
     global _voices

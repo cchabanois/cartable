@@ -123,9 +123,10 @@ async def extract(
             raise AppError("extract.bad_format", format=img.content_type)
 
     data = [Image(await img.read(), img.content_type) for img in images]
+    profile = await ankiconnect.active_profile() or ""  # the lesson belongs to this Anki profile
     with llm.recording("extract") as calls:  # model, tokens and cost, kept with the lesson
         try:
-            found = await extract_cards(data, prompt, deck)
+            found = await extract_cards(data, prompt, deck, profile)
         except Exception:
             usage.add(calls, lesson_id=None)  # answered but unusable: paid for, no lesson
             raise
@@ -133,7 +134,6 @@ async def extract(
         prompts.mark_used(prompt_id)
     # Photos taken sideways are saved upright (masks and diagram frames turn with them)
     photos = diagrams.straighten([i.data for i in data], found.deck.cards, found.turns, found.frames)
-    profile = await ankiconnect.active_profile() or ""  # the lesson belongs to this Anki profile
     lesson = LessonIn(**found.deck.model_dump(), voice=voice)
     created = lessons.create(lesson, prompt, photos, profile, found.frames, calls)
     usage.add(calls, created.id, created.deck)
@@ -301,7 +301,7 @@ async def revise_lesson(id: str, req: RevisionRequest, lang: str = Depends(page_
     with llm.recording("revise") as calls:
         try:
             revision = await revise_cards(
-                photos, lesson.prompt, Deck(deck=req.deck, cards=req.cards), req.instruction, lang
+                photos, lesson.prompt, Deck(deck=req.deck, cards=req.cards), req.instruction, lang, lesson.owner
             )
         finally:
             lessons.add_ai_calls(id, calls)  # an answer that couldn't be used is paid for too

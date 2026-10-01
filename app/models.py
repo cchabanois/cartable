@@ -161,6 +161,8 @@ class SettingsUpdate(BaseModel):
     ankiconnect_key: str | None = None
     anki_sync: bool | None = None
     all_profiles_view: bool | None = None
+    instructions: str | None = Field(default=None, max_length=4000)
+    profile_instructions: dict[str, str] | None = None  # replaces them all ("" removes one)
 
 
 class LessonAccess(BaseModel):

@@ -35,6 +35,7 @@ class SendResult:
     updated: int
     synced: bool
     sync_error: dict | None = None  # {"code", "params"}, translated by the page
+    sync_skipped: bool = False  # the profile isn't logged in to AnkiWeb: not tried
 
 
 async def _invoke(client: httpx.AsyncClient, action: str, **params):
@@ -67,6 +68,17 @@ async def active_profile() -> str | None:
             return await _invoke(client, "getActiveProfile") or None
     except AnkiConnectError:
         return None
+
+
+async def sync_configured() -> bool | None:
+    """Whether the open profile is logged in to AnkiWeb. The add-on's bridge knows;
+    AnkiConnect has no such action: None (unknown)."""
+    try:
+        async with httpx.AsyncClient(timeout=2.0, transport=_transport) as client:
+            result = await _invoke(client, "isSyncConfigured")
+    except AnkiConnectError:
+        return None
+    return result if isinstance(result, bool) else None
 
 
 async def profiles() -> list[str] | None:
@@ -130,7 +142,9 @@ async def send(notes: list[Note]) -> SendResult:
                     added += 1
 
         result = SendResult(added, updated, synced=False)
-        if settings.current().anki_sync:
+        if settings.current().anki_sync and await sync_configured() is False:
+            result.sync_skipped = True  # no AnkiWeb login on this profile: nothing to warn about at each send
+        elif settings.current().anki_sync:
             try:
                 await _invoke(client, "sync")
                 result.synced = True

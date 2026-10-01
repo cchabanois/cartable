@@ -249,6 +249,7 @@ async def anki_status() -> dict:
             "available": True,
             "version": await ankiconnect.version(),
             "profile": await ankiconnect.active_profile(),
+            "sync": await ankiconnect.sync_configured(),  # logged in to AnkiWeb (None: unknown)
         }
     except ankiconnect.AnkiConnectError as e:
         return {"available": False, "error": e.detail()}

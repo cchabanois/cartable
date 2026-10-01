@@ -34,6 +34,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Changed
 
+- In the Anki add-on, no AnkiWeb sync is tried for a profile that isn't logged in (no more warning at each send); the settings say whether the open profile is logged in.
 - The settings page saves as you go (after a short pause in a text field; API keys once their field is left or with Enter), with a ✓ Saved pill instead of the Save button. The test buttons are "Test" and "Test the connection with Anki".
 - A profile only ever sees its own lessons, shared lessons and lessons without owner: the "see other profiles' lessons" setting and the "All profiles" switch are gone (sharing does it; the settings' Lessons section shows every lesson). With Anki closed, every lesson is listed, read-only. The "send to another profile anyway?" question is gone with it.
 - The demo provider (canned cards, whatever the photo) is no longer offered in the settings; it stays available with `CARTABLE_LLM=fake`, for tests and development. If it is the saved choice, the settings still show it, with a warning.

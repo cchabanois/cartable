@@ -243,6 +243,11 @@
             <span class="track"><span class="knob"></span></span>
             <span><span x-text="$t('admin.anki.sync')"></span> <small x-text="$t('admin.anki.syncHint')"></small></span>
           </label>
+          <!-- Whether the open profile can sync (the add-on knows; AnkiConnect doesn't say) -->
+          <p class="hint" x-show="form.anki_sync && ankiStatus?.profile && ankiStatus?.sync === true"
+             x-text="$t('admin.anki.syncOn', { profile: ankiStatus?.profile })"></p>
+          <p class="hint warn" x-show="form.anki_sync && ankiStatus?.profile && ankiStatus?.sync === false"
+             x-text="$t('admin.anki.syncOff', { profile: ankiStatus?.profile })"></p>
           <button type="button" class="btn soft wide" @click="testAnki()" :disabled="testingAnki">
             <span x-text="testingAnki ? $t('admin.testing') : $t('admin.anki.test')"></span>
           </button>

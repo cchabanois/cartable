@@ -306,6 +306,49 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
+    // --- AI costs (US dollars) --------------------------------------------
+    formatCost(usd) {
+      Alpine.store("i18n").version;
+      if (usd === null || usd === undefined) return "—";
+      if (usd < 1) {  // AI calls cost cents: "2.7 ¢" says more than "$0.03"
+        const cents = (usd * 100).toLocaleString(I18N.lang, { maximumSignificantDigits: 2 });
+        return `${cents} ¢`;
+      }
+      return usd.toLocaleString(I18N.lang, { style: "currency", currency: "USD" });
+    },
+
+    lessonCost(l) {
+      const known = l.ai_calls.filter((c) => c.cost !== null);
+      return known.length ? known.reduce((sum, c) => sum + c.cost, 0) : null;
+    },
+
+    totalCost() {
+      return (this.lessons?.lessons ?? []).reduce((sum, l) => sum + (this.lessonCost(l) ?? 0), 0);
+    },
+
+    hasEstimates() {
+      return (this.lessons?.lessons ?? []).some((l) => l.ai_calls.some((c) => !c.exact && c.cost));
+    },
+
+    // "1.4 ¢ · gemini-3.8-flash · 1 generation + 2 corrections"
+    costLine(l) {
+      const models = [...new Set(l.ai_calls.map((c) => c.model))].join(", ");
+      const extract = l.ai_calls.filter((c) => c.kind === "extract").length;
+      const revise = l.ai_calls.length - extract;
+      const estimate = l.ai_calls.some((c) => !c.exact && c.cost) ? "≈ " : "";
+      const counts = [t("admin.costs.extracts", { count: extract })];
+      if (revise) counts.push(t("admin.costs.revisions", { count: revise }));
+      return `💰 ${estimate}${this.formatCost(this.lessonCost(l))} · ${models} · ${counts.join(" + ")}`;
+    },
+
+    callLine(call) {
+      const tokens = call.input_tokens === null ? "" : ` · ${t("admin.costs.tokens", {
+        input: call.input_tokens.toLocaleString(I18N.lang), output: (call.output_tokens ?? 0).toLocaleString(I18N.lang),
+      })}`;
+      const cost = call.cost === null ? t("admin.costs.unknown") : (call.exact ? "" : "≈ ") + this.formatCost(call.cost);
+      return `${this.formatDate(call.at)} · ${t(`admin.costs.kind.${call.kind}`)} · ${call.provider} · ${call.model}${tokens} · ${cost}`;
+    },
+
     formatDate(iso) {
       Alpine.store("i18n").version;  // re-render when the language changes
       return new Date(iso).toLocaleDateString(I18N.lang, { day: "numeric", month: "short", year: "numeric" });

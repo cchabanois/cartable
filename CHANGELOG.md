@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Each lesson keeps its AI calls (generation and corrections): provider, model, tokens and cost. Exact with OpenRouter, estimated from public prices otherwise. The settings page shows the cost of each lesson, the details of its calls and the total.
+
 - An AI correction can add a diagram label ("add a mask for the title"): the new card gets its mask, with the next free number; existing masks never move.
 
 - Diagram cards are cropped to the diagram: the AI gives its frame, stretched to hold every mask, so the diagram shows bigger on a phone. In the review, the frame is a dashed line whose corners can be dragged to crop by hand (it never cuts a label).

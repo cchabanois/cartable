@@ -176,7 +176,6 @@
       "deckPlaceholder": "Anglais::Leçon {n}",
       "deckHint": "Les parties entre accolades sont remplies d'après la leçon.",
       "voice": "Voix du verso",
-      "voiceHint": "Tape le début de la langue (« en-GB », « es-ES »…) pour voir les voix. Vide = pas de son ; « auto » = la voix de la langue du verso, trouvée par l'IA.",
       "listenVoice": "Écouter la voix",
       "female": "femme",
       "male": "homme",
@@ -187,7 +186,17 @@
       "builtin": "⭐ Consigne Cartable",
       "builtinHint": "Cette consigne fait partie de Cartable et s'améliore avec lui : duplique-la pour l'adapter (langue, voix, paquet…).",
       "duplicate": "⧉ Dupliquer",
-      "duplicateToChange": "⧉ Dupliquer pour modifier"
+      "duplicateToChange": "⧉ Dupliquer pour modifier",
+      "voiceMode": {
+        "none": "Pas de son",
+        "auto": "Automatique",
+        "pick": "Choisir une voix"
+      },
+      "voiceModeHint": {
+        "none": "Le verso n'est pas lu à voix haute.",
+        "auto": "L'IA reconnaît la langue du verso et Cartable prend une voix de cette langue (espagnol → Elvira, anglais britannique → Sonia…).",
+        "pick": "Tape le début de la langue (« en-GB », « es-ES »…) pour voir les voix ; ▶ pour écouter."
+      }
     },
     "pictures": {
       "drawing": "🎨 Dessin…",

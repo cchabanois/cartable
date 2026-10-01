@@ -176,7 +176,6 @@
       "deckPlaceholder": "French::Lesson {n}",
       "deckHint": "Parts in braces are filled in from the lesson.",
       "voice": "Voice for the back",
-      "voiceHint": "Type the start of the language (“fr-FR”, “es-ES”…) to see the voices. Empty = no sound; \"auto\" = the voice of the backs' language, found by the AI.",
       "listenVoice": "Listen to the voice",
       "female": "female",
       "male": "male",
@@ -187,7 +186,17 @@
       "builtin": "⭐ Cartable's prompt",
       "builtinHint": "This prompt is part of Cartable and is improved with it: duplicate it to adapt it (language, voice, deck…).",
       "duplicate": "⧉ Duplicate",
-      "duplicateToChange": "⧉ Duplicate to change"
+      "duplicateToChange": "⧉ Duplicate to change",
+      "voiceMode": {
+        "none": "No sound",
+        "auto": "Automatic",
+        "pick": "Choose a voice"
+      },
+      "voiceModeHint": {
+        "none": "The backs aren't read aloud.",
+        "auto": "The AI recognises the language of the backs and Cartable takes a voice of that language (Spanish → Elvira, British English → Sonia…).",
+        "pick": "Type the start of the language (“fr-FR”, “es-ES”…) to see the voices; ▶ to listen."
+      }
     },
     "pictures": {
       "drawing": "🎨 Drawing…",

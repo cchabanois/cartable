@@ -428,7 +428,8 @@
       "unknown_model": "Unknown image model: {model}.",
       "missing_key": "No {service} key for the image model.",
       "failed": "The picture couldn't be drawn: {detail}",
-      "empty": "The image model gave no picture."
+      "empty": "The image model gave no picture.",
+      "quota": "{service} refuses: quota exceeded for the image model (a free key can't draw). Choose an image model through another service in the settings."
     }
   },
   "demo": {

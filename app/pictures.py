@@ -41,14 +41,18 @@ class PictureError(AppError):
 
 
 def model(s: Settings) -> str:
-    """The image model: the one set, or one the saved keys can use (Gemini Flash Lite
-    Image: fast and the cheapest). "" when no key allows any."""
+    """The image model: the one set, or Gemini Flash Lite Image (fast, the cheapest)
+    through the service used for the cards when it can draw, else through OpenRouter,
+    else Gemini. A free Gemini key can't draw: it comes last. "" when no key allows any."""
     if s.picture_model.strip():
         return s.picture_model.strip()
+    openrouter = bool(s.openai_keys.get(OPENROUTER))
+    if s.llm == "gemini" and s.gemini_api_key:
+        return "gemini-3.1-flash-lite-image"
+    if openrouter:
+        return "google/gemini-3.1-flash-lite-image"
     if s.gemini_api_key:
         return "gemini-3.1-flash-lite-image"
-    if s.openai_keys.get(OPENROUTER):
-        return "google/gemini-3.1-flash-lite-image"
     return ""
 
 
@@ -80,6 +84,8 @@ async def _openrouter(s: Settings, name: str, prompt: str) -> bytes:
             messages=[{"role": "user", "content": prompt}],
             extra_body={"modalities": ["image", "text"], "usage": {"include": True}},
         )
+    except openai.RateLimitError as e:
+        raise PictureError("picture.quota", service="OpenRouter") from e
     except openai.OpenAIError as e:
         raise PictureError("picture.failed", detail=str(e)[:200]) from e
     if response.usage:
@@ -103,6 +109,8 @@ async def _gemini(s: Settings, name: str, prompt: str) -> bytes:
             model=name, contents=prompt, config=types.GenerateContentConfig(response_modalities=["IMAGE", "TEXT"])
         )
     except errors.APIError as e:
+        if e.code == 429:
+            raise PictureError("picture.quota", service="Gemini") from e
         raise PictureError("picture.failed", detail=f"{e.code} {e.message}"[:200]) from e
     usage = response.usage_metadata
     if usage:
@@ -142,25 +150,28 @@ def save(folder: Path, card: Card, data: bytes) -> str:
     return name
 
 
-async def draw_all(folder: Path, cards: list[Card]) -> int:
+async def draw_all(folder: Path, cards: list[Card]) -> tuple[int, dict | None]:
     """Draw the missing pictures (cards with a picture_prompt and no picture), a few at
-    a time. Returns how many failed: a card without its picture is still a card."""
+    a time. Returns how many failed and why the first did (an error's detail, for the
+    page): a card without its picture is still a card."""
     s = settings.current()
     todo = [c for c in cards if c.picture_prompt.strip() and not c.picture]
     sem = asyncio.Semaphore(CONCURRENCY)
-    failures = 0
+    failures: list[dict] = []
 
     async def one(card: Card) -> None:
-        nonlocal failures
         async with sem:
             try:
                 card.picture = save(folder, card, await draw(s, card.picture_prompt))
-            except (AppError, OSError, ValueError) as e:
-                failures += 1
+            except AppError as e:
+                failures.append(e.detail())
+                log.warning("Picture for %r: %s", card.picture_prompt, e)
+            except (OSError, ValueError) as e:  # not an image
+                failures.append(PictureError("picture.empty").detail())
                 log.warning("Picture for %r: %s", card.picture_prompt, e)
 
     await asyncio.gather(*(one(c) for c in todo))
-    return failures
+    return len(failures), (failures[0] if failures else None)
 
 
 def prune(folder: Path, cards: list[Card]) -> None:

@@ -695,7 +695,9 @@ document.addEventListener("alpine:init", () => {
         if (this.lessonId !== lessonId) return;  // another lesson opened meanwhile
         const drawn = new Map(res.lesson.cards.map((c) => [c.id, c.picture]));
         this.cards.forEach((c) => { if (!c.picture && drawn.get(c.id)) c.picture = drawn.get(c.id); });
-        if (res.failures) this.error = t("app.pictures.failed", { count: res.failures });
+        if (res.failures) {
+          this.error = t("app.pictures.failed", { count: res.failures }) + (res.error ? ` ${errorMessage(res.error)}` : "");
+        }
       } catch (e) {
         this.error = e.message;
       } finally {

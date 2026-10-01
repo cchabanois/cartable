@@ -344,13 +344,13 @@ async def draw_pictures(id: str) -> dict:
     folder = lessons.folder(id) / "images"
     with llm.recording("picture") as calls:
         try:
-            failures = await pictures.draw_all(folder, cards)
+            failures, error = await pictures.draw_all(folder, cards)
         finally:
             lessons.add_ai_calls(id, calls)
             usage.add(calls, id, lesson.deck)
     pictures.prune(folder, cards)
     content = LessonIn(**{**lesson.model_dump(include=set(LessonIn.model_fields)), "cards": cards})
-    return {"lesson": lessons.update(id, content), "failures": failures}
+    return {"lesson": lessons.update(id, content), "failures": failures, "error": error}
 
 
 @app.get("/api/lessons/{id}/pictures/{name}")

@@ -52,6 +52,7 @@ def test_pictures_drawn_and_kept(client, drawn):
     res = client.post(f"/api/lessons/{lesson['id']}/pictures").json()
     cards = res["lesson"]["cards"]
     assert res["failures"] == 1  # the umbrella: its card stays without a picture
+    assert res["error"] == {"code": "picture.failed", "params": {"detail": "refused"}}  # why, for the page
     assert sorted(drawn) == ["a dog", "an apple", "an umbrella"]  # nothing for "tomorrow"
     assert [bool(c["picture"]) for c in cards] == [True, True, False, False]
     assert [c["id"] for c in cards] == [c["id"] for c in lesson["cards"]]  # ids kept
@@ -142,7 +143,11 @@ def test_correction_keeps_ids_and_pictures():
 
 def test_image_model_from_the_keys():
     assert pictures.model(Settings()) == ""
-    assert pictures.model(Settings(gemini_api_key="k")) == "gemini-3.1-flash-lite-image"
-    openrouter = Settings(openai_keys={pictures.OPENROUTER: "k"})
-    assert pictures.model(openrouter) == "google/gemini-3.1-flash-lite-image"
+    assert pictures.model(Settings(llm="gemini", gemini_api_key="k")) == "gemini-3.1-flash-lite-image"
+    openrouter = {pictures.OPENROUTER: "k"}
+    assert pictures.model(Settings(openai_keys=openrouter)) == "google/gemini-3.1-flash-lite-image"
+    # Cards through OpenRouter, a (free) Gemini key in .env: OpenRouter draws
+    both = Settings(llm="openai", gemini_api_key="free", openai_keys=openrouter)
+    assert pictures.model(both) == "google/gemini-3.1-flash-lite-image"
+    assert pictures.model(Settings(llm="anthropic", gemini_api_key="k")) == "gemini-3.1-flash-lite-image"
     assert pictures.model(Settings(picture_model="openai/gpt-5-image-mini")) == "openai/gpt-5-image-mini"

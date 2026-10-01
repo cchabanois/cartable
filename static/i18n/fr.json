@@ -428,7 +428,8 @@
       "unknown_model": "Modèle d'images inconnu : {model}.",
       "missing_key": "Pas de clé {service} pour le modèle d'images.",
       "failed": "L'image n'a pas pu être dessinée : {detail}",
-      "empty": "Le modèle d'images n'a renvoyé aucune image."
+      "empty": "Le modèle d'images n'a renvoyé aucune image.",
+      "quota": "{service} refuse : quota dépassé pour le modèle d'images (une clé gratuite ne permet pas les images). Choisis un modèle d'images d'un autre service dans les réglages."
     }
   },
   "demo": {

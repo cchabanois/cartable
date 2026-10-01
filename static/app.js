@@ -60,7 +60,10 @@ const formatDate = (iso) =>
   new Date(iso).toLocaleString(I18N.lang, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 let nextKey = 0;
-const withKey = (card) => ({ info: "", subdeck: "", tags: [], ...card, key: nextKey++ });
+const withKey = (card) => ({ info: "", subdeck: "", tags: [], picture: "", picture_prompt: "", ...card, key: nextKey++ });
+
+// A card's stable id (crypto.randomUUID needs HTTPS; getRandomValues doesn't)
+const newId = () => [...crypto.getRandomValues(new Uint8Array(6))].map((b) => b.toString(16).padStart(2, "0")).join("");
 
 document.addEventListener("alpine:init", () => {
   Alpine.data("cartable", () => ({
@@ -95,6 +98,7 @@ document.addEventListener("alpine:init", () => {
     lessonPrompt: "",            // prompt text the open lesson was generated with
     frames: [],                  // diagram frames of the open lesson: what Anki shows of each photo          // visible from every profile (only the owner's profile can change it)
     sending: false,
+    drawing: false,              // the pictures the cards ask for are being drawn
 
     async init() {
       // Any change to the open lesson is saved automatically.
@@ -298,6 +302,7 @@ document.addEventListener("alpine:init", () => {
         this.show(lesson);
         this.loadLessons();
         if (!this.cards.length) this.error = t("app.review.noCards");
+        this.drawPictures();  // the cards show now, their pictures when drawn
       } catch (e) {
         this.error = e.message;
       } finally {
@@ -458,6 +463,7 @@ document.addEventListener("alpine:init", () => {
       clearTimeout(this.saveTimer);
       this.saveTimer = null;
       if (!this.lessonId || this.readOnly()) return;
+      if (this.drawing) return this.scheduleSave();  // after: the server is adding the pictures
       const body = this.snapshot();
       // Before the request: otherwise clearing saveTimer re-runs the autosave effect,
       // which would see an unsaved snapshot and schedule the same save again.
@@ -504,6 +510,7 @@ document.addEventListener("alpine:init", () => {
         this.saveState = "saved";
         this.revision = { text: "", busy: false, summary: res.summary, stats, undo: before };
         this.loadLessons();
+        this.drawPictures();  // a card added by the correction may ask for one
       } catch (e) {
         this.error = e.message;
         this.revision.busy = false;
@@ -670,7 +677,32 @@ document.addEventListener("alpine:init", () => {
 
     addCard() {
       const last = this.cards.at(-1);
-      this.cards.push(withKey({ front: "", back: "", subdeck: last?.subdeck ?? "" }));
+      this.cards.push(withKey({ id: newId(), front: "", back: "", subdeck: last?.subdeck ?? "" }));
+    },
+
+    // --- Pictures ("front: the picture of the word") ------------------------
+    pictureUrl(card) {
+      return `/api/lessons/${this.lessonId}/pictures/${card.picture}`;
+    },
+
+    async drawPictures() {
+      if (this.readOnly() || !this.cards.some((c) => c.picture_prompt && !c.picture)) return;
+      if (this.saveTimer) await this.saveNow();
+      this.drawing = true;
+      const lessonId = this.lessonId;
+      try {
+        const res = await (await api(`/api/lessons/${lessonId}/pictures`, { method: "POST" })).json();
+        if (this.lessonId !== lessonId) return;  // another lesson opened meanwhile
+        const drawn = new Map(res.lesson.cards.map((c) => [c.id, c.picture]));
+        this.cards.forEach((c) => { if (!c.picture && drawn.get(c.id)) c.picture = drawn.get(c.id); });
+        if (res.failures) {
+          this.error = t("app.pictures.failed", { count: res.failures }) + (res.error ? ` ${errorMessage(res.error)}` : "");
+        }
+      } catch (e) {
+        this.error = e.message;
+      } finally {
+        this.drawing = false;
+      }
     },
 
     // --- Audio ----------------------------------------------------------

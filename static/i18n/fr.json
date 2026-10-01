@@ -181,6 +181,13 @@
       "create": "Créer la consigne",
       "required": "Il faut au moins un nom et un texte.",
       "confirmDelete": "Supprimer la consigne « {name} » ?"
+    },
+    "pictures": {
+      "drawing": "🎨 Dessin…",
+      "failed": {
+        "one": "{count} image n'a pas pu être dessinée : sa carte n'en a pas.",
+        "other": "{count} images n'ont pas pu être dessinées : ces cartes n'en ont pas."
+      }
     }
   },
   "admin": {
@@ -323,7 +330,8 @@
       },
       "kind": {
         "extract": "génération",
-        "revise": "correction"
+        "revise": "correction",
+        "picture": "image"
       },
       "deleted": "dont {cost} pour des leçons supprimées depuis",
       "failed": "dont {cost} pour des générations échouées (sans leçon)",
@@ -331,7 +339,11 @@
         "one": "+ {count} appel dont le prix est inconnu",
         "other": "+ {count} appels dont le prix est inconnu"
       },
-      "cents": "{cents} ¢ US"
+      "cents": "{cents} ¢ US",
+      "pictures": {
+        "one": "{count} image",
+        "other": "{count} images"
+      }
     },
     "instructions": {
       "title": "📝 Instructions pour l'IA",
@@ -343,7 +355,13 @@
       "profilePlaceholder": "ex. : en 5ᵉ ; réponses courtes",
       "noProfiles": "Ouvre Anki pour régler des instructions pour chacun de ses profils."
     },
-    "notSaved": "Non enregistré"
+    "notSaved": "Non enregistré",
+    "pictures": {
+      "model": "Modèle d'images (images sur les cartes)",
+      "hint": "Pour les consignes du type « recto : image du mot ». Environ 3 à 7 ¢ US par image. Claude ne sait pas dessiner : une clé Gemini ou OpenRouter est utilisée.",
+      "auto": "automatique : {model}",
+      "none": "aucun (pas de clé Gemini ni OpenRouter)"
+    }
   },
   "errors": {
     "unknown": "Erreur inattendue ({code}).",
@@ -404,6 +422,14 @@
       "uv_unsupported": "Cet ordinateur n'est pas pris en charge (pas de uv pour lui) : installe uv toi-même (https://docs.astral.sh/uv/), puis redémarre Anki.",
       "uv_download_failed": "Téléchargement de uv depuis GitHub impossible (voir le journal). Vérifie la connexion Internet, puis Outils → Cartable → Redémarrer le serveur.",
       "install_failed": "Installation des dépendances de Cartable impossible (voir le journal)."
+    },
+    "picture": {
+      "no_model": "Pas de modèle d'images : choisis-en un dans les réglages (ou ajoute une clé Gemini ou OpenRouter).",
+      "unknown_model": "Modèle d'images inconnu : {model}.",
+      "missing_key": "Pas de clé {service} pour le modèle d'images.",
+      "failed": "L'image n'a pas pu être dessinée : {detail}",
+      "empty": "Le modèle d'images n'a renvoyé aucune image.",
+      "quota": "{service} refuse : quota dépassé pour le modèle d'images (une clé gratuite ne permet pas les images). Choisis un modèle d'images d'un autre service dans les réglages."
     }
   },
   "demo": {

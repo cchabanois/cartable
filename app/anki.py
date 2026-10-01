@@ -33,6 +33,10 @@ DIAGRAM_CSS = """\
 .cartable-mask.revealed { background: transparent; border: 3px solid #1b873f; }
 """
 
+PICTURE_CSS = """\
+.cartable-picture img { max-width: min(100%, 320px); max-height: 50vh; border-radius: 12px; }
+"""
+
 
 def _stable_id(*parts: str) -> int:
     """Deterministic id that fits in the 31 bits Anki expects."""
@@ -109,6 +113,26 @@ def diagram_note_type(voice: str) -> NoteType:
     return NoteType(name, kind, tuple(fields), templates, css=CSS + DIAGRAM_CSS, key="Id")
 
 
+def picture_note_type(voice: str) -> NoteType:
+    """A picture card: the picture and the front text (e.g. "How do you say it in
+    English?"), then the answer. "Id" (the card's own id) tells which note an update
+    is for: the fronts are often all the same."""
+    anki_tts = tts.is_anki_locale(voice)
+    sound = f"{{{{tts {voice}:Back}}}}" if anki_tts else "{{Audio}}"
+    info = '{{#Info}}<div class="info">{{Info}}</div>{{/Info}}'
+    templates = (
+        {
+            "name": "Image",
+            "qfmt": '<div class="cartable-picture">{{Picture}}</div>{{#Front}}<div>{{Front}}</div>{{/Front}}',
+            "afmt": f'{{{{FrontSide}}}}<hr id="answer">{{{{Back}}}}{sound}{info}',
+        },
+    )
+    fields = ["Front", "Back", "Info"] + ([] if anki_tts else ["Audio"]) + ["Picture", "Id"]
+    kind = f"picture TTS Anki {voice}" if anki_tts else "picture audio"
+    name = f"Cartable image ({kind.removeprefix('picture ')})"
+    return NoteType(name, kind, tuple(fields), templates, css=CSS + PICTURE_CSS, key="Id")
+
+
 @dataclass
 class Note:
     nt: NoteType
@@ -126,17 +150,20 @@ def notes(
     req: ExportRequest,
     audio: dict[str, Path] | None = None,
     images: dict[int, tuple[Path, list[float] | None]] | None = None,
+    pictures: dict[int, Path] | None = None,
 ) -> list[Note]:
     """The notes to send, in both output formats. `audio` maps a card back to its mp3;
-    `images` maps the index of a diagram card to its diagram's image and crop."""
-    audio, images = audio or {}, images or {}
+    `images` maps the index of a diagram card to its diagram's image and crop;
+    `pictures`, the index of a picture card to its picture."""
+    audio, images, pictures = audio or {}, images or {}, pictures or {}
     text_nt, diagram_nt = note_type(req.voice, req.reverse), diagram_note_type(req.voice)
+    picture_nt = picture_note_type(req.voice)
     result = []
     for i, card in enumerate(req.cards):
         front, back = card.front.strip(), card.back.strip()
-        if not front or not back:
+        if not back or not (front or i in pictures):  # a picture card may have no front text
             continue
-        nt = diagram_nt if i in images else text_nt
+        nt = diagram_nt if i in images else picture_nt if i in pictures else text_nt
         values = {"Front": html.escape(front), "Back": html.escape(back), "Info": html.escape(card.info.strip())}
         media = []
         if "Audio" in nt.fields:
@@ -151,6 +178,10 @@ def notes(
             values["AnswerMasks"] = diagrams.masks_html(page, card.mask.n, reveal=True, box=box)
             values["Id"] = f"{req.lesson_id or ''}:{card.mask.page}:{card.mask.n}"
             media.append(image)
+        elif i in pictures:
+            values["Picture"] = f'<img src="{pictures[i].name}">'
+            values["Id"] = card.id or f"{req.lesson_id or ''}:{i}"
+            media.append(pictures[i])
         result.append(
             Note(
                 nt=nt,
@@ -188,6 +219,7 @@ def build_apkg(
     req: ExportRequest,
     audio: dict[str, Path] | None = None,
     images: dict[int, tuple[Path, list[float] | None]] | None = None,
+    pictures: dict[int, Path] | None = None,
 ) -> str:
     """Write the package to a temporary file and return its path.
 
@@ -196,7 +228,7 @@ def build_apkg(
     """
     decks: dict[str, genanki.Deck] = {}
     models: dict[NoteType, genanki.Model] = {}
-    all_notes = notes(req, audio, images)
+    all_notes = notes(req, audio, images, pictures)
     for note in all_notes:
         deck = decks.setdefault(note.deck, genanki.Deck(_stable_id("deck", note.deck), note.deck))
         deck.add_note(

@@ -23,6 +23,14 @@ class Card(BaseModel):
     )
     tags: list[str] = Field(default_factory=list)
     mask: Mask | None = Field(default=None, description="Only for a diagram label (see the rules); otherwise null.")
+    picture_prompt: str = Field(
+        default="",
+        description="Only when the instructions ask for a picture on the card (see the rules): what to draw, "
+        "in English. Empty otherwise.",
+    )
+    # Set by Cartable, not by the AI:
+    picture: str = Field(default="", description="Leave empty.")  # file in the lesson's images/ folder
+    id: str = Field(default="", description="Leave empty.")  # stable: tells Anki which note a card is
 
 
 class Deck(BaseModel):
@@ -83,7 +91,7 @@ class AiCall(BaseModel):
     """One request to the AI for a lesson: what it used and cost."""
 
     at: str
-    kind: Literal["extract", "revise"]
+    kind: Literal["extract", "revise", "picture"]
     provider: str  # gemini, anthropic, openai (service host for OpenAI-compatible: "openrouter.ai")
     model: str  # the model that answered (a fallback, if the main one was overloaded)
     input_tokens: int | None = None
@@ -157,6 +165,7 @@ class SettingsUpdate(BaseModel):
     anki_sync: bool | None = None
     instructions: str | None = Field(default=None, max_length=4000)
     profile_instructions: dict[str, str] | None = None  # replaces them all ("" removes one)
+    picture_model: str | None = None
 
 
 class LessonAccess(BaseModel):

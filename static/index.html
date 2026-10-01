@@ -175,7 +175,7 @@
 
       <div class="cards">
         <template x-for="card in cards" :key="card.key">
-          <article class="flash" :class="{ changed: card._state, 'has-diagram': card.mask }">
+          <article class="flash" :class="{ changed: card._state, 'has-diagram': card.mask, 'has-picture': card.picture || card.picture_prompt }">
             <!-- Diagram label: the photo with every label hidden, this card's mask highlighted and movable -->
             <template x-if="card.mask && photoFor(card)">
               <div class="diagram">
@@ -196,6 +196,11 @@
                 </template>
               </div>
             </template>
+            <!-- Picture card: the picture shows with the front text -->
+            <div class="card-picture" x-show="card.picture || (card.picture_prompt && drawing)">
+              <img x-show="card.picture" :src="card.picture && pictureUrl(card)" :alt="card.picture_prompt">
+              <span class="drawing" x-show="!card.picture" x-text="$t('app.pictures.drawing')"></span>
+            </div>
             <div class="flash-body">
               <span class="flash-badge" x-show="card._state"
                     x-text="card._state === 'new' ? $t('app.review.badgeNew') : $t('app.review.badgeModified')"></span>

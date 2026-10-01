@@ -126,6 +126,20 @@
               </label>
             </div>
           </template>
+          <!-- Pictures on cards: an image model of its own (Claude can't draw) -->
+          <label class="field">
+            <span x-text="$t('admin.pictures.model')"></span>
+            <input x-model="form.picture_model" list="picture-models"
+                   :placeholder="saved.picture_default ? $t('admin.pictures.auto', { model: saved.picture_default }) : $t('admin.pictures.none')">
+            <datalist id="picture-models">
+              <option value="google/gemini-3.1-flash-lite-image"></option>
+              <option value="google/gemini-3.1-flash-image"></option>
+              <option value="openai/gpt-5-image-mini"></option>
+              <option value="gemini-3.1-flash-lite-image"></option>
+              <option value="gemini-3.1-flash-image"></option>
+            </datalist>
+            <small x-text="$t('admin.pictures.hint')"></small>
+          </label>
         </section>
 
         <!-- Keys -->

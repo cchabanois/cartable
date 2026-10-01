@@ -613,7 +613,7 @@ def test_all_error_codes_translated():
     for path in Path("app").glob("*.py"):
         codes |= set(
             re.findall(
-                r'(?:AppError|ExtractionError|AnkiConnectError)\(\s*"([a-z_]+\.[a-z_]+)"',
+                r'(?:AppError|ExtractionError|AnkiConnectError|PictureError)\(\s*"([a-z_]+\.[a-z_]+)"',
                 path.read_text(encoding="utf-8"),
             )
         )

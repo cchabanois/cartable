@@ -30,7 +30,7 @@ const KEYS = {
 };
 
 const EDITABLE = ["llm", "model", "fallback_models", "openai_base_url", "tts_rate", "ankiconnect_url", "anki_sync",
-                  "instructions", "profile_instructions"];
+                  "instructions", "profile_instructions", "picture_model"];
 
 function session(action, value) {
   try {
@@ -382,11 +382,12 @@ document.addEventListener("alpine:init", () => {
     // "1.4 ¢ · gemini-3.8-flash · 1 generation + 2 corrections"
     costLine(l) {
       const models = [...new Set(l.ai_calls.map((c) => c.model))].join(", ");
-      const extract = l.ai_calls.filter((c) => c.kind === "extract").length;
-      const revise = l.ai_calls.length - extract;
+      const count = (kind) => l.ai_calls.filter((c) => c.kind === kind).length;
+      const [extract, revise, picture] = [count("extract"), count("revise"), count("picture")];
       const estimate = l.ai_calls.some((c) => !c.exact && c.cost) ? "≈ " : "";
       const counts = [t("admin.costs.extracts", { count: extract })];
       if (revise) counts.push(t("admin.costs.revisions", { count: revise }));
+      if (picture) counts.push(t("admin.costs.pictures", { count: picture }));
       return `💰 ${estimate}${this.formatCost(this.lessonCost(l))} · ${models} · ${counts.join(" + ")}`;
     },
 

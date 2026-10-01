@@ -6,13 +6,15 @@
   audio/          mp3 of the card backs, embedded in exported packages
 """
 
+import hashlib
 import re
 import shutil
+import uuid
 from datetime import date
 from pathlib import Path
 
 from . import storage
-from .models import AiCall, Frame, Lesson, LessonIn, LessonSummary
+from .models import AiCall, Card, Frame, Lesson, LessonIn, LessonSummary
 
 ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")  # folder names we create; blocks "../"
 
@@ -45,10 +47,24 @@ def _count_photos(path: Path) -> int:
 
 def _read(path: Path) -> Lesson:
     data = storage.read_json(path / "lesson.json")
-    return Lesson(id=path.name, photo_count=_count_photos(path), **data)
+    lesson = Lesson(id=path.name, photo_count=_count_photos(path), **data)
+    # Cards saved before cards had ids: the same id at every reading, until it's saved
+    for n, card in enumerate(lesson.cards):
+        if not card.id:
+            card.id = hashlib.sha1(f"{path.name}|{n}|{card.front}".encode()).hexdigest()[:12]
+    return lesson
+
+
+def with_ids(cards: list[Card]) -> list[Card]:
+    """New cards (from the AI, or added) get their stable id."""
+    for card in cards:
+        if not card.id:
+            card.id = uuid.uuid4().hex[:12]
+    return cards
 
 
 def _write(path: Path, lesson: Lesson) -> None:
+    with_ids(lesson.cards)
     storage.write_json(path / "lesson.json", lesson.model_dump(exclude={"id", "photo_count"}))
 
 
@@ -119,8 +135,10 @@ def update(id: str, changes: LessonIn, exported: bool = False, share: bool | Non
         if not path:
             return None
         now = storage.now()
-        lesson = _read(path).model_copy(
-            update={
+        # Validated again (not model_copy): the cards become Card objects, not dicts
+        lesson = Lesson(
+            **{
+                **_read(path).model_dump(),
                 **changes.model_dump(include=set(LessonIn.model_fields) - {"shared"}, exclude_none=True),
                 **({"shared": share} if share is not None else {}),
                 "updated_at": now,

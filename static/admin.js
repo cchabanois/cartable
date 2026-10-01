@@ -290,6 +290,13 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
+    // In the add-on, Cartable talks to its own bridge (which mimics AnkiConnect):
+    // don't mention AnkiConnect there. The open profile tells it's the right one.
+    ankiOk(r) {
+      if (!r.profile) return t("admin.anki.testNoProfile");
+      return t(this.saved.embedded ? "admin.anki.testOkAddon" : "admin.anki.testOk", r);
+    },
+
     async testAnki() {
       this.ankiResult = null;
       if (!(await this.flush())) return;
@@ -297,7 +304,7 @@ document.addEventListener("alpine:init", () => {
       try {
         const r = await (await fetch("/api/anki/status")).json();
         this.ankiResult = r.available
-          ? { ok: true, text: t("admin.anki.testOk", r) }
+          ? { ok: true, text: this.ankiOk(r) }
           : { ok: false, text: `✗ ${errorMessage(r.error)}` };
       } catch {
         this.ankiResult = { ok: false, text: `✗ ${t("errors.unreachable")}` };

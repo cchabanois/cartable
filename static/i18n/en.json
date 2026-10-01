@@ -267,7 +267,9 @@
       "sync": "Sync with AnkiWeb after sending",
       "syncHint": "(to get the cards on the phone)",
       "test": "🔌 Test the connection with Anki",
-      "testOk": "✓ Anki answers (AnkiConnect version {version})."
+      "testOk": "✓ Anki answers (AnkiConnect version {version}, profile “{profile}”).",
+      "testOkAddon": "✓ Anki answers (Cartable add-on, profile “{profile}”).",
+      "testNoProfile": "Anki answers, but no profile is open: open one in Anki."
     },
     "lessons": {
       "title": "Lessons",

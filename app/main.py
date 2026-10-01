@@ -179,15 +179,23 @@ def _diagram_images(req: ExportRequest, lesson: Lesson | None) -> dict[int, tupl
     return images
 
 
+async def _visible(owner: str, shared: bool) -> bool:
+    """A profile sees its own lessons, shared ones and lessons without owner; another
+    profile's private lessons don't exist for it. Anki closed (no profile known): all."""
+    if shared or not owner:
+        return True
+    profile = await ankiconnect.active_profile()
+    return profile is None or profile == owner
+
+
 async def _lesson(id: str | None) -> Lesson | None:
-    """The lesson, if the open Anki profile may see it: when "see other profiles'
-    lessons" is off in the settings, another profile's private lessons don't exist."""
+    """The lesson, if the open Anki profile may see it."""
     lesson = lessons.get(id) if id else None
     if lesson is None:
         if id:
             raise AppError("lesson.not_found", 404)
         return None
-    if not settings.current().all_profiles_view and not lesson.visible_to(await ankiconnect.active_profile()):
+    if not await _visible(lesson.owner, lesson.shared):
         raise AppError("lesson.not_found", 404)
     return lesson
 
@@ -239,12 +247,7 @@ async def anki_status() -> dict:
 
 @app.post("/api/anki/send")
 async def anki_send(req: ExportRequest, background: BackgroundTasks) -> dict:
-    lesson = await _lesson(req.lesson_id)
-    if lesson and lesson.owner and not lesson.shared and not req.force:
-        active = await ankiconnect.active_profile()
-        if active and active != lesson.owner:
-            # Don't write one child's lesson into another child's collection by mistake.
-            raise AppError("anki.profile_mismatch", 409, lesson_profile=lesson.owner, active_profile=active)
+    lesson = await _lesson(req.lesson_id)  # another profile's private lesson doesn't exist for this one
     save = lesson and await _is_owner(lesson)  # someone else's lesson: sent, not changed
     audio, failures = await _card_audio(req, background)
     result = await ankiconnect.send(notes(req, audio, _diagram_images(req, lesson)))
@@ -262,16 +265,12 @@ def config() -> dict:
     s = settings.current()
     # Claude places diagram masks less precisely (too tight on handwriting): say so in the review.
     loose_boxes = s.llm == "anthropic" or "claude" in s.model_for_provider().lower()
-    return {"all_profiles_view": s.all_profiles_view, "version": VERSION, "diagram_warning": loose_boxes}
+    return {"version": VERSION, "diagram_warning": loose_boxes}
 
 
 @app.get("/api/lessons")
 async def list_lessons() -> list[LessonSummary]:
-    summaries = lessons.list_all()
-    if settings.current().all_profiles_view:
-        return summaries
-    profile = await ankiconnect.active_profile()
-    return [s for s in summaries if s.shared or not s.owner or s.owner == profile]
+    return [s for s in lessons.list_all() if await _visible(s.owner, s.shared)]
 
 
 @app.get("/api/lessons/{id}")

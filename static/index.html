@@ -288,11 +288,6 @@
     </div>
     <div class="profile-filter" x-show="anki.profile">
       <span x-html="$th('app.lessons.ankiProfile', { profile: anki.profile })"></span>
-      <label class="switch" x-show="allProfilesAllowed && otherProfiles()">
-        <input type="checkbox" x-model="allProfiles">
-        <span class="track"><span class="knob"></span></span>
-        <span x-text="$t('app.lessons.allProfiles')"></span>
-      </label>
     </div>
     <ul class="lesson-list">
       <li class="empty" x-show="!visibleLessons().length" x-text="$t('app.lessons.none')"></li>
@@ -303,7 +298,7 @@
             <small>
               <span x-text="formatDate(l.updated_at)"></span> ·
               <span x-text="$t('common.count.cards', { count: l.card_count })"></span>
-              <span x-show="l.owner && (allProfiles || !anki.profile || l.owner !== anki.profile)" x-text="' · 👤 ' + l.owner"></span>
+              <span x-show="l.owner && (!anki.profile || l.owner !== anki.profile)" x-text="' · 👤 ' + l.owner"></span>
             </small>
           </button>
           <span class="badge shared" x-show="l.shared" x-text="$t('app.lessons.sharedBadge')"></span>

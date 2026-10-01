@@ -137,8 +137,7 @@
       "noSound": {
         "one": "{count} carte sans son",
         "other": "{count} cartes sans son"
-      },
-      "confirmOtherProfile": "Cette leçon est pour « {lesson_profile} », mais c'est le profil « {active_profile} » qui est ouvert dans Anki.\n\nChange de profil dans Anki, ou touche OK pour envoyer quand même dans « {active_profile} »."
+      }
     },
     "export": {
       "noSound": "Paquet exporté, mais {count} carte(s) sans son (synthèse vocale indisponible)."
@@ -150,7 +149,6 @@
     "lessons": {
       "title": "Mes leçons",
       "ankiProfile": "👤 Profil Anki : <strong>{profile}</strong>",
-      "allProfiles": "Tous les profils",
       "none": "Aucune leçon pour ce profil.",
       "exported": "exportée",
       "delete": "Supprimer la leçon",
@@ -270,9 +268,7 @@
       "sync": "Synchroniser avec AnkiWeb après l'envoi",
       "syncHint": "(pour retrouver les cartes sur le téléphone)",
       "test": "🔌 Enregistrer et tester Anki",
-      "testOk": "✓ Anki répond (AnkiConnect version {version}).",
-      "allProfilesView": "Permettre de voir les leçons des autres profils",
-      "allProfilesViewHint": "(interrupteur « Tous les profils » dans 📚 ; décoché, chaque profil ne voit que ses leçons et les leçons partagées)"
+      "testOk": "✓ Anki répond (AnkiConnect version {version})."
     },
     "lessons": {
       "title": "Leçons",
@@ -379,8 +375,7 @@
       "bad_response": "Réponse inattendue : est-ce bien AnkiConnect à cette adresse ?",
       "error": "Anki ({action}) : {detail}",
       "no_profile": "Aucun profil ouvert dans Anki : ouvre un profil puis réessaie.",
-      "sync_not_logged_in": "Anki n'est pas connecté à AnkiWeb : clique une fois sur « Synchroniser » dans Anki pour te connecter",
-      "profile_mismatch": "Cette leçon est pour « {lesson_profile} », mais c'est le profil « {active_profile} » qui est ouvert dans Anki."
+      "sync_not_logged_in": "Anki n'est pas connecté à AnkiWeb : clique une fois sur « Synchroniser » dans Anki pour te connecter"
     },
     "tts": {
       "voices_unavailable": "Liste des voix indisponible : {detail}",

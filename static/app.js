@@ -89,8 +89,6 @@ document.addEventListener("alpine:init", () => {
     anki: { available: false },  // Anki reachable → direct send; `profile`: open Anki profile
     settingsHere: true,          // false on a phone when Cartable runs in the Anki add-on
     profileToApply: null,        // Anki profile switch waiting for the current task to finish
-    allProfiles: false,          // "My lessons": show every Anki profile's lessons
-    allProfilesAllowed: true,    // that switch can be disabled in the settings
     diagramWarning: false,       // the AI model places diagram masks loosely: say so
     lessonOwner: "",              // Anki profile that created the open lesson ("" = nobody: shared)
     lessonShared: false,
@@ -113,7 +111,6 @@ document.addEventListener("alpine:init", () => {
       try {
         this.settingsHere = (await (await fetch("/api/admin")).json()).allowed;
         const config = await (await api("/api/config")).json();
-        this.allProfilesAllowed = config.all_profiles_view;
         this.diagramWarning = config.diagram_warning;
       } catch {}
       await Promise.all([this.loadPrompts(Number(storage("get")) || null), this.loadLessons()]);
@@ -320,17 +317,12 @@ document.addEventListener("alpine:init", () => {
       return formatDate(iso);
     },
 
-    // Lessons of the open Anki profile, shared lessons, lessons without owner —
-    // or all of them with the "All profiles" switch (when the settings allow it).
+    // Lessons of the open Anki profile, shared lessons, lessons without owner (the server
+    // sends no others; filtered here too, so a profile switch shows at once).
     visibleLessons() {
       const profile = this.anki.profile;
-      if ((this.allProfiles && this.allProfilesAllowed) || !profile) return this.lessons;
+      if (!profile) return this.lessons;
       return this.lessons.filter((l) => l.shared || !l.owner || l.owner === profile);
-    },
-
-    // Other profiles have private lessons (the "All profiles" switch is useful)
-    otherProfiles() {
-      return this.lessons.some((l) => l.owner && !l.shared && l.owner !== this.anki.profile);
     },
 
     // Only the lesson's creator decides to share it
@@ -736,7 +728,7 @@ document.addEventListener("alpine:init", () => {
       if (this.loading || this.revision.busy || this.sending || this.exporting) return;
       const profile = this.profileToApply;
       this.profileToApply = null;
-      this.allProfiles = false;
+      this.loadLessons();  // the new profile's lessons
       if (this.lessonId && this.lessonOwner && !this.lessonShared && this.lessonOwner !== profile) {
         if (this.saveTimer) await this.saveNow();
         await this.newLesson();
@@ -745,14 +737,14 @@ document.addEventListener("alpine:init", () => {
       setTimeout(() => { if (this.success.includes(profile)) this.success = ""; }, 5000);
     },
 
-    async sendToAnki(force = false) {
+    async sendToAnki() {
       this.error = this.success = "";
       this.sending = true;
       try {
         const r = await (await api("/api/anki/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...this.payload(), lesson_id: this.lessonId, force }),
+          body: JSON.stringify({ ...this.payload(), lesson_id: this.lessonId }),
         })).json();
         this.lastSaved = this.snapshot();  // sending also saves the lesson
         clearTimeout(this.saveTimer);
@@ -771,13 +763,6 @@ document.addEventListener("alpine:init", () => {
         if (warnings.length) this.error = t("app.send.butWarning", { warnings: warnings.join(" ; ") });
         setTimeout(() => { if (this.success === message) this.success = ""; }, 6000);
       } catch (e) {
-        this.sending = false;
-        if (e.status === 409) {
-          // Lesson made for another Anki profile than the open one
-          const ok = confirm(t("app.send.confirmOtherProfile", e.detail.params));
-          if (ok) return this.sendToAnki(true);
-          return;
-        }
         this.error = e.message;
         this.checkAnki();
       } finally {

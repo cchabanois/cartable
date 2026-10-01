@@ -104,10 +104,6 @@ class Lesson(LessonIn):
     updated_at: str
     exported_at: str | None = None
 
-    def visible_to(self, profile: str | None) -> bool:
-        """Private lessons are only for their owner's profile."""
-        return self.shared or not self.owner or self.owner == profile
-
 
 class LessonSummary(BaseModel):
     id: str
@@ -131,7 +127,6 @@ class RevisionRequest(LessonIn):
 
 class ExportRequest(LessonIn):
     lesson_id: str | None = None  # saved lesson to update and mark as exported
-    force: bool = False  # send even if another Anki profile than the lesson's is open
 
 
 class PromptIn(BaseModel):
@@ -160,7 +155,6 @@ class SettingsUpdate(BaseModel):
     ankiconnect_url: str | None = Field(default=None, pattern=r"^https?://")
     ankiconnect_key: str | None = None
     anki_sync: bool | None = None
-    all_profiles_view: bool | None = None
 
 
 class LessonAccess(BaseModel):

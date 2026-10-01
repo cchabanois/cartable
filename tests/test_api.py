@@ -583,24 +583,6 @@ def test_lesson_without_anki_has_no_owner(client):
     assert _extract(client)["owner"] == ""
 
 
-def test_send_refused_in_another_profile(anki, client):
-    lesson = _extract(client)  # created while "Léa" is open
-    anki.profile = "Paul"
-    res = client.post("/api/anki/send", json={**SEND, "lesson_id": lesson["id"]})
-    assert res.status_code == 409
-    assert res.json()["detail"] == {
-        "code": "anki.profile_mismatch",
-        "params": {"lesson_profile": "Léa", "active_profile": "Paul"},
-    }
-    assert "addNote" not in anki.calls  # nothing written into Paul's collection
-
-    res = client.post("/api/anki/send", json={**SEND, "lesson_id": lesson["id"], "force": True})
-    assert res.status_code == 200 and res.json()["added"] == 2
-
-    anki.profile = "Léa"
-    assert client.post("/api/anki/send", json={**SEND, "lesson_id": lesson["id"]}).status_code == 200
-
-
 # --- Languages ---------------------------------------------------------------------
 
 
@@ -997,33 +979,32 @@ def test_lesson_without_owner_is_everyones(client):
     assert client.delete(url).status_code == 204
 
 
-def test_private_lessons_hidden_when_option_off(anki, admin):
-    lea = _extract(admin)  # private to Léa
+def test_other_profiles_private_lessons_hidden(anki, client):
+    lea = _extract(client)  # private to Léa
     anki.profile = "Paul"
-    paul = _extract(admin)
-    shared = _extract(admin)
-    admin.put(f"/api/lessons/{shared['id']}", json={"deck": "S", "cards": [], "shared": True})
+    paul = _extract(client)
+    shared = _extract(client)
+    client.put(f"/api/lessons/{shared['id']}", json={"deck": "S", "cards": [], "shared": True})
 
-    # Option on (default): the page may show everything
-    assert admin.get("/api/config").json()["all_profiles_view"] is True
-    assert len(admin.get("/api/lessons").json()) == 3
-
-    # Option off: Paul doesn't get Léa's private lesson, in any route
-    admin.put("/api/admin/settings", headers=ADMIN, json={"all_profiles_view": False})
-    assert admin.get("/api/config").json()["all_profiles_view"] is False
-    ids = {lesson["id"] for lesson in admin.get("/api/lessons").json()}
+    # Paul doesn't get Léa's private lesson, in any route
+    ids = {lesson["id"] for lesson in client.get("/api/lessons").json()}
     assert ids == {paul["id"], shared["id"]}
     for method, url in [
         ("GET", f"/api/lessons/{lea['id']}"),
         ("GET", f"/api/lessons/{lea['id']}/photos/1"),
         ("DELETE", f"/api/lessons/{lea['id']}"),
     ]:
-        assert admin.request(method, url).status_code == 404
-    assert admin.put(f"/api/lessons/{lea['id']}", json={"deck": "x", "cards": []}).status_code == 404
-    assert admin.post("/api/anki/send", json={**SEND, "lesson_id": lea["id"], "force": True}).status_code == 404
+        assert client.request(method, url).status_code == 404
+    assert client.put(f"/api/lessons/{lea['id']}", json={"deck": "x", "cards": []}).status_code == 404
+    assert client.post("/api/anki/send", json={**SEND, "lesson_id": lea["id"]}).status_code == 404
 
     anki.profile = "Léa"  # back in Léa's profile: it's hers again
-    assert admin.get(f"/api/lessons/{lea['id']}").status_code == 200
+    assert client.get(f"/api/lessons/{lea['id']}").status_code == 200
+    assert {lesson["id"] for lesson in client.get("/api/lessons").json()} == {lea["id"], shared["id"]}
+
+    # Anki closed: no profile known, every lesson listed (read-only for those with an owner)
+    anki.profile = None
+    assert len(client.get("/api/lessons").json()) == 3
 
 
 def test_version_from_pyproject(client):

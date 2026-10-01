@@ -200,11 +200,6 @@
             <span class="track"><span class="knob"></span></span>
             <span><span x-text="$t('admin.anki.sync')"></span> <small x-text="$t('admin.anki.syncHint')"></small></span>
           </label>
-          <label class="switch field">
-            <input type="checkbox" x-model="form.all_profiles_view">
-            <span class="track"><span class="knob"></span></span>
-            <span><span x-text="$t('admin.anki.allProfilesView')"></span> <small x-text="$t('admin.anki.allProfilesViewHint')"></small></span>
-          </label>
           <button type="button" class="btn soft wide" @click="testAnki()" :disabled="testingAnki">
             <span x-text="testingAnki ? $t('admin.testing') : $t('admin.anki.test')"></span>
           </button>

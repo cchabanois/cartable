@@ -29,6 +29,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Changed
 
+- A profile only ever sees its own lessons, shared lessons and lessons without owner: the "see other profiles' lessons" setting and the "All profiles" switch are gone (sharing does it; the settings' Lessons section shows every lesson). With Anki closed, every lesson is listed, read-only. The "send to another profile anyway?" question is gone with it.
 - The demo provider (canned cards, whatever the photo) is no longer offered in the settings; it stays available with `CARTABLE_LLM=fake`, for tests and development. If it is the saved choice, the settings still show it, with a warning.
 - A lesson is read-only for the other Anki profiles: only the profile that created it can edit, correct with the AI, share or delete it. The others can still read it, send it to their own Anki and export it (without changing it).
 

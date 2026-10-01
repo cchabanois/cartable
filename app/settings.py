@@ -53,9 +53,6 @@ class Settings(BaseModel):
     ankiconnect_url: str = "http://localhost:8765"  # Anki desktop with the AnkiConnect add-on
     ankiconnect_key: str = ""  # AnkiConnect "apiKey", if one is configured
     anki_sync: bool = True  # sync with AnkiWeb after sending, so phones get the cards
-    # "All profiles" toggle in "My lessons": off = a profile never sees another
-    # profile's private lessons (enforced by the server, not only hidden).
-    all_profiles_view: bool = True
 
     def model_for_provider(self) -> str:
         return self.model.strip() or DEFAULT_MODELS.get(self.llm, "")

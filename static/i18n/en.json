@@ -137,8 +137,7 @@
       "noSound": {
         "one": "{count} card without sound",
         "other": "{count} cards without sound"
-      },
-      "confirmOtherProfile": "This lesson is for “{lesson_profile}”, but the “{active_profile}” profile is open in Anki.\n\nSwitch profiles in Anki, or press OK to send it to “{active_profile}” anyway."
+      }
     },
     "export": {
       "noSound": "Deck exported, but {count} card(s) without sound (text-to-speech unavailable)."
@@ -150,7 +149,6 @@
     "lessons": {
       "title": "My lessons",
       "ankiProfile": "👤 Anki profile: <strong>{profile}</strong>",
-      "allProfiles": "All profiles",
       "none": "No lessons for this profile.",
       "exported": "exported",
       "delete": "Delete lesson",
@@ -270,9 +268,7 @@
       "sync": "Sync with AnkiWeb after sending",
       "syncHint": "(to get the cards on the phone)",
       "test": "🔌 Save and test Anki",
-      "testOk": "✓ Anki answers (AnkiConnect version {version}).",
-      "allProfilesView": "Allow seeing other profiles' lessons",
-      "allProfilesViewHint": "(“All profiles” switch in 📚; unchecked, each profile only sees its own and shared lessons)"
+      "testOk": "✓ Anki answers (AnkiConnect version {version})."
     },
     "lessons": {
       "title": "Lessons",
@@ -379,8 +375,7 @@
       "bad_response": "Unexpected answer: is AnkiConnect really at this address?",
       "error": "Anki ({action}): {detail}",
       "no_profile": "No profile open in Anki: open a profile and try again.",
-      "sync_not_logged_in": "Anki is not logged in to AnkiWeb: click “Sync” once in Anki to log in",
-      "profile_mismatch": "This lesson is for “{lesson_profile}”, but the “{active_profile}” profile is open in Anki."
+      "sync_not_logged_in": "Anki is not logged in to AnkiWeb: click “Sync” once in Anki to log in"
     },
     "tts": {
       "voices_unavailable": "Voice list unavailable: {detail}",

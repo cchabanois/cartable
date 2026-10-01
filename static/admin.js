@@ -29,8 +29,7 @@ const KEYS = {
   openai: [{ field: "openai_api_key", label: "admin.access.openaiKey", help: "" }],
 };
 
-const EDITABLE = ["llm", "model", "fallback_models", "openai_base_url", "tts_rate", "ankiconnect_url", "anki_sync",
-                  "all_profiles_view"];
+const EDITABLE = ["llm", "model", "fallback_models", "openai_base_url", "tts_rate", "ankiconnect_url", "anki_sync"];
 
 function session(action, value) {
   try {

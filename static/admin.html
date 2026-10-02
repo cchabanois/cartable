@@ -148,7 +148,7 @@
                     x-text="showAllModels ? $t('admin.service.fewerModels') : $t('admin.service.allModels', { count: loadedModels.length })"></button>
           </div>
           <div class="field" x-show="openaiLike()">
-            <button type="button" class="btn soft" @click="loadModels()" :disabled="loadingModels"
+            <button type="button" class="btn soft" @click="loadModels()" :disabled="loadingModels" x-show="!loadedModels.length"
                     x-text="loadingModels ? $t('admin.service.loading') : $t('admin.service.loadModels')"></button>
             <p class="hint" x-show="modelsInfo" x-text="modelsInfo"></p>
           </div>

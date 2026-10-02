@@ -143,9 +143,7 @@
                         :title="id" x-text="(id === recommendedModel ? '⭐ ' : '') + modelLabel(id)"></button>
               </template>
             </div>
-            <small x-text="$t('admin.service.aliasesHint')"></small>
-            <button type="button" class="link-btn" @click="showAllModels = !showAllModels"
-                    x-text="showAllModels ? $t('admin.service.fewerModels') : $t('admin.service.allModels', { count: loadedModels.length })"></button>
+            <small x-text="$t('admin.service.aliasesHint', { count: loadedModels.length })"></small>
           </div>
           <div class="field" x-show="openaiLike()">
             <button type="button" class="btn soft" @click="loadModels()" :disabled="loadingModels" x-show="!loadedModels.length"

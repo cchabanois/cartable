@@ -139,6 +139,16 @@ def test_settings_show_what_the_service_needs(page):
     page.get_by_text("OpenRouter", exact=True).click()
     sync_api.expect(page.get_by_text("Clé API OpenRouter")).to_be_visible()
     sync_api.expect(address).to_be_hidden()
+    # Its suggested models are buttons; the field suggests every model as one types
+    listed = {
+        "loadedModels": ["~google/gemini-flash-latest", "a/one", "b/two"],
+        "modelAliases": ["~google/gemini-flash-latest"],
+        "recommendedModel": "~google/gemini-flash-latest",
+    }
+    page.evaluate("listed => Object.assign(Alpine.$data(document.querySelector('[x-data]')), listed)", listed)
+    sync_api.expect(page.get_by_role("button", name="⭐ gemini-flash")).to_be_visible()
+    assert page.locator("#model-suggestions option").count() == 3
+    sync_api.expect(page.get_by_text("Ou tape le nom d'un des 3 modèles")).to_be_visible()
     page.get_by_text("Autre service compatible OpenAI").click()
     sync_api.expect(address).to_be_visible()  # only this one has an address
     # In the order things are set: the service, its access, then the model

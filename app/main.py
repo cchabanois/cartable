@@ -185,8 +185,12 @@ async def regenerate(
 ) -> Lesson:
     """Generate the lesson again (other prompt, other photos) in its place, instead of
     a second lesson. Only its owner's profile may."""
-    await _editable(id)
+    old = await _editable(id)
     g = await _generate(images, prompt, deck, voice, prompt_id, typing, dictation)
+    # The options set in the review stay (the prompt's are added): only the cards change
+    g.content.reverse = old.reverse
+    g.content.typing = g.content.typing or old.typing
+    g.content.dictation = g.content.dictation or old.dictation
     lesson = lessons.regenerated(id, g.content, prompt, g.photos, g.found.frames, g.calls, g.found.choice)
     if lesson is None:  # deleted meanwhile
         raise AppError("lesson.not_found", 404)
@@ -379,8 +383,14 @@ async def _anki_notes(lesson: Lesson) -> dict:
     profile = await ankiconnect.active_profile()
     if profile is None or (lesson.owner and profile != lesson.owner):
         return {"available": False, "count": 0, "ids": []}
+    # The other lessons: a note sent for one of them too isn't this lesson's alone
+    other_lessons = [o for s in lessons.list_all() if s.id != lesson.id and (o := lessons.get(s.id))]
+    others = {(n.deck, n.key) for o in other_lessons for n in anki.lesson_notes(_export_request(o))}
+    other_tags = {anki.lesson_tag(o.id) for o in other_lessons}
     try:
-        ids = await ankiconnect.find_lesson_notes(lesson.id, anki.lesson_notes(_export_request(lesson)))
+        ids = await ankiconnect.find_lesson_notes(
+            lesson.id, anki.lesson_notes(_export_request(lesson)), others, other_tags
+        )
     except ankiconnect.AnkiConnectError:
         return {"available": False, "count": 0, "ids": []}
     return {"available": True, "count": len(ids), "ids": ids}

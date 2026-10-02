@@ -136,25 +136,33 @@ async def send(notes: list[Note]) -> SendResult:
             deck_id = await _invoke(client, "createDeck", deck=deck)
             ids = await _invoke(client, "findNotes", query=f'"note:{nt.name}" did:{deck_id}')
             infos = await _invoke(client, "notesInfo", notes=ids) if ids else []
-            existing = {info["fields"][nt.key]["value"]: info["noteId"] for info in infos if nt.key in info["fields"]}
+            # By key; two cards with the same front ("le vol": vuelo, robo) have a note each
+            existing: dict[str, list[int]] = {}
+            for info in infos:
+                if nt.key in info["fields"]:
+                    existing.setdefault(info["fields"][nt.key]["value"], []).append(info["noteId"])
             for note in (n for n in notes if (n.deck, n.nt) == (deck, nt)):
-                if note.key in existing:
-                    await _invoke(client, "updateNoteFields", note={"id": existing[note.key], "fields": note.fields})
+                if existing.get(note.key):
+                    note_id = existing[note.key].pop(0)
+                    await _invoke(client, "updateNoteFields", note={"id": note_id, "fields": note.fields})
                     for tag in (t for t in note.tags if t.startswith(TAG_PREFIX)):
-                        retag.setdefault(tag, []).append(existing[note.key])
+                        retag.setdefault(tag, []).append(note_id)
                     updated += 1
                     continue
                 if deck not in others:
                     others[deck] = await _other_cartable_notes(client, deck)
                 # Sent before with other options (voice, reverse, typing, dictation): the same
                 # note moves to the new note type, keeping its review history
-                old = others[deck].get((nt.family, nt.key, note.key))
-                if old and old["modelName"] != nt.name and not unsupported:
+                candidates = [
+                    i for i in others[deck].get((nt.family, nt.key, note.key), []) if i["modelName"] != nt.name
+                ]
+                old = candidates[0] if candidates else None
+                if old and not unsupported:
                     try:
                         tags = sorted({*old["tags"], *note.tags})
                         changed = {"id": old["noteId"], "modelName": nt.name, "fields": note.fields, "tags": tags}
                         await _invoke(client, "updateNoteModel", note=changed)
-                        del others[deck][(nt.family, nt.key, note.key)]
+                        others[deck][(nt.family, nt.key, note.key)].remove(old)
                         updated += 1
                         converted += 1
                         continue
@@ -183,7 +191,7 @@ async def send(notes: list[Note]) -> SendResult:
         return result
 
 
-async def _other_cartable_notes(client: httpx.AsyncClient, deck: str) -> dict[tuple, dict]:
+async def _other_cartable_notes(client: httpx.AsyncClient, deck: str) -> dict[tuple, list[dict]]:
     """The deck's Cartable notes (not its subdecks'), by (family, key field, key value)."""
     name = _search(deck)
     ids = await _invoke(client, "findNotes", query=f'"deck:{name}" -"deck:{name}::*" "note:Cartable*"')
@@ -192,7 +200,7 @@ async def _other_cartable_notes(client: httpx.AsyncClient, deck: str) -> dict[tu
         kind = family(info.get("modelName", ""))
         for key in ("Front", "Id"):
             if kind and key in info["fields"]:
-                found[(kind, key, info["fields"][key]["value"])] = info
+                found.setdefault((kind, key, info["fields"][key]["value"]), []).append(info)
     return found
 
 
@@ -215,16 +223,26 @@ def _search(text: str) -> str:
     return "".join("\\" + c if c in '\\"*_' else c for c in text)
 
 
-async def find_lesson_notes(lesson_id: str, notes: list[Note]) -> list[int]:
+async def find_lesson_notes(
+    lesson_id: str,
+    notes: list[Note],
+    others: set[tuple[str, str]] = frozenset(),
+    other_tags: set[str] = frozenset(),
+) -> list[int]:
     """The lesson's notes in the open profile: those with its tag, and those sent before
-    notes had it (same note type and deck, same key). Never another note."""
+    notes had it (same note type and deck, same key). Never a note another lesson uses
+    too: tagged for it as well (`other_tags`: the tags of the lessons that still exist),
+    or untagged with the deck and key of one of its cards (`others`)."""
+    own = TAG_PREFIX + lesson_id
     async with _client() as client:
-        found = set(await _invoke(client, "findNotes", query=f'"tag:{_search(TAG_PREFIX + lesson_id)}"'))
+        tagged = await _invoke(client, "findNotes", query=f'"tag:{_search(own)}"')
+        infos = await _invoke(client, "notesInfo", notes=tagged) if tagged else []
+        found = {i["noteId"] for i in infos if not other_tags & set(i["tags"])}
         for deck, nt in dict.fromkeys((n.deck, n.nt) for n in notes):
-            keys = {n.key for n in notes if (n.deck, n.nt) == (deck, nt)}
+            keys = {n.key for n in notes if (n.deck, n.nt) == (deck, nt)} - {k for d, k in others if d == deck}
             name = _search(deck)
-            query = f'"note:{_search(nt.name)}" "deck:{name}" -"deck:{name}::*"'  # this deck, not its subdecks
-            ids = await _invoke(client, "findNotes", query=query)
+            query = f'"note:{_search(nt.name)}" "deck:{name}" -"deck:{name}::*" -"tag:{_search(TAG_PREFIX)}*"'
+            ids = await _invoke(client, "findNotes", query=query)  # this deck (not its subdecks), untagged
             infos = await _invoke(client, "notesInfo", notes=ids) if ids else []
             found.update(i["noteId"] for i in infos if i["fields"].get(nt.key, {}).get("value") in keys)
         return sorted(found)

@@ -69,6 +69,7 @@ class NoteType:
     key: str = "Front"  # field telling which note an update is for
     cloze: bool = False  # Anki makes one card per gap number
     variant: str = ""  # typed answer, dictation: part of the note type's id
+    reverse: bool = False  # with the reverse card: part of the note type's id
 
     @property
     def family(self) -> str:
@@ -147,7 +148,7 @@ def note_type(voice: str, reverse: bool, typing: bool = False, dictation: bool =
         fields.append("Audio")
         kind = "audio"
     name, variant = _variant("Cartable recto/verso" + (" + inverse" if reverse else ""), typing, dictation)
-    return NoteType(f"{name} ({kind})", kind, tuple(fields), tuple(templates), variant=variant)
+    return NoteType(f"{name} ({kind})", kind, tuple(fields), tuple(templates), variant=variant, reverse=reverse)
 
 
 def diagram_note_type(voice: str, typing: bool = False) -> NoteType:
@@ -327,7 +328,9 @@ def _html(text: str) -> str:
 
 def _model(nt: NoteType) -> genanki.Model:
     return genanki.Model(
-        _stable_id("model", nt.kind, str(len(nt.templates) > 1), *([nt.variant] if nt.variant else [])),
+        # Reverse card or not, then the options: unique per note type. (Before the
+        # dictation card, "two templates" meant the reverse card: same ids as then.)
+        _stable_id("model", nt.kind, str(nt.reverse), *([nt.variant] if nt.variant else [])),
         nt.name,
         fields=[{"name": f} for f in nt.fields],
         templates=list(nt.templates),
@@ -359,7 +362,9 @@ def build_apkg(
     decks: dict[str, genanki.Deck] = {}
     models: dict[NoteType, genanki.Model] = {}
     all_notes = notes(req, audio, images, pictures)
+    seen: dict[tuple[str, str], int] = {}  # the same key twice in a deck ("le vol": vuelo, robo)
     for note in all_notes:
+        n = seen[(note.deck, note.key)] = seen.get((note.deck, note.key), -1) + 1
         deck = decks.setdefault(note.deck, genanki.Deck(_stable_id("deck", note.deck), note.deck))
         deck.add_note(
             genanki.Note(
@@ -369,7 +374,7 @@ def build_apkg(
                 # Stable GUID: re-importing a corrected lesson updates the notes instead
                 # of duplicating them (as long as the front, or a label's place, and the
                 # deck stay the same).
-                guid=genanki.guid_for(note.deck, note.key),
+                guid=genanki.guid_for(note.deck, note.key, *([n] if n else [])),
             )
         )
     media = sorted({str(path) for n in all_notes for path in n.media})

@@ -67,6 +67,12 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Fixed
 
+- Note types with a dictation card, with and without the reverse card, had the same id: in a package, Anki took them for one.
+- "Generate again" no longer switches off the options set in the review (reverse card, typed answer, dictation).
+- Deleting a lesson with its cards in Anki never deletes a card another lesson uses too (the same lesson made twice in a deck).
+- Sending to Anki or exporting while pictures are being drawn waits for them, instead of sending the cards without their pictures.
+- A prompt's "auto" voice stays "auto" after a generation: generating again finds the voice of the new backs' language.
+- Two cards with the same front in a deck ("le vol": vuelo, robo) each keep their own note in Anki.
 - The AI no longer puts HTML tags or Markdown in the cards (bold words of the page came out as "<b>…</b>" in Anki).
 - After an update, browsers could keep old copies of the page's files (untranslated texts, missing styles): they are now checked on every load.
 - Every automatic save of a lesson was sent twice.

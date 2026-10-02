@@ -84,6 +84,7 @@ document.addEventListener("alpine:init", () => {
     deck: "",
     cards: [],
     reverse: false,
+    voice: "",                   // the open lesson's voice (the prompt's may be "auto": form.voice)
     decks: [],                   // existing deck names, for the deck field
     lessonChoice: "",            // what the AI chose to make (prompt "Automatic")
     lessonExported: false,       // already sent to Anki or exported
@@ -111,9 +112,9 @@ document.addEventListener("alpine:init", () => {
     profileToApply: null,        // Anki profile switch waiting for the current task to finish
     diagramWarning: false,       // the AI model places diagram masks loosely: say so
     lessonOwner: "",              // Anki profile that created the open lesson ("" = nobody: shared)
-    lessonShared: false,
+    lessonShared: false,         // visible from every profile (only the owner's profile can change it)
     lessonPrompt: "",            // prompt text the open lesson was generated with
-    frames: [],                  // diagram frames of the open lesson: what Anki shows of each photo          // visible from every profile (only the owner's profile can change it)
+    frames: [],                  // diagram frames of the open lesson: what Anki shows of each photo
     sending: false,
     drawing: false,              // the pictures the cards ask for are being drawn
     pictureJobs: 0,              // a card's picture being redrawn, uploaded or removed
@@ -371,8 +372,9 @@ document.addEventListener("alpine:init", () => {
       body.append("prompt", this.form.text);
       body.append("deck", this.form.deck);
       body.append("voice", this.form.voice);
-      body.append("typing", Boolean(this.form.typing));
-      body.append("dictation", Boolean(this.form.dictation));
+      // Generated again: the options set in the review stay, the prompt's are added
+      body.append("typing", Boolean(this.form.typing || (inPlace && this.typing)));
+      body.append("dictation", Boolean(this.form.dictation || (inPlace && this.dictation)));
       if (this.selectedId) body.append("prompt_id", this.selectedId);
       try {
         const url = inPlace ? `/api/lessons/${this.lessonId}/regenerate` : "/api/extract";
@@ -453,7 +455,7 @@ document.addEventListener("alpine:init", () => {
       this.reverse = lesson.reverse;
       this.typing = lesson.typing ?? false;
       this.dictation = lesson.dictation ?? false;
-      this.form.voice = lesson.voice;
+      this.voice = lesson.voice;
       this.lastSaved = this.snapshot();
       this.saveState = "saved";
       this.revision = { text: "", busy: false, summary: "", stats: "", undo: null };
@@ -480,7 +482,7 @@ document.addEventListener("alpine:init", () => {
       const saved = this.prompts.find((c) => c.text === lesson.prompt);
       this.selectedId = saved?.id ?? null;
       this.form = saved
-        ? { name: saved.name, text: saved.text, deck: saved.deck, voice: lesson.voice, typing: saved.typing, dictation: saved.dictation }
+        ? { name: saved.name, text: saved.text, deck: saved.deck, voice: saved.voice, typing: saved.typing, dictation: saved.dictation }
         : { name: "", text: lesson.prompt, deck: "", voice: lesson.voice, typing: lesson.typing, dictation: lesson.dictation };
     },
 
@@ -505,6 +507,7 @@ document.addEventListener("alpine:init", () => {
       this.deck = "";
       this.cards = [];
       this.reverse = false;
+      this.voice = "";
       this.typing = false;
       this.dictation = false;
       this.saveState = "";
@@ -572,7 +575,7 @@ document.addEventListener("alpine:init", () => {
         // Without the page's own fields: key, and _state, _panel, _subject, _drawing…
         cards: this.cards.map((card) =>
           Object.fromEntries(Object.entries(card).filter(([k]) => k !== "key" && !k.startsWith("_")))),
-        voice: this.form.voice,
+        voice: this.voice,
         reverse: this.reverse,
         typing: this.typing,
         dictation: this.dictation,
@@ -683,7 +686,7 @@ document.addEventListener("alpine:init", () => {
         frames: this.frames,
         lessonPrompt: this.lessonPrompt,
         lessonChoice: this.lessonChoice,
-        voice: this.form.voice,
+        voice: this.voice,
         reverse: this.reverse,
         typing: this.typing,
         dictation: this.dictation,
@@ -694,7 +697,7 @@ document.addEventListener("alpine:init", () => {
       const { deck, cards, voice, ...rest } = this.revision.undo;
       this.deck = deck;
       this.cards = cards;  // autosave sends the restored version
-      if (voice !== undefined) this.form.voice = voice;
+      if (voice !== undefined) this.voice = voice;
       Object.assign(this, rest);  // after a regeneration: frames, prompt, options
       this.revision = { text: "", busy: false, summary: t("app.revise.undone"), stats: "", undo: null };
     },
@@ -953,7 +956,7 @@ document.addEventListener("alpine:init", () => {
     },
 
     hasAudio() {
-      return this.isVoice(this.form.voice);
+      return this.isVoice(this.voice);
     },
 
     sampleText(voice) {
@@ -962,7 +965,7 @@ document.addEventListener("alpine:init", () => {
       return samples[voice.slice(0, 2)] ?? "Hello!";
     },
 
-    play(text, voice = this.form.voice) {
+    play(text, voice = this.voice) {
       if (!text.trim()) return;
       const params = new URLSearchParams({ text, voice });
       if (this.lessonId) params.set("lesson", this.lessonId);  // kept in the lesson, reused on export
@@ -1008,10 +1011,16 @@ document.addEventListener("alpine:init", () => {
       this.notify(t("app.profile.switched", { profile }));
     },
 
+    // Pictures being drawn or changed: the cards sent must have them
+    async picturesDone() {
+      while (this.drawing || this.pictureJobs) await new Promise((resolve) => setTimeout(resolve, 300));
+    },
+
     async sendToAnki() {
       this.error = this.success = "";
       this.sending = true;
       try {
+        await this.picturesDone();
         const r = await (await api("/api/anki/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1048,6 +1057,7 @@ document.addEventListener("alpine:init", () => {
       this.error = "";
       this.exporting = true;
       try {
+        await this.picturesDone();
         const res = await api("/api/export", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

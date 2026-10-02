@@ -47,14 +47,16 @@ python3 -m venv .venv
 .venv/bin/uvicorn app.main:app --host 0.0.0.0
 ```
 
-Then open http://localhost:8000, or `http://<computer-ip>:8000` from the phone on the same Wi-Fi.
+Then open http://localhost:8000 on the computer. For the phone (same Wi-Fi): ⚙️ → **Phones**, and scan the QR code.
 
 Or with Docker:
 
 ```sh
 docker build -t cartable .
-docker run -p 8000:8000 -v cartable-data:/data --env-file .env cartable
+docker run -p 8000:8000 -v cartable-data:/data --env-file .env -e CARTABLE_PUBLIC_URL=http://<computer-ip>:8000 cartable
 ```
+
+Inside Docker, Cartable can't see the computer's address: `CARTABLE_PUBLIC_URL` puts it in the phones' QR code. The computer itself goes through Docker's network too: open ⚙️ → **Phones** and use the link under the QR code once.
 
 The ⚙️ page (`/admin.html`) is reachable from the network in this mode. It is protected by an admin password, created on the first visit.
 
@@ -169,7 +171,8 @@ Stack:
 
 - **Always review the cards.** Even good models misread a word now and then.
 - **Children's schoolwork is private data.** Photos go to the AI provider you choose. A local model keeps them at home, at the cost of accuracy.
-- **Plain HTTP on the local network.** The camera works over plain HTTP, and the page can be added to the home screen as a shortcut. A fully installed app would need HTTPS.
+- **Only paired devices.** On the Wi-Fi, only the computer itself and the devices that scanned Cartable's QR code (Tools → Cartable → Open on the phone, or ⚙️ → Phones) can use it: the others can't spend your AI credits or delete lessons. "Disconnect every phone" in ⚙️ → Phones unpairs them all (a phone lost or lent).
+- **Plain HTTP on the local network.** The camera works over plain HTTP, and the page can be added to the home screen as a shortcut. Pairing stops the curious and other websites, not someone spying on the Wi-Fi traffic: keep your Wi-Fi protected (WPA2/WPA3). For HTTPS, and to use Cartable away from home, [Tailscale](https://tailscale.com) works: `tailscale serve 8000` on the computer, the Tailscale app on the phone, and set `CARTABLE_PUBLIC_URL` to the `https://….ts.net` address.
 - **Never expose AnkiConnect or Cartable to the Internet.** Keep them on your local network.
 - **edge-tts is unofficial.** Microsoft could shut it down.
 

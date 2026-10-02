@@ -215,6 +215,16 @@
           <p class="hint" x-show="!instructionProfiles().length" x-text="$t('admin.instructions.noProfiles')"></p>
         </section>
 
+        <!-- Phones: the QR code lets one in; unpairing them all changes the token -->
+        <section class="panel phones" x-show="phone">
+          <h2 x-text="$t('admin.phones.title')"></h2>
+          <p class="hint" x-text="$t('admin.phones.hint')"></p>
+          <img class="qr" :src="phone && '/api/qr?' + new URLSearchParams({ text: phone.url })" :alt="$t('admin.phones.qr')" width="200" height="200">
+          <p class="hint"><a :href="phone?.url" x-text="$t('admin.phones.thisDevice')"></a></p>
+          <p class="hint" x-text="$t('admin.phones.security')"></p>
+          <button type="button" class="btn danger-soft" @click="unpairPhones()" x-text="$t('admin.phones.unpair')"></button>
+        </section>
+
         <!-- Anki -->
         <section class="panel">
           <h2 x-text="$t('admin.anki.title')"></h2>

@@ -247,6 +247,9 @@
       "photo": "📷 My photo",
       "remove": "✕ No picture",
       "cost": "A drawing costs about 3 to 7 US¢; your own photo is free."
+    },
+    "pairing": {
+      "title": "Device not allowed"
     }
   },
   "admin": {
@@ -423,6 +426,16 @@
       "hint": "For prompts like \"front: the picture of the word\". About 3 to 7 US¢ per picture. Claude can't draw: a Gemini or OpenRouter key is used.",
       "auto": "automatic: {model}",
       "none": "none (no Gemini or OpenRouter key)"
+    },
+    "phones": {
+      "title": "📱 Phones",
+      "hint": "Scan this QR code with the phone: it opens Cartable and allows this phone. Then add the page to the home screen.",
+      "qr": "QR code to open Cartable on the phone",
+      "security": "Only devices that scanned this QR code can use Cartable over the Wi-Fi (the computer itself, always). Without HTTPS this stops the curious and other websites, not someone spying on the Wi-Fi.",
+      "unpair": "Disconnect every phone",
+      "confirmUnpair": "Disconnect every phone? Each one will have to scan the QR code again (useful if a phone was lost or lent).",
+      "unpaired": "Phones disconnected: scan the new QR code on each one.",
+      "thisDevice": "Or allow the device you're reading this on (Docker, another computer)"
     }
   },
   "errors": {
@@ -497,6 +510,9 @@
     },
     "card": {
       "not_found": "This card no longer exists: reload the lesson."
+    },
+    "device": {
+      "not_paired": "This device isn't allowed yet: scan Cartable's QR code (in Anki: Tools → Cartable → Open on the phone; otherwise in the settings, on the computer)."
     }
   },
   "demo": {

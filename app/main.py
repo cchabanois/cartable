@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -53,6 +54,47 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Cartable", version=VERSION, lifespan=lifespan)
+
+
+# --- Paired devices only -----------------------------------------------------
+# On the Wi-Fi, anyone could otherwise use Cartable: spend the AI keys, delete lessons
+# and their cards in Anki. The computer itself always may; other devices need the
+# token, given once by the QR code (…/?k=<token>) and kept in a cookie. Without HTTPS
+# this stops whoever finds the address and other websites' requests (the cookie is
+# SameSite=Strict), not someone listening to the Wi-Fi.
+DEVICE_COOKIE = "cartable_key"
+UNPAIRED_ALLOWED = {"/api/lang", "/api/qr"}  # the page telling how to pair, the QR code
+# The settings have their own protection (the computer only in the add-on, else the
+# admin password, sent in a header other sites can't add): they give the QR code.
+UNPAIRED_PREFIXES = ("/api/admin",)
+
+
+def _paired(request: Request) -> bool:
+    return (
+        is_local(request)
+        or settings.is_device_token(request.cookies.get(DEVICE_COOKIE))
+        or settings.is_device_token(request.query_params.get("k"))
+    )
+
+
+@app.middleware("http")
+async def paired_devices_only(request: Request, call_next):
+    path = request.url.path
+    allowed = path in UNPAIRED_ALLOWED or path.startswith(UNPAIRED_PREFIXES)
+    if path.startswith("/api/") and not allowed and not _paired(request):
+        return JSONResponse(status_code=401, content={"detail": AppError("device.not_paired").detail()})
+    response = await call_next(request)
+    given = request.query_params.get("k")
+    if settings.is_device_token(given) and request.cookies.get(DEVICE_COOKIE) != given:
+        response.set_cookie(
+            DEVICE_COOKIE,
+            given,
+            max_age=400 * 24 * 3600,  # the longest browsers keep a cookie
+            httponly=True,
+            samesite="strict",
+            secure=request.url.scheme == "https",
+        )
+    return response
 
 
 @app.exception_handler(AppError)
@@ -712,6 +754,47 @@ async def admin_lesson_anki_notes(id: str) -> dict:
 @app.delete("/api/admin/lessons/{id}", dependencies=[Depends(require_admin)])
 async def admin_delete_lesson(id: str, in_anki: bool = Query(False, alias="anki")) -> dict:
     return await _delete(_any_lesson(id), in_anki)
+
+
+def lan_address() -> str:
+    """This computer's address on the local network, as phones reach it."""
+    import socket
+
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("10.255.255.255", 1))  # no packet is sent
+            return s.getsockname()[0]
+    except OSError:
+        return "localhost"
+
+
+@app.get("/api/admin/phone", dependencies=[Depends(require_admin)])
+def admin_phone(request: Request) -> dict:
+    """The link that pairs a phone (in the QR code): this computer's address and the token.
+    CARTABLE_PUBLIC_URL gives the address when Cartable can't see it (Docker, a proxy)."""
+    base = os.environ.get("CARTABLE_PUBLIC_URL", "").strip().rstrip("/")
+    if not base:
+        port = request.url.port or (443 if request.url.scheme == "https" else 80)
+        host = lan_address() if is_local(request) else request.url.hostname
+        base = f"{request.url.scheme}://{host}:{port}"
+    return {"url": f"{base}/?k={settings.device_token()}"}
+
+
+@app.post("/api/admin/phone/unpair", dependencies=[Depends(require_admin)])
+def admin_unpair(request: Request) -> dict:
+    """A new token: every phone must scan the QR code again (one was lost, lent…)."""
+    settings.new_device_token()
+    return admin_phone(request)
+
+
+@app.get("/manifest.json")
+def manifest(request: Request) -> JSONResponse:
+    """The home screen icon opens the page with the token: on an iPhone, an icon doesn't
+    share Safari's cookies."""
+    data = json.loads((STATIC_DIR / "manifest.json").read_text(encoding="utf-8"))
+    if _paired(request) and not is_local(request):
+        data["start_url"] = f"/?k={settings.device_token()}"
+    return JSONResponse(data, media_type="application/manifest+json", headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/api/qr")

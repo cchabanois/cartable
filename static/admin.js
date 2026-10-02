@@ -66,6 +66,7 @@ document.addEventListener("alpine:init", () => {
     saveTimer: null,
     error: "",
     notice: "",
+    phone: null,      // { url }: the link in the phones' QR code
 
     async init() {
       await i18nReady;
@@ -110,6 +111,23 @@ document.addEventListener("alpine:init", () => {
       return res.status === 204 ? null : res.json();
     },
 
+    async loadPhone() {
+      try {
+        this.phone = await this.request("/api/admin/phone");
+      } catch {}  // the section stays hidden
+    },
+
+    // A new token: every phone must scan the QR code again (one was lost or lent)
+    async unpairPhones() {
+      if (!confirm(t("admin.phones.confirmUnpair"))) return;
+      try {
+        this.phone = await this.request("/api/admin/phone/unpair", { method: "POST" });
+        this.notice = t("admin.phones.unpaired");
+      } catch (e) {
+        this.error = e.message;
+      }
+    },
+
     async load(password) {
       this.password = password;
       try {
@@ -118,6 +136,7 @@ document.addEventListener("alpine:init", () => {
         if (password) session("set", password);
         this.loadLessons();
         this.loadAnkiStatus();
+        this.loadPhone();
       } catch (e) {
         this.error = e.message;
       }
@@ -370,10 +389,10 @@ document.addEventListener("alpine:init", () => {
       try {
         let count = 0;
         try {
-          count = (await (await this.request(`/api/admin/lessons/${l.id}/anki-notes`)).json()).count;
+          count = (await this.request(`/api/admin/lessons/${l.id}/anki-notes`)).count;
         } catch {}  // Anki unknown: the lesson alone
         const anki = count > 0 && confirm(t("admin.lessons.alsoAnki", { count }));
-        const r = await (await this.request(`/api/admin/lessons/${l.id}?anki=${anki}`, { method: "DELETE" })).json();
+        const r = await this.request(`/api/admin/lessons/${l.id}?anki=${anki}`, { method: "DELETE" });
         if (r.anki_deleted) this.notice = t("app.lessons.deletedInAnki", { count: r.anki_deleted });
         this.lessons.lessons = this.lessons.lessons.filter((x) => x.id !== l.id);
       } catch (e) {

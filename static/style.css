@@ -750,3 +750,7 @@ h2 {
 /* Cloze: the gaps, numbered like the Anki cards they make */
 .math-preview .gap { padding: 0 .25rem; border-radius: 4px; background: var(--primary-soft); color: var(--primary); font-weight: 700; }
 .math-preview .gap sup { margin-right: .15rem; font-size: .65em; color: var(--muted); }
+
+/* Pairing: a device without the token; the phones' QR code in the settings */
+.pairing p { line-height: 1.5; }
+.phones .qr { display: block; margin: .5rem auto 1rem; border-radius: var(--radius-sm); background: #fff; padding: .5rem; }

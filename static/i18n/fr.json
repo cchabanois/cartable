@@ -247,6 +247,9 @@
       "photo": "📷 Ma photo",
       "remove": "✕ Pas d'image",
       "cost": "Un dessin coûte environ 3 à 7 ¢ US ; ta propre photo est gratuite."
+    },
+    "pairing": {
+      "title": "Appareil non autorisé"
     }
   },
   "admin": {
@@ -423,6 +426,16 @@
       "hint": "Pour les consignes du type « recto : image du mot ». Environ 3 à 7 ¢ US par image. Claude ne sait pas dessiner : une clé Gemini ou OpenRouter est utilisée.",
       "auto": "automatique : {model}",
       "none": "aucun (pas de clé Gemini ni OpenRouter)"
+    },
+    "phones": {
+      "title": "📱 Téléphones",
+      "hint": "Scanne ce QR code avec le téléphone : il ouvre Cartable et autorise ce téléphone. Ensuite, ajoute la page à l'écran d'accueil.",
+      "qr": "QR code pour ouvrir Cartable sur le téléphone",
+      "security": "Seuls les appareils qui ont scanné ce QR code peuvent utiliser Cartable sur le Wi-Fi (l'ordinateur lui-même, toujours). Sans HTTPS, ça arrête les curieux et les autres sites web, pas quelqu'un qui espionne le Wi-Fi.",
+      "unpair": "Déconnecter tous les téléphones",
+      "confirmUnpair": "Déconnecter tous les téléphones ? Chacun devra scanner à nouveau le QR code (utile si un téléphone a été perdu ou prêté).",
+      "unpaired": "Téléphones déconnectés : scanne le nouveau QR code sur chacun.",
+      "thisDevice": "Ou autoriser l'appareil où tu lis cette page (Docker, autre ordinateur)"
     }
   },
   "errors": {
@@ -497,6 +510,9 @@
     },
     "card": {
       "not_found": "Cette carte n'existe plus : recharge la leçon."
+    },
+    "device": {
+      "not_paired": "Cet appareil n'est pas encore autorisé : scanne le QR code de Cartable (dans Anki : Outils → Cartable → Ouvrir sur le téléphone ; sinon dans les réglages, sur l'ordinateur)."
     }
   },
   "demo": {

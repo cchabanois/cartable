@@ -152,8 +152,19 @@ def qr_png(text: str) -> bytes | None:
         return None
 
 
+def phone_link() -> str | None:
+    """The link that pairs a phone: the address and the server's token (asked locally)."""
+    port = config().get("port", 8000)
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/admin/phone", timeout=5) as response:
+            return json.loads(response.read())["url"]
+    except (OSError, ValueError, KeyError):
+        return None
+
+
 def show_phone() -> None:
-    """How to open Cartable on the phone: a QR code of the address, and three steps."""
+    """How to open Cartable on the phone: a QR code of the address (with the token that
+    lets the phone in), and three steps."""
     _, lan = urls()
     if not server.running():
         start()
@@ -162,7 +173,7 @@ def show_phone() -> None:
     dialog = QDialog(mw)
     dialog.setWindowTitle(t("addon.phoneTitle"))
     layout_ = QVBoxLayout(dialog)
-    png = qr_png(lan)
+    png = qr_png(phone_link() or lan)
     if png:
         image = QLabel()
         pixmap = QPixmap()

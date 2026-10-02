@@ -40,7 +40,6 @@ document.addEventListener("alpine:init", () => {
     modelAliases: [],    // OpenRouter: "~…-latest", the latest model of each main family (the short list)
     modelNames: {},      // id → name given by the service ("Google: Gemini Flash Latest")
     recommendedModel: null,
-    showAllModels: false,  // the full list instead of the short one
     modelsInfo: "",
     loadingModels: false,
     status: null,
@@ -195,15 +194,15 @@ document.addEventListener("alpine:init", () => {
     },
 
     clearModels() {
-      Object.assign(this, { loadedModels: [], modelAliases: [], modelNames: {}, recommendedModel: null, showAllModels: false });
+      Object.assign(this, { loadedModels: [], modelAliases: [], modelNames: {}, recommendedModel: null });
       this.modelsInfo = "";
     },
 
-    // The short list (OpenRouter's aliases) unless all the models are asked for
+    // Every model the service lists: the field filters them as one types (OpenRouter's
+    // suggested ones are the buttons below it)
     modelSuggestions() {
       if (!this.openaiLike()) return this.provider().models;
-      const shown = this.modelAliases.length && !this.showAllModels ? this.modelAliases : this.loadedModels;
-      return [...new Set([...this.provider().models, ...shown])];
+      return [...new Set([...this.provider().models, ...this.modelAliases, ...this.loadedModels])];
     },
 
     // "Google: Gemini Flash Latest" → "Gemini Flash"

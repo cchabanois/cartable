@@ -387,9 +387,7 @@
       },
       "noVisionModels": "None of this service's models accepts images: one is needed to read the lesson photos.",
       "aliases": "Suggested models",
-      "aliasesHint": "Always the latest version of each model (⭐: recommended, the most precise on diagrams). The field above can also be typed in.",
-      "allModels": "Suggest every model ({count}) in the field",
-      "fewerModels": "Suggest the suggested models only"
+      "aliasesHint": "Always the latest version of each model (⭐: recommended, the most precise on diagrams). Or type the name of one of the {count} models in the field above."
     },
     "costs": {
       "total": "💰 AI: {cost} in total",

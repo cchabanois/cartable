@@ -387,9 +387,7 @@
       },
       "noVisionModels": "Aucun modèle de ce service n'accepte les images : il en faut un pour lire les photos des leçons.",
       "aliases": "Modèles conseillés",
-      "aliasesHint": "Toujours la dernière version de chaque modèle (⭐ : recommandé, le plus précis sur les schémas). Le choix se fait aussi dans le champ ci-dessus.",
-      "allModels": "Proposer tous les modèles ({count}) dans le champ",
-      "fewerModels": "Ne proposer que les modèles conseillés"
+      "aliasesHint": "Toujours la dernière version de chaque modèle (⭐ : recommandé, le plus précis sur les schémas). Ou tape le nom d'un des {count} modèles dans le champ ci-dessus."
     },
     "costs": {
       "total": "💰 IA : {cost} au total",

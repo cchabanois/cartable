@@ -64,6 +64,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Changed
 
+- Settings, OpenRouter: the model field suggests every model as one types; the suggested ones are the buttons (no more switching the field's list).
 - The settings follow the order things are set: the AI service, its access (key, address), then the model with its test, then the pictures' model. The models list themselves as soon as the access is saved.
 - Every Python package is pinned to an exact version for every system (`requirements.txt`, compiled from `requirements.in`): a new release of a library can no longer break an add-on or Docker install.
 - OpenAI, OpenRouter and the other OpenAI-compatible services are three providers of their own in ⚙️ (and in the code), each with its key and its way to choose the model, instead of one "OpenAI-compatible" provider with services. Saved settings and `.env` are read as before.

@@ -37,11 +37,12 @@
       </span>
     </div>
     <div class="appbar-actions">
-      <button class="chip-btn" @click="lessonsOpen = true" x-show="lessons.length">
-        <span x-text="$t('app.lessonsButton')"></span> <span class="count" x-text="visibleLessons().length"></span>
+      <button class="chip-btn" @click="lessonsOpen = true" x-show="lessons.length" :aria-label="$t('app.lessonsButton')">
+        <span aria-hidden="true">📚</span><span class="wide-only" x-text="$t('app.lessonsButton')"></span>
+        <span class="count" x-text="visibleLessons().length"></span>
       </button>
-      <button class="chip-btn icon-only" x-show="lessonId" @click="newLesson()"
-              :aria-label="$t('app.newLesson')" :title="$t('app.newLesson')">＋</button>
+      <button class="chip-btn" x-show="lessonId" @click="newLesson()"
+              :aria-label="$t('app.newLesson')" :title="$t('app.newLessonHint')" x-text="$t('app.newLessonShort')"></button>
       <a class="chip-btn icon-only" href="admin.html" x-show="settingsHere"
          :aria-label="$t('app.settings')" :title="$t('app.settings')">⚙️</a>
     </div>
@@ -54,6 +55,8 @@
   </div>
   <div class="toast ok" x-cloak x-show="success && !error" x-transition.opacity role="status">
     <span x-text="success"></span>
+    <!-- After a send or an export: the lesson is done, start the next one -->
+    <button class="toast-action" x-show="successNext" @click="success = ''; newLesson()" x-text="$t('app.newLessonAction')"></button>
     <button @click="success = ''" :aria-label="$t('common.close')">✕</button>
   </div>
 

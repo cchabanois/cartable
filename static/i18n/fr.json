@@ -27,8 +27,12 @@
       "noneShort": "aucun",
       "switched": "👤 Profil Anki : {profile}. Ses leçons sont dans 📚."
     },
-    "lessonsButton": "📚 Leçons",
+    "lessonsButton": "Leçons",
     "newLesson": "Nouvelle leçon",
+    "newLessonShort": "＋ Nouvelle",
+    "newLessonHint": "Nouvelle leçon : la leçon actuelle reste dans 📚 Leçons",
+    "newLessonAction": "＋ Nouvelle leçon",
+    "lessonKept": "« {deck} » reste dans 📚 Leçons.",
     "settings": "Réglages",
     "photos": {
       "title": "Photos de la leçon",
@@ -157,7 +161,8 @@
       }
     },
     "export": {
-      "noSound": "Paquet exporté, mais {count} carte(s) sans son (synthèse vocale indisponible)."
+      "noSound": "Paquet exporté, mais {count} carte(s) sans son (synthèse vocale indisponible).",
+      "done": "✓ Paquet téléchargé : ouvre-le avec Anki."
     },
     "audio": {
       "failed": "Lecture impossible : voix inconnue ou synthèse indisponible.",

@@ -14,7 +14,7 @@ load_dotenv()  # before the app imports, some of which read variables at import 
 
 import io
 
-from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, Request, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, Query, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -363,10 +363,59 @@ async def update_lesson(id: str, lesson: LessonIn) -> Lesson:
     return lessons.update(id, lesson, share=share)
 
 
-@app.delete("/api/lessons/{id}", status_code=204)
-async def delete_lesson(id: str) -> None:
-    await _editable(id)
-    lessons.delete(id)
+def _export_request(lesson: Lesson) -> ExportRequest:
+    return ExportRequest(**lesson.model_dump(include=set(LessonIn.model_fields)), lesson_id=lesson.id)
+
+
+def _lesson_decks(lesson: Lesson) -> list[str]:
+    """The decks the lesson's cards go to: its own and its subdecks."""
+    return sorted({lesson.deck.strip()} | {n.deck for n in anki.lesson_notes(_export_request(lesson))})
+
+
+async def _anki_notes(lesson: Lesson) -> dict:
+    """The lesson's notes in the open Anki profile: {"available", "count", "ids"}.
+    Only in its owner's profile (or any, for a lesson without owner): the others
+    can't have them."""
+    profile = await ankiconnect.active_profile()
+    if profile is None or (lesson.owner and profile != lesson.owner):
+        return {"available": False, "count": 0, "ids": []}
+    try:
+        ids = await ankiconnect.find_lesson_notes(lesson.id, anki.lesson_notes(_export_request(lesson)))
+    except ankiconnect.AnkiConnectError:
+        return {"available": False, "count": 0, "ids": []}
+    return {"available": True, "count": len(ids), "ids": ids}
+
+
+async def _delete(lesson: Lesson, in_anki: bool) -> dict:
+    """Delete the lesson; with `in_anki`, its notes in Anki first (and its decks left
+    empty), then sync."""
+    result = {"anki_deleted": 0, "synced": False, "sync_error": None, "sync_skipped": False}
+    if in_anki:
+        found = await _anki_notes(lesson)
+        if not found["available"]:
+            raise AppError("anki.unreachable", 502)
+        sent = await ankiconnect.delete_notes(found["ids"], _lesson_decks(lesson))
+        result.update(
+            anki_deleted=found["count"],
+            synced=sent.synced,
+            sync_error=sent.sync_error,
+            sync_skipped=sent.sync_skipped,
+        )
+    lessons.delete(lesson.id)
+    return result
+
+
+@app.get("/api/lessons/{id}/anki-notes")
+async def lesson_anki_notes(id: str) -> dict:
+    """How many of the lesson's notes are in Anki: asked before deleting it."""
+    found = await _anki_notes(await _editable(id))
+    return {"available": found["available"], "count": found["count"]}
+
+
+@app.delete("/api/lessons/{id}")
+async def delete_lesson(id: str, in_anki: bool = Query(False, alias="anki")) -> dict:
+    """Delete the lesson; `?anki=true`: its notes in Anki too (their review history is lost)."""
+    return await _delete(await _editable(id), in_anki)
 
 
 @app.post("/api/lessons/{id}/revise")
@@ -637,10 +686,22 @@ def admin_lesson_access(id: str, access: LessonAccess) -> LessonSummary:
     return LessonSummary(card_count=len(lesson.cards), **lesson.model_dump(exclude={"cards"}))
 
 
-@app.delete("/api/admin/lessons/{id}", status_code=204, dependencies=[Depends(require_admin)])
-def admin_delete_lesson(id: str) -> None:
-    if not lessons.delete(id):
+def _any_lesson(id: str) -> Lesson:
+    lesson = lessons.get(id)
+    if lesson is None:
         raise AppError("lesson.not_found", 404)
+    return lesson
+
+
+@app.get("/api/admin/lessons/{id}/anki-notes", dependencies=[Depends(require_admin)])
+async def admin_lesson_anki_notes(id: str) -> dict:
+    found = await _anki_notes(_any_lesson(id))
+    return {"available": found["available"], "count": found["count"]}
+
+
+@app.delete("/api/admin/lessons/{id}", dependencies=[Depends(require_admin)])
+async def admin_delete_lesson(id: str, in_anki: bool = Query(False, alias="anki")) -> dict:
+    return await _delete(_any_lesson(id), in_anki)
 
 
 @app.get("/api/qr")

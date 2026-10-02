@@ -164,9 +164,17 @@
       "none": "Aucune leçon pour ce profil.",
       "exported": "exportée",
       "delete": "Supprimer la leçon",
-      "confirmDelete": "Supprimer « {deck} » et ses photos ?",
+      "confirmDelete": "Supprimer « {deck} » ?",
       "openFailed": "Impossible d'ouvrir la leçon : {message}",
-      "sharedBadge": "partagée"
+      "sharedBadge": "partagée",
+      "checkingAnki": "Recherche de ses cartes dans Anki…",
+      "alsoAnki": "Supprimer aussi ses {count} cartes dans Anki",
+      "alsoAnkiHint": "(leur historique de révision sera perdu)",
+      "ankiClosed": "Anki n'est pas ouvert sur ce profil : les cartes déjà envoyées y restent.",
+      "deleteLesson": "Supprimer la leçon",
+      "deleteBoth": "Supprimer la leçon et les {count} cartes",
+      "deletedInAnki": "🗑 {count} cartes supprimées d'Anki.",
+      "deletedNoSync": "Cartes supprimées d'Anki, mais pas de synchro AnkiWeb ({reason})."
     },
     "picker": {
       "title": "Consignes",
@@ -327,7 +335,8 @@
       "shared": "Partagée avec les autres profils",
       "delete": "Supprimer la leçon",
       "confirmDelete": "Supprimer la leçon « {deck} » pour tous les profils ? Ses photos et ses cartes sont effacées.",
-      "changed": "« {deck} » : enregistré."
+      "changed": "« {deck} » : enregistré.",
+      "alsoAnki": "Supprimer aussi ses {count} cartes dans Anki ? Leur historique de révision sera perdu.\n\nOK : supprimer aussi les cartes. Annuler : garder les cartes dans Anki."
     },
     "passwordSection": {
       "title": "🔐 Mot de passe administrateur",

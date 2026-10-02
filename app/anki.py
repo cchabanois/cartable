@@ -219,6 +219,7 @@ def notes(
     `images` maps the index of a diagram card to its diagram's image and crop;
     `pictures`, the index of a picture card to its picture."""
     audio, images, pictures = audio or {}, images or {}, pictures or {}
+    own_tags = [lesson_tag(req.lesson_id)] if req.lesson_id else []  # to find the lesson's notes again
     typing = req.typing or req.dictation
     text_nt = note_type(req.voice, req.reverse, req.typing, req.dictation)
     diagram_nt, picture_nt = diagram_note_type(req.voice, req.typing), picture_note_type(req.voice, req.typing)
@@ -238,7 +239,7 @@ def notes(
                         "Info": _html(card.info.strip()),
                         "Id": card.id or f"{req.lesson_id or ''}:{i}",
                     },
-                    tags=[_tag(t) for t in card.tags if t.strip()],
+                    tags=[_tag(t) for t in card.tags if t.strip()] + own_tags,
                     media=[],
                 )
             )
@@ -271,13 +272,33 @@ def notes(
                 nt=nt,
                 deck=_deck_name(req.deck, card.subdeck),
                 fields=values,
-                tags=[_tag(t) for t in card.tags if t.strip()],
+                tags=[_tag(t) for t in card.tags if t.strip()] + own_tags,
                 media=media,
             )
         )
     if not result:
         raise AppError("export.no_cards")
     return result
+
+
+TAG_PREFIX = "cartable::"
+
+
+def lesson_tag(lesson_id: str) -> str:
+    """The tag of every note sent for a lesson: its notes can be found again (to delete
+    them with the lesson), whatever was changed in them."""
+    return f"{TAG_PREFIX}{lesson_id}"
+
+
+def lesson_notes(req: ExportRequest) -> list[Note]:
+    """The notes a lesson gives, as sent (note type, deck, key), without their media:
+    to find in Anki the notes sent before they had the lesson's tag."""
+    diagrams_ = {i: (Path("diagram.jpg"), None) for i, c in enumerate(req.cards) if c.mask}
+    pictures_ = {i: Path("picture.jpg") for i, c in enumerate(req.cards) if c.picture and not c.mask}
+    try:
+        return notes(req, images=diagrams_, pictures=pictures_)
+    except AppError:  # no card
+        return []
 
 
 def _html(text: str) -> str:

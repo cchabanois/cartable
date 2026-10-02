@@ -146,6 +146,27 @@ def _add_note(p: dict) -> int:
     return note.id
 
 
+def _find_cards(p: dict) -> list[int]:
+    return list(_col().find_cards(p["query"]))
+
+
+def _add_tags(p: dict) -> None:
+    _col().tags.bulk_add(list(p["notes"]), p["tags"])
+
+
+def _delete_notes(p: dict) -> None:
+    _col().remove_notes(list(p["notes"]))
+    _schedule_refresh()
+
+
+def _delete_decks(p: dict) -> None:
+    # Cartable only asks for decks it found empty; their cards would go too (cardsToo)
+    col = _col()
+    ids = [deck_id for name in p["decks"] if (deck_id := col.decks.id_for_name(name))]
+    col.decks.remove(ids)
+    _schedule_refresh()
+
+
 def _sync(p: dict) -> None:
     # Never open the login dialog in the middle of a send: report it instead
     # (Cartable translates this into "Anki is not logged in to AnkiWeb").
@@ -182,6 +203,10 @@ ACTIONS: dict[str, Callable[[dict], Any]] = {
     "findNotes": _find_notes,
     "notesInfo": _notes_info,
     "updateNoteFields": _update_note_fields,
+    "findCards": _find_cards,
+    "addTags": _add_tags,
+    "deleteNotes": _delete_notes,
+    "deleteDecks": _delete_decks,
     "addNote": _add_note,
     "sync": _sync,
 }

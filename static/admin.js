@@ -363,11 +363,18 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
+    // Its cards in Anki go only when confirmed (asked when the open profile has some)
     async deleteLesson(l) {
       if (!confirm(t("admin.lessons.confirmDelete", { deck: l.deck }))) return;
       this.error = this.notice = "";
       try {
-        await this.request(`/api/admin/lessons/${l.id}`, { method: "DELETE" });
+        let count = 0;
+        try {
+          count = (await (await this.request(`/api/admin/lessons/${l.id}/anki-notes`)).json()).count;
+        } catch {}  // Anki unknown: the lesson alone
+        const anki = count > 0 && confirm(t("admin.lessons.alsoAnki", { count }));
+        const r = await (await this.request(`/api/admin/lessons/${l.id}?anki=${anki}`, { method: "DELETE" })).json();
+        if (r.anki_deleted) this.notice = t("app.lessons.deletedInAnki", { count: r.anki_deleted });
         this.lessons.lessons = this.lessons.lessons.filter((x) => x.id !== l.id);
       } catch (e) {
         this.error = e.message;

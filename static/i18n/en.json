@@ -164,9 +164,17 @@
       "none": "No lessons for this profile.",
       "exported": "exported",
       "delete": "Delete lesson",
-      "confirmDelete": "Delete “{deck}” and its photos?",
+      "confirmDelete": "Delete “{deck}”?",
       "openFailed": "Can't open the lesson: {message}",
-      "sharedBadge": "shared"
+      "sharedBadge": "shared",
+      "checkingAnki": "Looking for its cards in Anki…",
+      "alsoAnki": "Also delete its {count} cards in Anki",
+      "alsoAnkiHint": "(their review history will be lost)",
+      "ankiClosed": "Anki isn't open on this profile: the cards already sent stay there.",
+      "deleteLesson": "Delete the lesson",
+      "deleteBoth": "Delete the lesson and the {count} cards",
+      "deletedInAnki": "🗑 {count} cards deleted from Anki.",
+      "deletedNoSync": "Cards deleted from Anki, but no AnkiWeb sync ({reason})."
     },
     "picker": {
       "title": "Instructions",
@@ -327,7 +335,8 @@
       "shared": "Shared with the other profiles",
       "delete": "Delete the lesson",
       "confirmDelete": "Delete the lesson \"{deck}\" for every profile? Its photos and cards are removed.",
-      "changed": "\"{deck}\": saved."
+      "changed": "\"{deck}\": saved.",
+      "alsoAnki": "Also delete its {count} cards in Anki? Their review history will be lost.\n\nOK: delete the cards too. Cancel: keep the cards in Anki."
     },
     "passwordSection": {
       "title": "🔐 Admin password",

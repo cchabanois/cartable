@@ -62,7 +62,11 @@ gaps.
 the instructions don't forbid it, fill "subdeck"; otherwise leave it empty.
 - Deck name: start from the suggested template and replace the parts in braces with \
 what you read on the page (number, lesson title…). Without a template, suggest a short \
-name like "Subject::Lesson".
+name like "Subject::Lesson". When the existing decks are listed, reuse the names that \
+match, written exactly the same: the subject's deck under the name already used \
+("Maths" if it exists, not a new "Mathématiques"), and the lesson's own deck if it is \
+already there. When none matches, make a new name: never squeeze a lesson into an \
+unrelated deck.
 - Diagrams: when the instructions ask to learn the labels of a diagram (a diagram to \
 complete, its labels hidden, one card per label or arrow, "the diagram without the \
 names"…), make one card per label naming a \
@@ -161,10 +165,19 @@ def standing_instructions(s: Settings, profile: str | None) -> str:
     return "\n\n".join(parts) + "\n(The request below wins if it says otherwise.)\n\n"
 
 
-def _user_text(prompt: str, deck: str, photos: int, sizes: list[tuple[int, int] | None] = (), fmt: str = "") -> str:
+def _user_text(
+    prompt: str,
+    deck: str,
+    photos: int,
+    sizes: list[tuple[int, int] | None] = (),
+    fmt: str = "",
+    decks: list[str] = (),
+) -> str:
     text = f"Instructions: {prompt.strip()}"
     if deck.strip():
         text += f"\nDeck name template: {deck.strip()}"
+    if decks:
+        text += "\nExisting decks: " + "; ".join(decks)
     if not photos:
         text += "\nThere is no photo: create the cards from these instructions alone."
     elif fmt:
@@ -193,15 +206,18 @@ class Extracted:
     back_language: str = ""  # "es-ES": for a prompt whose voice is "auto"
 
 
-async def extract_cards(images: list[Image], prompt: str, deck: str = "", profile: str | None = None) -> Extracted:
-    """`profile`: the open Anki profile, for its standing instructions."""
+async def extract_cards(
+    images: list[Image], prompt: str, deck: str = "", profile: str | None = None, decks: list[str] = ()
+) -> Extracted:
+    """`profile`: the open Anki profile, for its standing instructions; `decks`: the
+    decks that already exist, to reuse their names."""
     s = settings.current()
     if s.llm == "fake":
         await record(s, "fake", "fake", 0, 0, cost=0.0)
         return Extracted(_fake(images, prompt, deck), [0] * len(images), [], "es-ES")
     fmt = diagrams.box_format(s.model_for_provider())
     images, sizes = _prepare(images)
-    text = standing_instructions(s, profile) + _user_text(prompt, deck, len(images), sizes, fmt)
+    text = standing_instructions(s, profile) + _user_text(prompt, deck, len(images), sizes, fmt, decks)
     result = await _generate(s, images, text, Extraction)
     diagrams.normalize(result.cards, sizes, fmt)
     return Extracted(

@@ -84,6 +84,7 @@ document.addEventListener("alpine:init", () => {
     deck: "",
     cards: [],
     reverse: false,
+    decks: [],                   // existing deck names, for the deck field
     typing: false,               // the answer is typed in Anki
     dictation: false,            // a dictation card: hear the back, type it
     lessons: [],         // saved lesson summaries
@@ -360,6 +361,13 @@ document.addEventListener("alpine:init", () => {
       } finally {
         this.loading = false;
       }
+    },
+
+    // Decks that already exist (Anki's, the lessons'), offered when the deck is edited
+    async loadDecks() {
+      try {
+        this.decks = await (await api("/api/decks")).json();
+      } catch {}  // only suggestions
     },
 
     // --- Saved lessons ---------------------------------------------------

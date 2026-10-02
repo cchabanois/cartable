@@ -94,6 +94,10 @@ def _create_model(p: dict) -> int:
     return mm.add(model).id
 
 
+def _deck_names(p: dict) -> list[str]:
+    return [d.name for d in _col().decks.all_names_and_ids()]
+
+
 def _create_deck(p: dict) -> int:
     deck_id = _col().decks.id(p["deck"], create=True)
     _schedule_refresh()
@@ -172,6 +176,7 @@ ACTIONS: dict[str, Callable[[dict], Any]] = {
     "isSyncConfigured": _sync_configured,
     "modelNames": _model_names,
     "createModel": _create_model,
+    "deckNames": _deck_names,
     "createDeck": _create_deck,
     "storeMediaFile": _store_media_file,
     "findNotes": _find_notes,

@@ -90,6 +90,15 @@ async def profiles() -> list[str] | None:
         return None
 
 
+async def deck_names() -> list[str] | None:
+    """The open profile's decks, or None when Anki can't be reached."""
+    try:
+        async with httpx.AsyncClient(timeout=2.0, transport=_transport) as client:
+            return list(await _invoke(client, "deckNames") or [])
+    except AnkiConnectError:
+        return None
+
+
 async def version() -> int:
     async with _client() as client:
         return await _invoke(client, "version")

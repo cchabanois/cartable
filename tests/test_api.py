@@ -9,8 +9,9 @@ import pytest
 from conftest import ADMIN, synthesized
 from fastapi.testclient import TestClient
 
-from app import ankiconnect, i18n, lessons, prompts, settings, storage, tts
+from app import ankiconnect, i18n, lessons, llm, prompts, settings, storage, tts
 from app.main import app
+from app.models import LessonIn
 
 
 def test_cartable_prompts(client):
@@ -448,6 +449,8 @@ class FakeAnki:
             result = list(self.models)
         elif action == "createModel":
             self.models[p["modelName"]] = p
+        elif action == "deckNames":
+            result = ["Default", *self.decks]
         elif action == "createDeck":
             result = self.decks.setdefault(p["deck"], 1000 + len(self.decks))
         elif action == "storeMediaFile":
@@ -1343,3 +1346,31 @@ def test_dictation_prompt_starts_lessons_with_its_options(client):
     assert copy["typing"] is True and copy["dictation"] is True and copy["builtin"] is False
     changed = client.put(f"/api/prompts/{copy['id']}", json={**copy, "dictation": False}).json()
     assert changed["typing"] is True and changed["dictation"] is False
+
+
+def test_existing_decks_given_to_the_ai(anki, client, monkeypatch):
+    from app import main
+
+    anki.decks.update({"Maths": 1, "Maths::Fractions": 2, "Espagnol": 3})
+    # Lessons: their decks count too (with their parents), another profile's private ones don't
+    lessons.create(LessonIn(deck="Histoire::La Révolution", cards=[]), "p", [], owner="Léa")
+    lessons.create(LessonIn(deck="Secret::De Paul", cards=[]), "p", [], owner="Paul")
+    expected = ["Espagnol", "Histoire", "Histoire::La Révolution", "Maths", "Maths::Fractions"]
+    assert client.get("/api/decks").json() == expected  # Léa's view, without Anki's "Default"
+
+    seen = {}
+
+    async def extract_cards(images, prompt, deck="", profile=None, decks=()):
+        seen["decks"] = decks
+        return await llm.extract_cards(images, prompt, deck, profile, decks)
+
+    monkeypatch.setattr(main, "extract_cards", extract_cards)
+    assert client.post("/api/extract", data={"prompt": "Les fractions"}).status_code == 201
+    assert seen["decks"] == expected
+    text = llm._user_text("Les fractions", "{matière}::{leçon}", 1, decks=expected)
+    assert "Existing decks: Espagnol; Histoire; Histoire::La Révolution; Maths; Maths::Fractions" in text
+
+
+def test_existing_decks_without_anki(client):
+    lessons.create(LessonIn(deck="Anglais::Leçon 2", cards=[]), "p", [])
+    assert client.get("/api/decks").json() == ["Anglais", "Anglais::Leçon 2"]

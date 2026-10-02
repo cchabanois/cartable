@@ -88,6 +88,8 @@ class LessonIn(Deck):
     # "es_ES" → {{tts}} tag read by Anki itself; empty → no sound.
     voice: str = ""
     reverse: bool = False  # adds the reverse card (back → front)
+    typing: bool = False  # the answer is typed, Anki compares it letter by letter
+    dictation: bool = False  # adds a dictation card: hear the back, type it (needs a voice)
     # Whether every Anki profile sees the lesson (None in an update = unchanged).
     # Only the owner's profile may change it; the owner itself never changes.
     shared: bool | None = None
@@ -150,6 +152,8 @@ class PromptIn(BaseModel):
     text: str
     deck: str = ""
     voice: str = ""  # see LessonIn.voice
+    typing: bool = False  # the lessons made with it start with these options (see LessonIn)
+    dictation: bool = False
 
 
 class Prompt(PromptIn):

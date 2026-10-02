@@ -74,6 +74,11 @@
       "addCard": "＋ Add a card",
       "reverse": "Add the reverse card",
       "reverseHint": "(back → front)",
+      "typing": "Type the answer",
+      "typingHint": "(Anki compares it letter by letter: great for spelling)",
+      "dictation": "Add a dictation",
+      "dictationHint": "(hear the back, write it)",
+      "dictationNoVoice": "(pick a voice first)",
       "voiceIncluded": "🔊 Voice <code>{voice}</code>, included in the deck.",
       "voiceDevice": "🔊 Read aloud by the device in <code>{voice}</code>.",
       "badgeNew": "new",
@@ -177,6 +182,7 @@
       "deck": "Suggested deck name",
       "deckPlaceholder": "French::Lesson {n}",
       "deckHint": "Parts in braces are filled in from the lesson.",
+      "options": "Card options",
       "voice": "Voice for the back",
       "listenVoice": "Listen to the voice",
       "female": "female",
@@ -547,6 +553,14 @@
       "text": "Create one card per word of the list below. Front: the word in English. Back: its translation into Spanish, with the article.\nList: ",
       "deck": "{language}::Words",
       "voice": "auto"
+    },
+    "dictation": {
+      "name": "Spelling dictation",
+      "text": "Create one card per word to learn to spell, from the lesson or from the list below. Front: a short sentence using the word, with the word replaced by \"…\" (its definition if the sentence isn't enough to guess it). Back: the word alone, written exactly as in the sentence. Info: a useful spelling tip (silent letter, word family…), otherwise empty.",
+      "deck": "English::Spelling",
+      "voice": "auto",
+      "typing": true,
+      "dictation": true
     }
   }
 }

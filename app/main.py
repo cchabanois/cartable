@@ -120,6 +120,8 @@ async def extract(
     deck: str = Form(""),
     voice: str = Form(""),
     prompt_id: str | None = Form(None),
+    typing: bool = Form(False),
+    dictation: bool = Form(False),
 ) -> Lesson:
     """Read the photos (or, without photos, work from the prompt alone), then save the
     lesson (photos + cards) so it can be reopened."""
@@ -145,7 +147,7 @@ async def extract(
     photos = diagrams.straighten([i.data for i in data], found.deck.cards, found.turns, found.frames)
     if voice.strip().lower() == "auto":  # the voice of the language the backs are in
         voice = await tts.voice_for(found.back_language)
-    lesson = LessonIn(**found.deck.model_dump(), voice=voice)
+    lesson = LessonIn(**found.deck.model_dump(), voice=voice, typing=typing, dictation=dictation)
     created = lessons.create(lesson, prompt, photos, profile, found.frames, calls)
     usage.add(calls, created.id, created.deck)
     return created
@@ -333,7 +335,15 @@ async def revise_lesson(id: str, req: RevisionRequest, lang: str = Depends(page_
             lessons.add_ai_calls(id, calls)  # an answer that couldn't be used is paid for too
             usage.add(calls, id, req.deck)
     updated = lessons.update(
-        id, LessonIn(deck=revision.deck, cards=revision.cards, voice=req.voice, reverse=req.reverse)
+        id,
+        LessonIn(
+            deck=revision.deck,
+            cards=revision.cards,
+            voice=req.voice,
+            reverse=req.reverse,
+            typing=req.typing,
+            dictation=req.dictation,
+        ),
     )
     return {"lesson": updated, "summary": revision.summary}
 

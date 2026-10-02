@@ -79,11 +79,13 @@ document.addEventListener("alpine:init", () => {
     photos: [],          // { blob, url }
     prompts: [],
     selectedId: null,
-    form: { name: "", text: "", deck: "", voice: "" },
+    form: { name: "", text: "", deck: "", voice: "", typing: false, dictation: false },
     voices: [],          // edge-tts voices: { voice, locale, gender }
     deck: "",
     cards: [],
     reverse: false,
+    typing: false,               // the answer is typed in Anki
+    dictation: false,            // a dictation card: hear the back, type it
     lessons: [],         // saved lesson summaries
     lessonId: null,       // open lesson (null = new lesson, not generated yet)
     saveState: "",       // "", "pending", "saving", "saved", "error"
@@ -237,8 +239,8 @@ document.addEventListener("alpine:init", () => {
     selectPrompt() {
       const c = this.current();
       this.form = c
-        ? { name: c.name, text: c.text, deck: c.deck, voice: c.voice }
-        : { name: "", text: "", deck: "", voice: "" };
+        ? { name: c.name, text: c.text, deck: c.deck, voice: c.voice, typing: c.typing, dictation: c.dictation }
+        : { name: "", text: "", deck: "", voice: "", typing: false, dictation: false };
       if (c) storage("set", c.id);
     },
 
@@ -258,11 +260,15 @@ document.addEventListener("alpine:init", () => {
     // "copy" = a new prompt starting from the text tweaked for this time.
     openEditor(mode) {
       const c = this.current();
-      const base = mode === "new" ? { name: "", text: "", deck: "", voice: c?.voice ?? "" } : { ...this.form };
+      const base = mode === "new"
+        ? { name: "", text: "", deck: "", voice: c?.voice ?? "", typing: false, dictation: false }
+        : { ...this.form };
       if (mode === "copy") base.name = "";
       // Cartable's prompts open read-only: "Duplicate" makes a copy to change
       const builtin = mode === "edit" && Boolean(c?.builtin);
-      if (builtin) Object.assign(base, { name: c.name, text: c.text, deck: c.deck, voice: c.voice });
+      if (builtin) {
+        Object.assign(base, { name: c.name, text: c.text, deck: c.deck, voice: c.voice, typing: c.typing, dictation: c.dictation });
+      }
       // Voice of the backs: none, automatic (the backs' language, found by the AI), or a chosen one
       const voiceMode = !base.voice ? "none" : base.voice === "auto" ? "auto" : "pick";
       this.editor = { open: true, id: mode === "edit" ? c.id : null, builtin, error: "", ...base, voiceMode };
@@ -278,7 +284,7 @@ document.addEventListener("alpine:init", () => {
     },
 
     async saveEditor() {
-      const { id, name, text, deck, voiceMode } = this.editor;
+      const { id, name, text, deck, voiceMode, typing, dictation } = this.editor;
       const voice = voiceMode === "none" ? "" : voiceMode === "auto" ? "auto" : this.editor.voice;
       if (!name.trim() || !text.trim()) {
         this.editor.error = t("app.editor.required");
@@ -288,7 +294,10 @@ document.addEventListener("alpine:init", () => {
         const saved = await (await api(id ? `/api/prompts/${id}` : "/api/prompts", {
           method: id ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: name.trim(), text: text.trim(), deck: deck.trim(), voice: voice.trim() }),
+          body: JSON.stringify({
+            name: name.trim(), text: text.trim(), deck: deck.trim(), voice: voice.trim(),
+            typing: Boolean(typing), dictation: Boolean(dictation && voice.trim()),
+          }),
         })).json();
         this.editor.open = false;
         await this.loadPrompts(saved.id);
@@ -334,6 +343,8 @@ document.addEventListener("alpine:init", () => {
       body.append("prompt", this.form.text);
       body.append("deck", this.form.deck);
       body.append("voice", this.form.voice);
+      body.append("typing", Boolean(this.form.typing));
+      body.append("dictation", Boolean(this.form.dictation));
       if (this.selectedId) body.append("prompt_id", this.selectedId);
       try {
         const lesson = await (await api("/api/extract", { method: "POST", body })).json();
@@ -398,6 +409,8 @@ document.addEventListener("alpine:init", () => {
       this.deck = lesson.deck;
       this.cards = lesson.cards.map(withKey);
       this.reverse = lesson.reverse;
+      this.typing = lesson.typing ?? false;
+      this.dictation = lesson.dictation ?? false;
       this.form.voice = lesson.voice;
       this.lastSaved = this.snapshot();
       this.saveState = "saved";
@@ -425,8 +438,8 @@ document.addEventListener("alpine:init", () => {
       const saved = this.prompts.find((c) => c.text === lesson.prompt);
       this.selectedId = saved?.id ?? null;
       this.form = saved
-        ? { name: saved.name, text: saved.text, deck: saved.deck, voice: lesson.voice }
-        : { name: "", text: lesson.prompt, deck: "", voice: lesson.voice };
+        ? { name: saved.name, text: saved.text, deck: saved.deck, voice: lesson.voice, typing: saved.typing, dictation: saved.dictation }
+        : { name: "", text: lesson.prompt, deck: "", voice: lesson.voice, typing: lesson.typing, dictation: lesson.dictation };
     },
 
     // The lesson's photos from the server, as blobs, so a generation can be run again.
@@ -449,6 +462,8 @@ document.addEventListener("alpine:init", () => {
       this.deck = "";
       this.cards = [];
       this.reverse = false;
+      this.typing = false;
+      this.dictation = false;
       this.saveState = "";
       this.lessonPrompt = "";
       this.frames = [];
@@ -489,6 +504,8 @@ document.addEventListener("alpine:init", () => {
           Object.fromEntries(Object.entries(card).filter(([k]) => k !== "key" && !k.startsWith("_")))),
         voice: this.form.voice,
         reverse: this.reverse,
+        typing: this.typing,
+        dictation: this.dictation,
         shared: this.lessonShared,
         frames: this.frames,
       };

@@ -18,6 +18,7 @@ CSS = """\
 .card { font-family: system-ui, sans-serif; font-size: 26px; text-align: center; }
 .info { font-size: 18px; color: #777; margin-top: 12px; }
 .card img { max-width: 100%; height: auto; }
+.dictation { font-size: 40px; }
 """
 
 # Diagram cards: the masks are HTML over the image, placed in % of its size.
@@ -67,12 +68,29 @@ class NoteType:
     css: str = CSS
     key: str = "Front"  # field telling which note an update is for
     cloze: bool = False  # Anki makes one card per gap number
+    variant: str = ""  # typed answer, dictation: part of the note type's id
 
     def __hash__(self) -> int:
         return hash(self.name)
 
 
-def note_type(voice: str, reverse: bool) -> NoteType:
+def _typed(template: dict, field: str) -> dict:
+    """The template asking to type `field`: a box on the question, Anki's letter by
+    letter comparison in its place on the answer. The answer repeats the question
+    (not {{FrontSide}}, which would show the box twice)."""
+    question = template["qfmt"]
+    answer = template["afmt"].replace("{{FrontSide}}", question).replace(f"{{{{{field}}}}}", f"{{{{type:{field}}}}}", 1)
+    return {**template, "qfmt": f"{question}{{{{type:{field}}}}}", "afmt": answer}
+
+
+def _variant(name: str, typing: bool, dictation: bool) -> tuple[str, str]:
+    """The note type's name and variant ("" for the plain one: its id is unchanged)."""
+    parts = [p for p, on in (("typing", typing), ("dictation", dictation)) if on]
+    name += (" à taper" if typing else "") + (" + dictée" if dictation else "")
+    return name, "+".join(parts)
+
+
+def note_type(voice: str, reverse: bool, typing: bool = False, dictation: bool = False) -> NoteType:
     # Two ways to read the back aloud:
     # - Anki locale ("es_ES"): {{tts}} tag, spoken by the device's speech engine;
     # - edge-tts voice: embedded mp3, in an "Audio" field ([sound:…]).
@@ -96,17 +114,24 @@ def note_type(voice: str, reverse: bool) -> NoteType:
                 "afmt": f'{{{{FrontSide}}}}<hr id="answer">{{{{Front}}}}{info}',
             }
         )
+    if typing:
+        templates = [_typed(templates[0], "Back"), *[_typed(t, "Front") for t in templates[1:]]]
+    dictation = dictation and bool(voice)  # nothing to hear without a voice
+    if dictation:
+        # Hear the back, write it; the answer shows the comparison and what it means
+        heard = f'<div class="dictation">🎧</div>{sound}{{{{type:Back}}}}'
+        templates.append({"name": "Dictée", "qfmt": heard, "afmt": f'{heard}<hr id="answer">{{{{Front}}}}{info}'})
     fields = ["Front", "Back", "Info"]
     if anki_tts:
         kind = f"TTS Anki {voice}"
     else:
         fields.append("Audio")
         kind = "audio"
-    name = "Cartable recto/verso" + (" + inverse" if reverse else "") + f" ({kind})"
-    return NoteType(name, kind, tuple(fields), tuple(templates))
+    name, variant = _variant("Cartable recto/verso" + (" + inverse" if reverse else ""), typing, dictation)
+    return NoteType(f"{name} ({kind})", kind, tuple(fields), tuple(templates), variant=variant)
 
 
-def diagram_note_type(voice: str) -> NoteType:
+def diagram_note_type(voice: str, typing: bool = False) -> NoteType:
     """A diagram label: the diagram with every label hidden and the question, then the
     answer with that label shown again. One image per diagram, shared by its cards;
     the masks are HTML ("Masks", "AnswerMasks"). "Id" (lesson, photo, label number)
@@ -122,13 +147,16 @@ def diagram_note_type(voice: str) -> NoteType:
             f'<hr id="answer">{{{{Back}}}}{sound}{info}',
         },
     )
+    if typing:
+        templates = (_typed(templates[0], "Back"),)
     fields = ["Front", "Back", "Info"] + ([] if anki_tts else ["Audio"]) + ["Image", "Masks", "AnswerMasks", "Id"]
     kind = f"labels TTS Anki {voice}" if anki_tts else "labels audio"
-    name = f"Cartable légendes ({kind.removeprefix('labels ')})"
-    return NoteType(name, kind, tuple(fields), templates, css=CSS + DIAGRAM_CSS, key="Id")
+    name, variant = _variant("Cartable légendes", typing, False)
+    name = f"{name} ({kind.removeprefix('labels ')})"
+    return NoteType(name, kind, tuple(fields), templates, css=CSS + DIAGRAM_CSS, key="Id", variant=variant)
 
 
-def picture_note_type(voice: str) -> NoteType:
+def picture_note_type(voice: str, typing: bool = False) -> NoteType:
     """A picture card: the picture and the front text (e.g. "How do you say it in
     English?"), then the answer. "Id" (the card's own id) tells which note an update
     is for: the fronts are often all the same."""
@@ -142,10 +170,13 @@ def picture_note_type(voice: str) -> NoteType:
             "afmt": f'{{{{FrontSide}}}}<hr id="answer">{{{{Back}}}}{sound}{info}',
         },
     )
+    if typing:
+        templates = (_typed(templates[0], "Back"),)
     fields = ["Front", "Back", "Info"] + ([] if anki_tts else ["Audio"]) + ["Picture", "Id"]
     kind = f"picture TTS Anki {voice}" if anki_tts else "picture audio"
-    name = f"Cartable image ({kind.removeprefix('picture ')})"
-    return NoteType(name, kind, tuple(fields), templates, css=CSS + PICTURE_CSS, key="Id")
+    name, variant = _variant("Cartable image", typing, False)
+    name = f"{name} ({kind.removeprefix('picture ')})"
+    return NoteType(name, kind, tuple(fields), templates, css=CSS + PICTURE_CSS, key="Id", variant=variant)
 
 
 def cloze_note_type() -> NoteType:
@@ -188,8 +219,11 @@ def notes(
     `images` maps the index of a diagram card to its diagram's image and crop;
     `pictures`, the index of a picture card to its picture."""
     audio, images, pictures = audio or {}, images or {}, pictures or {}
-    text_nt, diagram_nt = note_type(req.voice, req.reverse), diagram_note_type(req.voice)
-    picture_nt, cloze_nt = picture_note_type(req.voice), cloze_note_type()
+    typing = req.typing or req.dictation
+    text_nt = note_type(req.voice, req.reverse, req.typing, req.dictation)
+    diagram_nt, picture_nt = diagram_note_type(req.voice, req.typing), picture_note_type(req.voice, req.typing)
+    # A formula isn't typed (its code would be) nor heard
+    math_nt, cloze_nt = note_type(req.voice, req.reverse), cloze_note_type()
     result = []
     for i, card in enumerate(req.cards):
         front, back = card.front.strip(), card.back.strip()
@@ -212,6 +246,8 @@ def notes(
         if not back or not (front or i in pictures):  # a picture card may have no front text
             continue
         nt = diagram_nt if i in images else picture_nt if i in pictures else text_nt
+        if typing and tts.has_math(back) and nt is text_nt:
+            nt = math_nt
         values = {"Front": _html(front), "Back": _html(back), "Info": _html(card.info.strip())}
         media = []
         if "Audio" in nt.fields:
@@ -251,7 +287,7 @@ def _html(text: str) -> str:
 
 def _model(nt: NoteType) -> genanki.Model:
     return genanki.Model(
-        _stable_id("model", nt.kind, str(len(nt.templates) > 1)),
+        _stable_id("model", nt.kind, str(len(nt.templates) > 1), *([nt.variant] if nt.variant else [])),
         nt.name,
         fields=[{"name": f} for f in nt.fields],
         templates=list(nt.templates),

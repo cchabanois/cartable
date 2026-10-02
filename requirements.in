@@ -1,0 +1,17 @@
+# Cartable's direct dependencies, with the oldest versions it works with.
+# requirements.txt pins every package (these and theirs) to exact versions, for every
+# system: what the Anki add-on, Docker and the CI install. After changing this file,
+# or to update the pins:
+#   uv pip compile requirements.in --universal --python-version 3.13 -o requirements.txt [--upgrade]
+fastapi>=0.141.1
+uvicorn[standard]>=0.54
+python-multipart>=0.0.32
+python-dotenv>=1.2.3
+genanki>=0.13.1
+httpx>=0.28.1
+segno>=1.6.6
+pillow>=12.0
+google-genai>=2.25
+anthropic>=1.9
+openai>=3.20
+edge-tts>=7.2.8

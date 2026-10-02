@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- "✏️ Free" prompt, first of the chips: write a prompt for this time only, not saved (it stays with the lesson; "💾 Save as a new prompt" if it's worth keeping). Its voice is "auto". The chip that creates a saved prompt is now "💾 New".
+
 - Deleting a lesson can delete its cards in Anki too: the confirmation says how many the open profile has and offers to delete them (unticked; their review history goes with them), then the decks left empty (the lesson's and their parents, never Anki's "Default"), then syncs. Notes sent now carry a `cartable::<lesson>` tag; those sent before are found by deck, note type and key. From the open lesson too (🗑 next to its title), and in the settings page. The add-on answers `findCards`, `addTags`, `deleteNotes` and `deleteDecks`.
 
 - "✨ Generate again" replaces the lesson's cards (same photos, or the photos as changed, with the prompt now chosen) instead of making a second lesson; "↩ Undo" brings the previous cards and prompt back. Warned when the lesson was already sent to Anki (the cards sent stay there). Someone else's lesson still gives a new lesson of one's own.

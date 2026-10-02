@@ -237,6 +237,16 @@ document.addEventListener("alpine:init", () => {
       this.$nextTick(() => this.$refs.pickerSearch.focus());
     },
 
+    // "✏️ Free": a prompt for this time only (kept with the lesson, not in the list).
+    // Voice "auto": a voice only when the backs are in a language being learned.
+    chooseFree() {
+      if (this.selectedId !== null) {
+        this.selectedId = null;
+        this.form = { name: "", text: "", deck: "", voice: "auto", typing: false, dictation: false };
+      }
+      this.$nextTick(() => this.$refs.promptText.focus());
+    },
+
     choose(id) {
       this.selectedId = id;
       this.selectPrompt();

@@ -132,7 +132,7 @@ document.addEventListener("alpine:init", () => {
         this.loadLessons();
         this.loadAnkiStatus();
         this.loadPhone();
-        this.loadShortList();
+        this.autoLoadModels();
       } catch (e) {
         this.error = e.message;
       }
@@ -172,16 +172,26 @@ document.addEventListener("alpine:init", () => {
     providerChanged() {
       this.form.model = this.form.llm === this.saved.llm ? this.saved.model : "";
       this.clearModels();
-      this.loadShortList();
+      this.autoLoadModels();
     },
 
     openaiLike() {
       return OPENAI_LIKE.includes(this.form.llm);
     },
 
-    // OpenRouter with its key: its short list shows without a click (listing is free)
-    loadShortList() {
-      if (this.form.llm === "openrouter" && this.saved.openrouter_api_key) this.loadModels();
+    // Once the access is set (key, or address), the service's models list themselves:
+    // OpenRouter's short list shows without a click (listing models is free).
+    accessReady() {
+      const ready = {
+        openai: this.saved.openai_api_key,
+        openrouter: this.saved.openrouter_api_key,
+        compatible: this.saved.compatible_base_url,
+      };
+      return Boolean(ready[this.form.llm]) && this.form.llm === this.saved.llm;
+    },
+
+    autoLoadModels() {
+      if (this.openaiLike() && this.accessReady() && !this.loadedModels.length && !this.loadingModels) this.loadModels();
     },
 
     clearModels() {
@@ -285,6 +295,7 @@ document.addEventListener("alpine:init", () => {
           for (const [k, v] of Object.entries(typed)) if (v !== null && !(k in sent)) this.keys[k] = v;
         }
         this.saveState = this.dirty({ keys: false }) ? "pending" : "saved";
+        this.autoLoadModels();  // a key or an address just saved
         return true;
       } catch (e) {
         this.error = e.message;  // e.g. an address without http://: not saved, said here

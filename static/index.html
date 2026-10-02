@@ -285,15 +285,15 @@
           <span class="track"><span class="knob"></span></span>
           <span><span x-text="$t('app.review.typing')"></span> <small x-text="$t('app.review.typingHint')"></small></span>
         </label>
-        <label class="switch" :class="{ disabled: readOnly() || !form.voice }">
-          <input type="checkbox" x-model="dictation" :disabled="readOnly() || !form.voice">
+        <label class="switch" :class="{ disabled: readOnly() || !voice }">
+          <input type="checkbox" x-model="dictation" :disabled="readOnly() || !voice">
           <span class="track"><span class="knob"></span></span>
           <span><span x-text="$t('app.review.dictation')"></span>
-            <small x-text="form.voice ? $t('app.review.dictationHint') : $t('app.review.dictationNoVoice')"></small></span>
+            <small x-text="voice ? $t('app.review.dictationHint') : $t('app.review.dictationNoVoice')"></small></span>
         </label>
-        <p class="hint" x-show="form.voice">
-          <span x-show="hasAudio()" x-html="$th('app.review.voiceIncluded', { voice: form.voice })"></span>
-          <span x-show="!hasAudio()" x-html="$th('app.review.voiceDevice', { voice: form.voice })"></span>
+        <p class="hint" x-show="voice">
+          <span x-show="hasAudio()" x-html="$th('app.review.voiceIncluded', { voice })"></span>
+          <span x-show="!hasAudio()" x-html="$th('app.review.voiceDevice', { voice })"></span>
         </p>
       </div>
     </section>

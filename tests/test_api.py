@@ -470,12 +470,19 @@ class FakeAnki:
                     for i, n in self.notes.items()
                     if n["deckName"] == cartable[1] and n["modelName"].startswith("Cartable")
                 ]
-            elif deck := re.fullmatch(r'"note:(.+)" "deck:(.+)" -"deck:.+::\*"', q):
-                result = [i for i, n in self.notes.items() if (n["modelName"], n["deckName"]) == deck.groups()]
-            else:
+            elif deck := re.fullmatch(r'"note:([^"]+)" "deck:([^"]+)" -"deck:[^"]+::\*" -"tag:cartable::\*"', q):
+                result = [
+                    i
+                    for i, n in self.notes.items()
+                    if (n["modelName"], n["deckName"]) == deck.groups()
+                    and not any(t.startswith("cartable::") for t in n["tags"])
+                ]
+            elif re.fullmatch(r'"note:[^"]+" did:\d+', q):
                 result = [
                     i for i, n in self.notes.items() if q == f'"note:{n["modelName"]}" did:{self.decks[n["deckName"]]}'
                 ]
+            else:
+                raise AssertionError(f"query not understood by the fake: {q}")
         elif action == "findCards":
             name = re.fullmatch(r'"deck:(.+)"', p["query"])[1]
             result = [
@@ -1532,3 +1539,53 @@ def test_options_changed_with_an_old_ankiconnect(client, monkeypatch):
     client.post("/api/anki/send", json=body)
     res = client.post("/api/anki/send", json={**body, "typing": True}).json()
     assert (res["added"], res["converted"], res["conversion_unsupported"]) == (6, 0, True)  # as before, and said
+
+
+def test_note_type_ids_are_unique():
+    """A package carries note types by id: two different ones must never share it."""
+    from itertools import product
+
+    from app import anki
+
+    names: dict[int, set[str]] = {}
+    for voice, reverse, typing, dictation in product(["", "es_ES", "es-ES-ElviraNeural"], *[[False, True]] * 3):
+        nt = anki.note_type(voice, reverse, typing, dictation)
+        names.setdefault(anki._model(nt).model_id, set()).add(nt.name)
+    for nt in (anki.diagram_note_type("", t) for t in (False, True)):
+        names.setdefault(anki._model(nt).model_id, set()).add(nt.name)
+    assert all(len(n) == 1 for n in names.values())
+
+
+def test_regenerate_keeps_the_review_options(client):
+    lesson = _extract(client)
+    url = f"/api/lessons/{lesson['id']}"
+    client.put(url, json={"deck": lesson["deck"], "cards": lesson["cards"], "reverse": True, "typing": True})
+    new = client.post(f"{url}/regenerate", data={"prompt": "FR → ES", "dictation": "true"}).json()
+    assert (new["reverse"], new["typing"], new["dictation"]) == (True, True, True)  # the prompt's added
+
+
+def test_same_front_twice_one_note_each(anki, client, tmp_path):
+    cards = [{"front": "le vol", "back": "el vuelo"}, {"front": "le vol", "back": "el robo"}]
+    body = {"deck": "Espagnol", "cards": cards, "voice": ""}
+    assert client.post("/api/anki/send", json=body).json()["added"] == 2
+    corrected = {**body, "cards": [{**cards[0], "back": "el vuelo (avion)"}, cards[1]]}
+    assert client.post("/api/anki/send", json=corrected).json()["updated"] == 2
+    assert sorted(n["fields"]["Back"] for n in anki.notes.values()) == ["el robo", "el vuelo (avion)"]
+    # In a package too: a GUID each
+    notes, _, _, _ = _notes(client.post("/api/export", json=body).content, tmp_path)
+    assert len({guid for guid, _ in notes}) == 2
+
+
+def test_deleting_a_lesson_keeps_another_lessons_notes(anki, client):
+    first, second = _extract(client), _extract(client)  # the same lesson made twice, same deck
+    for lesson in (first, second):
+        body = {"deck": "Espagnol::Leçon 7", "cards": lesson["cards"], "lesson_id": lesson["id"]}
+        client.post("/api/anki/send", json=body)
+        client.put(f"/api/lessons/{lesson['id']}", json=body)
+    # Same fronts: the second send updated the first's notes, which carry both tags now
+    assert len(anki.notes) == 6
+    url = f"/api/lessons/{first['id']}"
+    assert client.get(f"{url}/anki-notes").json()["count"] == 0  # all shared with the other lesson
+    client.delete(f"{url}?anki=true")
+    assert len(anki.notes) == 6
+    assert client.get(f"/api/lessons/{second['id']}/anki-notes").json()["count"] == 6  # alone now

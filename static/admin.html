@@ -91,18 +91,12 @@
           <p class="hint warn" x-show="form.llm === 'fake'" x-text="$t('admin.provider.fake.warning')"></p>
           <template x-if="form.llm !== 'fake'">
             <div>
-              <!-- OpenAI-compatible: which service (fills the address and a model) -->
-              <div class="field" x-show="form.llm === 'openai'">
-                <span class="field-label" x-text="$t('admin.service.title')"></span>
-                <div class="chips">
-                  <template x-for="s in services" :key="s.id">
-                    <button type="button" class="chip" :class="{ active: service()?.id === s.id }"
-                            @click="chooseService(s)" x-text="s.name"></button>
-                  </template>
-                  <button type="button" class="chip" :class="{ active: !service() }"
-                          @click="chooseService(null)" x-text="$t('admin.service.other')"></button>
-                </div>
-              </div>
+              <!-- Another OpenAI-compatible service: its address -->
+              <label class="field" x-show="form.llm === 'compatible'">
+                <span x-text="$t('admin.access.apiAddress')"></span>
+                <input x-model="form.compatible_base_url" placeholder="http://localhost:11434/v1">
+                <small x-html="$t('admin.access.ollamaHint')"></small>
+              </label>
 
               <label class="field">
                 <span x-text="$t('admin.provider.model')"></span>
@@ -113,15 +107,16 @@
                     <option :value="m"></option>
                   </template>
                 </datalist>
-                <small x-show="form.llm !== 'openai'" x-text="$t('admin.provider.modelHint')"></small>
-                <small x-show="form.llm === 'openai' && !modelAliases.length" x-text="$t('admin.service.vision')"></small>
+                <small x-show="!openaiLike()" x-text="$t('admin.provider.modelHint')"></small>
+                <small x-show="openaiLike() && !modelAliases.length" x-text="$t('admin.service.vision')"></small>
               </label>
               <!-- OpenRouter: the latest model of each main family, the others on demand -->
-              <div class="field" x-show="form.llm === 'openai' && modelAliases.length">
+              <div class="field" x-show="openaiLike() && modelAliases.length">
                 <span x-text="$t('admin.service.aliases')"></span>
                 <div class="chips">
                   <template x-for="id in modelAliases" :key="id">
-                    <button type="button" class="chip" :class="{ active: form.model === id }" @click="form.model = id"
+                    <button type="button" class="chip" :class="{ active: (form.model || saved.default_models[form.llm]) === id }"
+                            @click="form.model = id"
                             :title="id" x-text="(id === recommendedModel ? '⭐ ' : '') + modelLabel(id)"></button>
                   </template>
                 </div>
@@ -129,7 +124,7 @@
                 <button type="button" class="link-btn" @click="showAllModels = !showAllModels"
                         x-text="showAllModels ? $t('admin.service.fewerModels') : $t('admin.service.allModels', { count: loadedModels.length })"></button>
               </div>
-              <div class="field" x-show="form.llm === 'openai'">
+              <div class="field" x-show="openaiLike()">
                 <button type="button" class="btn soft" @click="loadModels()" :disabled="loadingModels"
                         x-text="loadingModels ? $t('admin.service.loading') : $t('admin.service.loadModels')"></button>
                 <p class="hint" x-show="modelsInfo" x-text="modelsInfo"></p>
@@ -173,21 +168,13 @@
               </div>
               <small x-show="savedKey(k.field)" x-text="$t('admin.access.replaceHint')"></small>
               <small x-show="k.help" x-html="k.help && $t(k.help)"></small>
-              <template x-if="form.llm === 'openai'">
-                <small>
-                  <span x-show="service()?.keyUrl"><span x-text="$t('admin.service.keyAt')"></span>
-                    <a :href="service()?.keyUrl" target="_blank" rel="noopener" x-text="service()?.keyUrl?.replace('https://', '')"></a>.</span>
-                </small>
-              </template>
+              <small x-show="k.keyUrl"><span x-text="$t('admin.service.keyAt')"></span>
+                <a :href="k.keyUrl" target="_blank" rel="noopener" x-text="k.keyUrl?.replace('https://', '')"></a>.</small>
               <small class="warn" x-show="keys[k.field] === null" x-text="$t('admin.access.willBeCleared')"></small>
             </div>
           </template>
 
-          <label class="field" x-show="form.llm === 'openai'">
-            <span x-text="$t('admin.access.apiAddress')"></span>
-            <input x-model="form.openai_base_url" placeholder="http://localhost:11434/v1">
-            <small x-html="$t('admin.access.ollamaHint')"></small>
-          </label>
+
 
           <button type="button" class="btn soft wide" @click="test()" :disabled="testing">
             <span x-text="testing ? $t('admin.testing') : $t('admin.access.test')"></span>

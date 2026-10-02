@@ -282,8 +282,16 @@
         "description": "Very good reading, handwriting included. Paid, a few cents per lesson."
       },
       "openai": {
-        "name": "OpenAI-compatible (OpenAI, OpenRouter…)",
-        "description": "OpenAI, or OpenRouter: one key for GPT, Claude, Gemini, Mistral… “Other” accepts any compatible service (Ollama, LM Studio…)."
+        "name": "OpenAI (GPT)",
+        "description": "GPT models, with an OpenAI key. Paid, a few cents per lesson."
+      },
+      "openrouter": {
+        "name": "OpenRouter",
+        "description": "One key for Gemini, Claude, GPT, Mistral… and always their latest version. The exact cost of each lesson."
+      },
+      "compatible": {
+        "name": "Other OpenAI-compatible service",
+        "description": "A model at home (Ollama, LM Studio…) or another service (Mistral…), at its address."
       },
       "fake": {
         "name": "Demo",
@@ -302,7 +310,9 @@
       "geminiHelp": "Create one at <a href=\"https://aistudio.google.com/apikey\" target=\"_blank\" rel=\"noopener\">aistudio.google.com/apikey</a>.",
       "anthropicKey": "Anthropic API key",
       "anthropicHelp": "Create one at <a href=\"https://console.anthropic.com/settings/keys\" target=\"_blank\" rel=\"noopener\">console.anthropic.com</a>.",
-      "openaiKey": "Service API key (not needed for a local service)",
+      "openaiKey": "OpenAI API key",
+      "openrouterKey": "OpenRouter API key",
+      "compatibleKey": "Service API key (often not needed for a local model)",
       "keySaved": "{masked} (saved)",
       "pasteKey": "Paste the key here",
       "replaceHint": "To replace it, paste the new key.",
@@ -362,8 +372,6 @@
       "button": "Change the password"
     },
     "service": {
-      "title": "Service",
-      "other": "Other",
       "keyAt": "Create a key at",
       "vision": "Pick a model that accepts images (vision).",
       "loadModels": "📋 Load the service's models",

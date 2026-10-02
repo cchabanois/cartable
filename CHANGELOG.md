@@ -62,6 +62,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Changed
 
+- OpenAI, OpenRouter and the other OpenAI-compatible services are three providers of their own in ⚙️ (and in the code), each with its key and its way to choose the model, instead of one "OpenAI-compatible" provider with services. Saved settings and `.env` are read as before.
 - The default prompts are no longer copied into the user's prompts on first start; old copies left unchanged that a Cartable prompt replaces are dropped (the "FR → ES" ones, with their Spanish voice, are kept).
 - In the Anki add-on, no AnkiWeb sync is tried for a profile that isn't logged in (no more warning at each send); the settings say whether the open profile is logged in.
 - The settings page saves as you go (after a short pause in a text field; API keys once their field is left or with Enter), with a ✓ Saved pill instead of the Save button. The test buttons are "Test" and "Test the connection with Anki".

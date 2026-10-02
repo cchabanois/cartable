@@ -799,10 +799,10 @@ def test_service_models(admin, monkeypatch):
     admin.put(
         "/api/admin/settings",
         headers=ADMIN,
-        json={"llm": "openai", "openai_base_url": "https://openrouter.ai/api/v1", "openai_api_key": "sk-or-1"},
+        json={"llm": "openrouter", "openrouter_api_key": "sk-or-1"},
     )
 
-    # OpenRouter-like: models describe their inputs → only those accepting images
+    # OpenRouter: models describe their inputs → only those accepting images
     monkeypatch.setattr(
         openai,
         "AsyncOpenAI",
@@ -821,14 +821,16 @@ def test_service_models(admin, monkeypatch):
     assert listed(res) == {"models": ["anthropic/claude-sonnet-5", "openai/gpt-6-luna"], "vision_only": True}
     assert seen == {"base_url": "https://openrouter.ai/api/v1", "api_key": "sk-or-1"}
 
-    # OpenAI-like: no description → every model
+    # OpenAI: no description → every model
+    admin.put("/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_api_key": "sk-openai-1"})
     monkeypatch.setattr(openai, "AsyncOpenAI", fake_openai([FakeModel("b"), FakeModel("a")], seen))
     assert listed(admin.post("/api/admin/models", headers=ADMIN)) == {"models": ["a", "b"], "vision_only": False}
+    assert seen == {"base_url": "https://api.openai.com/v1", "api_key": "sk-openai-1"}
     assert admin.post("/api/admin/models").status_code == 401
 
 
 def test_openai_compatible_without_model(admin):
-    admin.put("/api/admin/settings", headers=ADMIN, json={"llm": "openai", "model": ""})
+    admin.put("/api/admin/settings", headers=ADMIN, json={"llm": "compatible", "model": ""})
     files = [("images", ("p.jpg", b"x", "image/jpeg"))]
     res = admin.post("/api/extract", files=files, data={"prompt": "x"})
     assert res.status_code == 502
@@ -854,7 +856,9 @@ def test_openai_compatible_service_error(admin, monkeypatch):
             return gen()
 
     admin.put(
-        "/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "https://api.example.test/v1"}
+        "/api/admin/settings",
+        headers=ADMIN,
+        json={"llm": "compatible", "compatible_base_url": "https://api.example.test/v1"},
     )
     monkeypatch.setattr(openai, "AsyncOpenAI", Failing)
     res = admin.post("/api/admin/models", headers=ADMIN)
@@ -864,49 +868,83 @@ def test_openai_compatible_service_error(admin, monkeypatch):
         "params": {"provider": "api.example.test", "status": 500, "detail": "boom"},
     }
 
-    admin.put("/api/admin/settings", headers=ADMIN, json={"openai_base_url": ""})
+    admin.put("/api/admin/settings", headers=ADMIN, json={"compatible_base_url": ""})
     assert admin.post("/api/admin/models", headers=ADMIN).json()["detail"]["code"] == "llm.missing_url"
 
 
-def test_one_key_per_openai_compatible_service(admin, tmp_path):
+def test_openai_openrouter_and_compatible_are_separate(admin):
     def put(body):
         return admin.put("/api/admin/settings", headers=ADMIN, json=body).json()
 
-    put({"llm": "openai", "openai_base_url": "https://api.openai.com/v1", "openai_api_key": "sk-openai-1111"})
-    view = put({"openai_base_url": "https://openrouter.ai/api/v1", "openai_api_key": "sk-or-2222"})
-
-    # Each service keeps its own key; the page gets them masked, by service
-    assert view["openai_keys"] == {
-        "https://api.openai.com/v1": "•••• 1111",
-        "https://openrouter.ai/api/v1": "•••• 2222",
-    }
-    assert view["openai_api_key"] == "•••• 2222"  # the current service's
+    view = put({"openai_api_key": "sk-openai-1111", "openrouter_api_key": "sk-or-2222", "compatible_api_key": "loc"})
+    # Each its own key, masked for the page
+    assert (view["openai_api_key"], view["openrouter_api_key"]) == ("•••• 1111", "•••• 2222")
     assert "sk-" not in json.dumps(view)
-    assert settings.current().openai_key() == "sk-or-2222"
+    for provider, url, key in [
+        ("openai", "https://api.openai.com/v1", "sk-openai-1111"),
+        ("openrouter", "https://openrouter.ai/api/v1", "sk-or-2222"),
+    ]:
+        put({"llm": provider})
+        assert (settings.current().base_url(), settings.current().api_key()) == (url, key)
+    put({"llm": "compatible", "compatible_base_url": "http://localhost:11434/v1"})
+    assert (settings.current().base_url(), settings.current().api_key()) == ("http://localhost:11434/v1", "loc")
+    assert admin.put("/api/admin/settings", headers=ADMIN, json={"compatible_base_url": "localhost"}).status_code == 422
+    # Their default models
+    assert view["default_models"]["openrouter"] == "~google/gemini-flash-latest"
+    put({"llm": "openai", "openai_api_key": ""})  # cleared
+    assert settings.current().api_key() == ""
 
-    put({"openai_base_url": "https://api.openai.com/v1/"})  # switching back: its key comes back
-    assert settings.current().openai_key() == "sk-openai-1111"
 
-    put({"openai_base_url": "https://api.mistral.ai/v1"})  # a service without a key
-    assert settings.current().openai_key() == ""
-
-    put({"openai_base_url": "https://openrouter.ai/api/v1", "openai_api_key": ""})  # delete OpenRouter's only
-    assert set(settings.current().openai_keys) == {"https://api.openai.com/v1"}
-
-
-def test_legacy_openai_key_moved_to_its_service(client, tmp_path):
-    """A key saved before keys per service belongs to the service saved with it only."""
+@pytest.mark.parametrize(
+    ("saved", "expected"),
+    [
+        # One provider with a key per address (the settings before the split)
+        (
+            {
+                "llm": "openai",
+                "model": "gpt-6-luna",
+                "openai_base_url": "https://api.openai.com/v1",
+                "openai_keys": {"https://api.openai.com/v1": "sk-o", "https://openrouter.ai/api/v1/": "sk-r"},
+            },
+            {"llm": "openai", "openai_api_key": "sk-o", "openrouter_api_key": "sk-r", "model": "gpt-6-luna"},
+        ),
+        (
+            {"llm": "openai", "openai_base_url": "https://openrouter.ai/api/v1", "openai_keys": {}},
+            {"llm": "openrouter"},
+        ),
+        (
+            {
+                "llm": "openai",
+                "openai_base_url": "http://localhost:11434/v1",
+                "openai_keys": {"http://localhost:11434/v1": "ollama"},
+            },
+            {"llm": "compatible", "compatible_base_url": "http://localhost:11434/v1", "compatible_api_key": "ollama"},
+        ),
+        # Older still: one key, for the address saved with it
+        (
+            {"llm": "gemini", "openai_base_url": "https://openrouter.ai/api/v1", "openai_api_key": "sk-old"},
+            {"llm": "gemini", "openrouter_api_key": "sk-old", "openai_api_key": ""},
+        ),
+    ],
+)
+def test_settings_saved_before_the_split(client, tmp_path, saved, expected):
     path = tmp_path / "data" / "settings.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps({"llm": "openai", "openai_base_url": "https://api.openai.com/v1", "openai_api_key": "sk-old-9999"})
-    )
-    assert settings.current().openai_key() == "sk-old-9999"
-    settings.save({"openai_base_url": "https://openrouter.ai/api/v1"})
-    assert settings.current().openai_key() == ""  # not reused for OpenRouter
-    saved = json.loads(path.read_text(encoding="utf-8"))
-    assert "openai_api_key" not in saved  # migrated on save
-    assert saved["openai_keys"] == {"https://api.openai.com/v1": "sk-old-9999"}
+    path.write_text(json.dumps(saved))
+    current = settings.current().model_dump()
+    assert {k: current[k] for k in expected} == expected
+    settings.save({"tts_rate": "+0%"})  # written in the new form
+    written = json.loads(path.read_text(encoding="utf-8"))
+    assert "openai_base_url" not in written and "openai_keys" not in written
+    assert {k: settings.current().model_dump()[k] for k in expected} == expected
+
+
+def test_env_before_the_split(client, monkeypatch):
+    monkeypatch.setenv("CARTABLE_LLM", "openai")
+    monkeypatch.setenv("CARTABLE_OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
+    monkeypatch.setenv("CARTABLE_OPENAI_API_KEY", "sk-env")
+    s = settings.current()
+    assert (s.llm, s.openrouter_api_key, s.base_url()) == ("openrouter", "sk-env", "https://openrouter.ai/api/v1")
 
 
 class FakeMistralModel:
@@ -919,7 +957,9 @@ def test_mistral_models(admin, monkeypatch):
     import openai
 
     admin.put(
-        "/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "https://api.mistral.ai/v1"}
+        "/api/admin/settings",
+        headers=ADMIN,
+        json={"llm": "compatible", "compatible_base_url": "https://api.mistral.ai/v1"},
     )
     monkeypatch.setattr(
         openai,
@@ -950,7 +990,9 @@ def test_lm_studio_models(admin, monkeypatch):
     import openai
 
     admin.put(
-        "/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "http://localhost:1234/v1"}
+        "/api/admin/settings",
+        headers=ADMIN,
+        json={"llm": "compatible", "compatible_base_url": "http://localhost:1234/v1"},
     )
     monkeypatch.setattr(openai, "AsyncOpenAI", fake_openai([FakeModel("google/gemma-4"), FakeModel("qwen/qwen3")], {}))
     local_server(
@@ -972,7 +1014,9 @@ def test_ollama_models(admin, monkeypatch):
     import openai
 
     admin.put(
-        "/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "http://localhost:11434/v1"}
+        "/api/admin/settings",
+        headers=ADMIN,
+        json={"llm": "compatible", "compatible_base_url": "http://localhost:11434/v1"},
     )
     monkeypatch.setattr(openai, "AsyncOpenAI", fake_openai([FakeModel("qwen2.5vl:7b"), FakeModel("llama3:8b")], {}))
     capabilities = {"qwen2.5vl:7b": ["completion", "vision"], "llama3:8b": ["completion"]}
@@ -1656,9 +1700,7 @@ def test_openrouter_short_list(admin, monkeypatch):
     """OpenRouter's aliases (always the latest model of a family) come as a short list."""
     import openai
 
-    admin.put(
-        "/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "https://openrouter.ai/api/v1"}
-    )
+    admin.put("/api/admin/settings", headers=ADMIN, json={"llm": "openrouter"})
     vision = (["image", "text"], ["structured_outputs"])
     models = [
         FakeModel("~google/gemini-flash-latest", *vision, name="Google: Gemini Flash Latest"),

@@ -112,7 +112,7 @@ class AiCall(BaseModel):
 
     at: str
     kind: Literal["extract", "revise", "picture"]
-    provider: str  # gemini, anthropic, openai (service host for OpenAI-compatible: "openrouter.ai")
+    provider: str  # gemini, anthropic; the service's host for the OpenAI-like ones ("openrouter.ai")
     model: str  # the model that answered (a fallback, if the main one was overloaded)
     input_tokens: int | None = None
     output_tokens: int | None = None
@@ -176,13 +176,15 @@ class Prompt(PromptIn):
 class SettingsUpdate(BaseModel):
     """Admin page form: None leaves a field unchanged ("" clears an API key)."""
 
-    llm: Literal["gemini", "anthropic", "openai", "fake"] | None = None
+    llm: Literal["gemini", "anthropic", "openai", "openrouter", "compatible", "fake"] | None = None
     model: str | None = None
     fallback_models: str | None = None
     gemini_api_key: str | None = None
     anthropic_api_key: str | None = None
-    openai_base_url: str | None = None
     openai_api_key: str | None = None
+    openrouter_api_key: str | None = None
+    compatible_base_url: str | None = Field(default=None, pattern=r"^(https?://.*)?$")
+    compatible_api_key: str | None = None
     tts_rate: str | None = Field(default=None, pattern=r"^[+-]\d{1,2}%$")
     ankiconnect_url: str | None = Field(default=None, pattern=r"^https?://")
     ankiconnect_key: str | None = None

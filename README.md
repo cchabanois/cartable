@@ -134,6 +134,12 @@ The server never builds sentences: its errors are codes (`llm.overloaded`, `less
 .venv/bin/ruff check . && .venv/bin/ruff format --check .   # lint and formatting (pyproject.toml)
 ```
 
+`requirements.txt` pins every package to an exact version, for every system, so a new release of a library can't break an install (the add-on installs it on the user's computer). The direct dependencies are in `requirements.in`; to change them or update the pins (Dependabot proposes updates every week):
+
+```sh
+uv pip compile requirements.in --universal --python-version 3.13 -o requirements.txt --upgrade
+```
+
 `tests/test_page.py` drives the pages in a real browser (Playwright, headless Chromium): the page saving as it goes, generating again and undoing, deleting a lesson, the settings. It is skipped unless Playwright is installed: `.venv/bin/pip install -r requirements-page.txt`, then `.venv/bin/python -m playwright install chromium` (or set `CARTABLE_TEST_CHROMIUM=/usr/bin/chromium` to use the system's Chromium).
 
 `tests/test_real_anki.py` runs the add-on's bridge and the `.apkg` import against Anki's real engine (the `anki` package, no Anki window). It is skipped unless that package is installed: `.venv/bin/pip install -r requirements-anki.txt`.

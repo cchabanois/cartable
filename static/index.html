@@ -134,6 +134,9 @@
           <span x-show="saveState === 'pending' || saveState === 'saving'" x-text="$t('app.review.saving')"></span>
           <span x-show="saveState === 'error'" x-text="$t('app.review.notSaved')"></span>
         </span>
+        <!-- The open lesson can be deleted here too (same confirmation as in the list) -->
+        <button class="icon-btn muted" x-show="lessonId && !readOnly()" @click="deleteLesson({ id: lessonId, deck })"
+                :aria-label="$t('app.lessons.delete')" :title="$t('app.lessons.delete')">🗑</button>
       </div>
 
       <label class="field deck">

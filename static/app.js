@@ -514,9 +514,9 @@ document.addEventListener("alpine:init", () => {
       this.removal = { open: true, lesson: l, checking: true, available: false, count: 0, anki: false, busy: false };
       try {
         const found = await (await api(`/api/lessons/${l.id}/anki-notes`)).json();
-        if (this.removal.lesson === l) Object.assign(this.removal, found);
+        if (this.removal.lesson?.id === l.id) Object.assign(this.removal, found);  // still this lesson's dialog
       } catch {}  // Anki unknown: the lesson alone
-      if (this.removal.lesson === l) this.removal.checking = false;
+      if (this.removal.lesson?.id === l.id) this.removal.checking = false;
     },
 
     async confirmDeleteLesson() {

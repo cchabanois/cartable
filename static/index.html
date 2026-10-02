@@ -92,6 +92,9 @@
     <section class="panel">
       <h2><span class="step">2</span> <span x-text="$t('app.prompt.title')"></span></h2>
       <div class="chips" role="radiogroup" :aria-label="$t('app.prompt.title')">
+        <!-- A prompt written for this time only, never saved -->
+        <button class="chip" role="radio" :aria-checked="selectedId === null" :class="{ active: selectedId === null }"
+                @click="chooseFree()" x-text="$t('app.prompt.free')" :title="$t('app.prompt.freeHint')"></button>
         <template x-for="c in recentPrompts()" :key="c.id">
           <button class="chip" role="radio" :aria-checked="c.id === selectedId"
                   :class="{ active: c.id === selectedId }"
@@ -101,10 +104,12 @@
         <button class="chip more" x-show="prompts.length > recentPrompts().length" @click="openPicker()">
           <span x-text="$t('app.prompt.all')"></span> <span class="count" x-text="prompts.length"></span>
         </button>
-        <button class="chip add" @click="openEditor('new')" x-text="$t('app.prompt.new')"></button>
+        <button class="chip add" @click="openEditor('new')" x-text="$t('app.prompt.new')" :title="$t('app.prompt.newHint')"></button>
       </div>
-      <textarea x-model="form.text" rows="4" :aria-label="$t('app.prompt.text')"></textarea>
+      <textarea x-model="form.text" rows="4" x-ref="promptText" :aria-label="$t('app.prompt.text')"
+                :placeholder="selectedId === null ? $t('app.prompt.freePlaceholder') : ''"></textarea>
       <p class="hint" x-show="isModified()" x-text="$t('app.prompt.modified')"></p>
+      <p class="hint" x-show="selectedId === null" x-text="$t('app.prompt.freeNote')"></p>
 
       <div class="prompt-actions">
         <button class="link-btn" x-show="selectedId" @click="openEditor('edit')" x-text="$t('app.prompt.edit')"></button>

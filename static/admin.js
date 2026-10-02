@@ -14,7 +14,7 @@ const PROVIDERS = [
 const SERVICES = [
   { id: "openai", name: "OpenAI", url: "https://api.openai.com/v1", model: "gpt-6-luna",
     keyUrl: "https://platform.openai.com/api-keys" },
-  { id: "openrouter", name: "OpenRouter", url: "https://openrouter.ai/api/v1", model: "google/gemini-3.8-flash",
+  { id: "openrouter", name: "OpenRouter", url: "https://openrouter.ai/api/v1", model: "~google/gemini-flash-latest",
     keyUrl: "https://openrouter.ai/keys" },
 ];
 
@@ -46,6 +46,10 @@ document.addEventListener("alpine:init", () => {
     providers: PROVIDERS,
     services: SERVICES,
     loadedModels: [],    // models listed by the OpenAI-compatible service
+    modelAliases: [],    // OpenRouter: "~…-latest", the latest model of each main family (the short list)
+    modelNames: {},      // id → name given by the service ("Google: Gemini Flash Latest")
+    recommendedModel: null,
+    showAllModels: false,  // the full list instead of the short one
     modelsInfo: "",
     loadingModels: false,
     status: null,
@@ -137,6 +141,9 @@ document.addEventListener("alpine:init", () => {
         this.loadLessons();
         this.loadAnkiStatus();
         this.loadPhone();
+        if (this.form.llm === "openai" && this.service()?.id === "openrouter" && this.savedKey("openai_api_key")) {
+          this.loadModels();
+        }
       } catch (e) {
         this.error = e.message;
       }
@@ -176,14 +183,26 @@ document.addEventListener("alpine:init", () => {
     providerChanged() {
       if (this.form.llm === this.saved.llm) this.form.model = this.saved.model;
       else this.form.model = this.form.llm === "openai" ? (this.service()?.model ?? "") : "";
-      this.loadedModels = [];
+      this.clearModels();
+    },
+
+    clearModels() {
+      Object.assign(this, { loadedModels: [], modelAliases: [], modelNames: {}, recommendedModel: null, showAllModels: false });
       this.modelsInfo = "";
     },
 
+    // The short list (OpenRouter's aliases) unless all the models are asked for
     modelSuggestions() {
       if (this.form.llm !== "openai") return this.provider().models;
       const preset = this.service()?.model;
-      return [...new Set([...(preset ? [preset] : []), ...this.loadedModels])];
+      const shown = this.modelAliases.length && !this.showAllModels ? this.modelAliases : this.loadedModels;
+      return [...new Set([...(preset ? [preset] : []), ...shown])];
+    },
+
+    // "Google: Gemini Flash Latest" → "Gemini Flash"
+    modelLabel(id) {
+      const name = this.modelNames[id] ?? id.replace(/^~[^/]+\//, "");
+      return name.replace(/^[^:]+:\s*/, "").replace(/\s+latest$/i, "").replace(/-latest$/, "");
     },
 
     // Service matching the saved/typed address, null for "Other".
@@ -195,8 +214,7 @@ document.addEventListener("alpine:init", () => {
       this.form.openai_base_url = s ? s.url : "";
       this.form.model = s ? s.model : "";
       delete this.keys.openai_api_key;  // a key typed for the previous service isn't for this one
-      this.loadedModels = [];
-      this.modelsInfo = "";
+      this.clearModels();
     },
 
     // Saved key (masked) for a key field; for the OpenAI-compatible provider,
@@ -211,8 +229,9 @@ document.addEventListener("alpine:init", () => {
       if (!(await this.flush())) return;  // the server lists with the saved address and key
       this.loadingModels = true;
       try {
-        const { models, vision_only } = await this.request("/api/admin/models", { method: "POST" });
-        this.loadedModels = models;
+        const { models, vision_only, aliases = [], names = {}, recommended = null } =
+          await this.request("/api/admin/models", { method: "POST" });
+        Object.assign(this, { loadedModels: models, modelAliases: aliases, modelNames: names, recommendedModel: recommended });
         // vision_only: the service says which models accept images; otherwise the test tells.
         const key = vision_only ? "admin.service.modelsVision" : "admin.service.modelsAll";
         this.modelsInfo = models.length ? t(key, { count: models.length })

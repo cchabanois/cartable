@@ -114,8 +114,21 @@
                   </template>
                 </datalist>
                 <small x-show="form.llm !== 'openai'" x-text="$t('admin.provider.modelHint')"></small>
-                <small x-show="form.llm === 'openai'" x-text="$t('admin.service.vision')"></small>
+                <small x-show="form.llm === 'openai' && !modelAliases.length" x-text="$t('admin.service.vision')"></small>
               </label>
+              <!-- OpenRouter: the latest model of each main family, the others on demand -->
+              <div class="field" x-show="form.llm === 'openai' && modelAliases.length">
+                <span x-text="$t('admin.service.aliases')"></span>
+                <div class="chips">
+                  <template x-for="id in modelAliases" :key="id">
+                    <button type="button" class="chip" :class="{ active: form.model === id }" @click="form.model = id"
+                            :title="id" x-text="(id === recommendedModel ? '⭐ ' : '') + modelLabel(id)"></button>
+                  </template>
+                </div>
+                <small x-text="$t('admin.service.aliasesHint')"></small>
+                <button type="button" class="link-btn" @click="showAllModels = !showAllModels"
+                        x-text="showAllModels ? $t('admin.service.fewerModels') : $t('admin.service.allModels', { count: loadedModels.length })"></button>
+              </div>
               <div class="field" x-show="form.llm === 'openai'">
                 <button type="button" class="btn soft" @click="loadModels()" :disabled="loadingModels"
                         x-text="loadingModels ? $t('admin.service.loading') : $t('admin.service.loadModels')"></button>

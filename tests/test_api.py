@@ -760,10 +760,17 @@ def test_revision_summary_in_page_language(client):
 # --- OpenAI-compatible services ------------------------------------------------------
 
 
+def listed(res) -> dict:
+    """The model list's main fields (the short list is tested on its own)."""
+    return {k: res.json()[k] for k in ("models", "vision_only")}
+
+
 class FakeModel:
-    def __init__(self, id, modalities=None, parameters=None):
+    def __init__(self, id, modalities=None, parameters=None, name=None):
         self.id = id
         self.model_extra = {"architecture": {"input_modalities": modalities}} if modalities else {}
+        if name:
+            self.model_extra["name"] = name
         if parameters is not None:
             self.model_extra["supported_parameters"] = parameters
 
@@ -811,12 +818,12 @@ def test_service_models(admin, monkeypatch):
         ),
     )
     res = admin.post("/api/admin/models", headers=ADMIN)
-    assert res.json() == {"models": ["anthropic/claude-sonnet-5", "openai/gpt-6-luna"], "vision_only": True}
+    assert listed(res) == {"models": ["anthropic/claude-sonnet-5", "openai/gpt-6-luna"], "vision_only": True}
     assert seen == {"base_url": "https://openrouter.ai/api/v1", "api_key": "sk-or-1"}
 
     # OpenAI-like: no description → every model
     monkeypatch.setattr(openai, "AsyncOpenAI", fake_openai([FakeModel("b"), FakeModel("a")], seen))
-    assert admin.post("/api/admin/models", headers=ADMIN).json() == {"models": ["a", "b"], "vision_only": False}
+    assert listed(admin.post("/api/admin/models", headers=ADMIN)) == {"models": ["a", "b"], "vision_only": False}
     assert admin.post("/api/admin/models").status_code == 401
 
 
@@ -919,7 +926,7 @@ def test_mistral_models(admin, monkeypatch):
         "AsyncOpenAI",
         fake_openai([FakeMistralModel("mistral-medium-3-5", True), FakeMistralModel("codestral", False)], {}),
     )
-    assert admin.post("/api/admin/models", headers=ADMIN).json() == {
+    assert listed(admin.post("/api/admin/models", headers=ADMIN)) == {
         "models": ["mistral-medium-3-5"],
         "vision_only": True,
     }
@@ -958,7 +965,7 @@ def test_lm_studio_models(admin, monkeypatch):
             }
         },
     )
-    assert admin.post("/api/admin/models", headers=ADMIN).json() == {"models": ["google/gemma-4"], "vision_only": True}
+    assert listed(admin.post("/api/admin/models", headers=ADMIN)) == {"models": ["google/gemma-4"], "vision_only": True}
 
 
 def test_ollama_models(admin, monkeypatch):
@@ -976,7 +983,7 @@ def test_ollama_models(admin, monkeypatch):
             ("POST", "/api/show"): lambda body: {"capabilities": capabilities[body["model"]]},
         },
     )
-    assert admin.post("/api/admin/models", headers=ADMIN).json() == {"models": ["qwen2.5vl:7b"], "vision_only": True}
+    assert listed(admin.post("/api/admin/models", headers=ADMIN)) == {"models": ["qwen2.5vl:7b"], "vision_only": True}
 
 
 def test_test_image_and_json(admin, monkeypatch):
@@ -1643,3 +1650,25 @@ def test_phone_link_address(client, monkeypatch):
         assert local.get("/api/admin/phone").json()["url"] == f"http://192.168.1.10:8000/?k={token}"
         monkeypatch.setenv("CARTABLE_PUBLIC_URL", "https://pc.example.ts.net/")  # Docker, tailscale serve
         assert local.get("/api/admin/phone").json()["url"] == f"https://pc.example.ts.net/?k={token}"
+
+
+def test_openrouter_short_list(admin, monkeypatch):
+    """OpenRouter's aliases (always the latest model of a family) come as a short list."""
+    import openai
+
+    admin.put(
+        "/api/admin/settings", headers=ADMIN, json={"llm": "openai", "openai_base_url": "https://openrouter.ai/api/v1"}
+    )
+    vision = (["image", "text"], ["structured_outputs"])
+    models = [
+        FakeModel("~google/gemini-flash-latest", *vision, name="Google: Gemini Flash Latest"),
+        FakeModel("~anthropic/claude-sonnet-latest", *vision, name="Anthropic: Claude Sonnet Latest"),
+        FakeModel("~deepseek/deepseek-pro-latest", ["text"], ["structured_outputs"]),  # no images
+        FakeModel("google/gemini-3.8-flash", *vision, name="Google: Gemini 3.8 Flash"),
+    ]
+    monkeypatch.setattr(openai, "AsyncOpenAI", fake_openai(models, {}))
+    res = admin.post("/api/admin/models", headers=ADMIN).json()
+    assert res["aliases"] == ["~google/gemini-flash-latest", "~anthropic/claude-sonnet-latest"]  # recommended first
+    assert res["recommended"] == "~google/gemini-flash-latest"
+    assert res["names"]["~google/gemini-flash-latest"] == "Google: Gemini Flash Latest"
+    assert "google/gemini-3.8-flash" in res["models"] and "~deepseek/deepseek-pro-latest" not in res["models"]

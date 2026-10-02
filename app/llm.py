@@ -581,13 +581,21 @@ async def _local_vision_models(s: Settings) -> list[str] | None:
             return None
 
 
+# OpenRouter's aliases ("~google/gemini-flash-latest"): always the latest model of a
+# family, the main ones of each provider. Offered first; this one recommended (the
+# most precise on diagrams in our trials, fast and cheap).
+ALIAS = "~"
+RECOMMENDED = "~google/gemini-flash-latest"
+
+
 async def list_models(s: Settings) -> dict:
     """Models of the OpenAI-compatible service, keeping those accepting images
     when the service tells (OpenRouter, Mistral, LM Studio, Ollama) — and
     structured output when it tells that too (OpenRouter).
 
-    Returns {"models": [...], "vision_only": bool}; vision_only is False when
-    the service doesn't say (OpenAI): the admin test then tells for sure."""
+    Returns {"models": [...], "vision_only": bool, "aliases": [...], "names": {id: name},
+    "recommended": id or None}; vision_only is False when the service doesn't say
+    (OpenAI): the admin test then tells for sure. `aliases`: the short list (OpenRouter)."""
     import openai
 
     client = _openai_base(s)
@@ -601,11 +609,25 @@ async def list_models(s: Settings) -> dict:
 
     known = [_usable(m) for m in models]
     if any(k is not None for k in known):
-        return {"models": sorted(m.id for m, k in zip(models, known, strict=True) if k), "vision_only": True}
+        usable = [m for m, k in zip(models, known, strict=True) if k]
+        aliases = sorted((m.id for m in usable if m.id.startswith(ALIAS)), key=lambda i: (i != RECOMMENDED, i))
+        return {
+            "models": sorted(m.id for m in usable),
+            "vision_only": True,
+            "aliases": aliases,
+            "names": {m.id: name for m in usable if (name := (m.model_extra or {}).get("name"))},
+            "recommended": RECOMMENDED if RECOMMENDED in aliases else None,
+        }
     local = await _local_vision_models(s)
     if local is not None:
-        return {"models": sorted(local), "vision_only": True}
-    return {"models": sorted(m.id for m in models), "vision_only": False}
+        return {"models": sorted(local), "vision_only": True, "aliases": [], "names": {}, "recommended": None}
+    return {
+        "models": sorted(m.id for m in models),
+        "vision_only": False,
+        "aliases": [],
+        "names": {},
+        "recommended": None,
+    }
 
 
 async def _openai[T: BaseModel](s: Settings, images: list[Image], text: str, schema: type[T]) -> T:

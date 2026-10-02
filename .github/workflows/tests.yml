@@ -74,6 +74,23 @@ jobs:
           fi
       - run: pytest -q tests/test_real_anki.py
 
+  page:
+    # The pages in a real browser (Playwright, headless Chromium): saving as they go,
+    # generating again and undoing, deleting a lesson, the settings (tests/test_page.py).
+    name: page (browser)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - run: pip install -r requirements-page.txt
+      - run: python -m playwright install --with-deps chromium
+      - run: pytest -q tests/test_page.py
+
   addon-install:
     # The packaged add-on, unpacked as Anki would: downloads uv, installs Python
     # and the dependencies, starts the server (see tools/check_addon_install.py).

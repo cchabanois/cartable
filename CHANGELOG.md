@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Tests of the pages in a real browser (Playwright, headless Chromium), in the CI: the page saving as it goes, generating again and undoing, deleting the open lesson, the settings showing what each AI service needs.
+
 - With OpenRouter, the settings suggest a short list: its "~…-latest" models, always the latest version of each main family (Gemini Flash ⭐ recommended, Claude Sonnet, GPT Mini…), with their readable names; every model on demand. The list loads by itself when OpenRouter has a key. Choosing OpenRouter now suggests `~google/gemini-flash-latest`.
 
 - Only paired devices can use Cartable over the Wi-Fi: the computer itself always, other devices once they scanned the QR code (Tools → Cartable → Open on the phone, or the new ⚙️ → Phones section), which leaves a token in a long-lived cookie (`SameSite=Strict`, so other websites can't use it). The home screen icon carries it too (on an iPhone it doesn't share Safari's cookies). "Disconnect every phone" changes the token. Without HTTPS it stops the curious and other websites, not someone spying on the Wi-Fi; the README explains Tailscale for HTTPS. `CARTABLE_PUBLIC_URL` gives the address for the QR code where Cartable can't see it (Docker, proxy).

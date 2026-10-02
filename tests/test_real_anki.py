@@ -148,6 +148,9 @@ def test_bridge_on_a_real_collection(bridged, col):
     assert len(col.find_notes(f'"note:{note_type.name}"')) == len(cards)
     assert fields(col, mother)["Back"] == "la mamá"
 
+    # The decks it now holds, offered for the next lessons
+    assert set(decks) <= set(client.get("/api/decks").json())
+
     # Anki's profiles, for the owner picker in the settings
     assert client.post("/api/admin/password", json={"new": "secret"}).status_code == 204
     listing = client.get("/api/admin/lessons", headers={"X-Admin-Password": "secret"}).json()

@@ -177,7 +177,7 @@ def test_sideways_photo_saved_upright(client, monkeypatch):
     from app import main
     from app.models import Deck
 
-    async def sideways(images, prompt, deck="", profile=None):
+    async def sideways(images, prompt, deck="", profile=None, decks=()):
         mask = Mask(page=1, n=1, box=[0.1, 0.2, 0.3, 0.4])
         deck = Deck(deck="D", cards=[Card(front="What is (1)?", back="x", mask=mask)])
         return llm.Extracted(deck, [90], [Frame(page=1, box=[0.05, 0.1, 0.5, 0.6])])
@@ -288,7 +288,7 @@ def test_turning_a_photo_by_hand_turns_its_frame(client, monkeypatch):
     from app import main
     from app.models import Deck
 
-    async def framed(images, prompt, deck="", profile=None):
+    async def framed(images, prompt, deck="", profile=None, decks=()):
         mask = Mask(page=1, n=1, box=[0.1, 0.2, 0.3, 0.4])
         deck = Deck(deck="D", cards=[Card(front="What is (1)?", back="x", mask=mask)])
         return llm.Extracted(deck, [0], [Frame(page=1, box=[0.05, 0.1, 0.5, 0.6])])

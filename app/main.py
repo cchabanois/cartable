@@ -17,7 +17,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, Reque
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from . import anki, ankiconnect, diagrams, i18n, lessons, llm, pictures, prompts, settings, tts, usage
+from . import anki, ankiconnect, decks, diagrams, i18n, lessons, llm, pictures, prompts, settings, tts, usage
 from .anki import build_apkg, notes
 from .errors import AppError
 from .llm import Image, check, extract_cards, list_models, revise_cards
@@ -137,7 +137,7 @@ async def extract(
     profile = await ankiconnect.active_profile() or ""  # the lesson belongs to this Anki profile
     with llm.recording("extract") as calls:  # model, tokens and cost, kept with the lesson
         try:
-            found = await extract_cards(data, prompt, deck, profile)
+            found = await extract_cards(data, prompt, deck, profile, await decks.known(profile))
         except Exception:
             usage.add(calls, lesson_id=None)  # answered but unusable: paid for, no lesson
             raise
@@ -259,6 +259,12 @@ async def export(req: ExportRequest, background: BackgroundTasks) -> FileRespons
 
 
 # --- Direct send to Anki (AnkiConnect) ----------------------------------------
+
+
+@app.get("/api/decks")
+async def deck_names() -> list[str]:
+    """The decks that already exist (Anki's and the lessons'), offered for the deck name."""
+    return await decks.known(await ankiconnect.active_profile())
 
 
 @app.get("/api/anki/status")

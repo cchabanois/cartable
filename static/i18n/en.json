@@ -505,7 +505,7 @@
   "builtinPrompts": {
     "auto": {
       "name": "Automatic (from the lesson)",
-      "text": "Look at the lesson and choose the most useful cards to review it:\n- vocabulary of a language: one card per word or phrase, front in English, back in the language being learned;\n- a lesson (history, science, geography…): short questions / answers, or fill in the blanks for the sentences to remember;\n- formulas: one card per formula (front: what it calculates, back: the formula);\n- a diagram with labels: a diagram to complete, one card per label.\nMix them if the page holds several of these.",
+      "text": "Look at the lesson and choose the most useful cards to review it:\n- vocabulary of a language: one card per word or phrase, front in English, back in the language being learned;\n- a lesson (history, science, geography…): short questions / answers, or fill in the blanks for the sentences to remember;\n- formulas: one card per formula (front: what it calculates, back: the formula);\n- a diagram with labels: a diagram to complete, one card per label.\nMix them if the page holds several of these.\nSay in one sentence what you chose.",
       "deck": "{subject}::{lesson title}",
       "voice": "auto"
     },

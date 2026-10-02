@@ -77,7 +77,7 @@ class Extraction(Deck):
     )
     choice: str = Field(
         default="",
-        description="Only when the instructions let you choose the kind of cards: one short sentence, in the "
+        description="Whenever the instructions let you choose the kind of cards: one short sentence, in the "
         'language of the instructions, saying what you made (e.g. "Spanish vocabulary: French → Spanish"). '
         "Otherwise empty.",
     )

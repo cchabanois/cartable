@@ -57,6 +57,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Fixed
 
+- The AI no longer puts HTML tags or Markdown in the cards (bold words of the page came out as "<b>…</b>" in Anki).
 - After an update, browsers could keep old copies of the page's files (untranslated texts, missing styles): they are now checked on every load.
 - Every automatic save of a lesson was sent twice.
 

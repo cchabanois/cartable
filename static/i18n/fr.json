@@ -505,7 +505,7 @@
   "builtinPrompts": {
     "auto": {
       "name": "Automatique (d'après la leçon)",
-      "text": "Regarde la leçon et choisis les cartes les plus utiles pour la réviser :\n- vocabulaire d'une langue : une carte par mot ou expression, recto en français, verso dans la langue étudiée ;\n- leçon de cours (histoire, sciences, géographie…) : questions / réponses courtes, ou texte à trous pour les phrases à retenir ;\n- formules : une carte par formule (recto : ce qu'elle calcule, verso : la formule) ;\n- schéma avec des légendes : schéma à compléter, une carte par légende.\nMélange si la page contient plusieurs de ces choses.",
+      "text": "Regarde la leçon et choisis les cartes les plus utiles pour la réviser :\n- vocabulaire d'une langue : une carte par mot ou expression, recto en français, verso dans la langue étudiée ;\n- leçon de cours (histoire, sciences, géographie…) : questions / réponses courtes, ou texte à trous pour les phrases à retenir ;\n- formules : une carte par formule (recto : ce qu'elle calcule, verso : la formule) ;\n- schéma avec des légendes : schéma à compléter, une carte par légende.\nMélange si la page contient plusieurs de ces choses.\nDis en une phrase ce que tu as choisi.",
       "deck": "{matière}::{titre de la leçon}",
       "voice": "auto"
     },

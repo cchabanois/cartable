@@ -56,6 +56,8 @@ A hint may follow: "{{c1::1789::année}}". Hide what matters (dates, names, key 
 words), not small words. The back is empty, or a short extra shown with the answer. \
 In a gap, never write "}}" inside a formula: add a space ("} }"). Other cards have no \
 gaps.
+- Plain text in every field: no HTML tags and no Markdown (no <b>, no **bold**), even \
+for words in bold on the page; only the MathJax and cloze syntaxes above.
 - One idea per card; keep front and back short.
 - The "info" field is optional: leave it empty when there is nothing useful to add.
 - If the lesson naturally splits into parts (vocabulary, conjugation, sentences…) and \

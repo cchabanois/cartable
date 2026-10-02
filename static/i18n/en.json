@@ -86,6 +86,7 @@
       "noCards": "No cards found: check the photos or the instructions.",
       "owner": "👤 <strong>{owner}</strong>'s lesson",
       "sharedSwitch": "Shared with the other profiles",
+      "choice": "🤖 {choice}",
       "promptUsed": "📝 Instructions used for this lesson",
       "clozeHint": "Cloze: {{c1::…}} hides what is between the braces. Each number makes one card in Anki; the same number hides several gaps together.",
       "diagramHint": "Diagram: drag a red mask to move it, its round corner to resize it, so it hides the whole label. The dashed frame is what Anki shows of the photo: drag its blue corners to crop it.",
@@ -502,6 +503,12 @@
     "installDeclined": "Cartable isn't started. To install it later: Tools → Cartable → Open Cartable."
   },
   "builtinPrompts": {
+    "auto": {
+      "name": "Automatic (from the lesson)",
+      "text": "Look at the lesson and choose the most useful cards to review it:\n- vocabulary of a language: one card per word or phrase, front in English, back in the language being learned;\n- a lesson (history, science, geography…): short questions / answers, or fill in the blanks for the sentences to remember;\n- formulas: one card per formula (front: what it calculates, back: the formula);\n- a diagram with labels: a diagram to complete, one card per label.\nMix them if the page holds several of these.",
+      "deck": "{subject}::{lesson title}",
+      "voice": "auto"
+    },
     "vocabulary": {
       "name": "Vocabulary of a language",
       "text": "Create Anki cards with the vocabulary of the language lesson. One word or expression per card. Front in my language, back in the language being learned, with the article for nouns. In \"info\", give the gender, the plural when it is irregular, and a short example if the lesson has one.",

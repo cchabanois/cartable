@@ -85,6 +85,7 @@ document.addEventListener("alpine:init", () => {
     cards: [],
     reverse: false,
     decks: [],                   // existing deck names, for the deck field
+    lessonChoice: "",            // what the AI chose to make (prompt "Automatic")
     typing: false,               // the answer is typed in Anki
     dictation: false,            // a dictation card: hear the back, type it
     lessons: [],         // saved lesson summaries
@@ -413,6 +414,7 @@ document.addEventListener("alpine:init", () => {
       this.lessonOwner = lesson.owner ?? "";
       this.lessonShared = lesson.shared ?? false;
       this.lessonPrompt = lesson.prompt ?? "";
+      this.lessonChoice = lesson.choice ?? "";
       this.frames = lesson.frames ?? [];
       this.deck = lesson.deck;
       this.cards = lesson.cards.map(withKey);
@@ -474,6 +476,7 @@ document.addEventListener("alpine:init", () => {
       this.dictation = false;
       this.saveState = "";
       this.lessonPrompt = "";
+      this.lessonChoice = "";
       this.frames = [];
       // Back to the saved prompt picked last (a reopened lesson may have left its own text)
       if (!this.current()) {

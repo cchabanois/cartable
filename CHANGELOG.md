@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Cartable prompt ⭐ "Automatic (from the lesson)", first in the list (so picked when nothing was picked before): the AI looks at the lesson and chooses the cards (vocabulary, questions, cloze, formulas, diagram to complete, or a mix), with the voice of the language if any. One line in the review says what it chose.
+
 - Existing decks reused: the AI gets the decks of the open Anki profile and of the lessons it sees, and puts a lesson into the matching one ("Maths" if it exists, not a new "Mathématiques"), or makes a new name when none matches. The deck field suggests them. The add-on answers `deckNames`.
 
 - Typed answers and dictation, two options next to "Add the reverse card", kept with the lesson. "Type the answer": the pupil types it and Anki compares it letter by letter (text, picture and diagram cards; not formulas). "Add a dictation" (needs a voice): one more card per note, where the back is heard and written. New note types ("… à taper", "… + dictée"); the existing ones are unchanged. A prompt can carry these options (in its editor): the lessons made with it start with them. New Cartable prompt ⭐ "Dictée de mots": a sentence with the word replaced by "…", the word heard and typed.

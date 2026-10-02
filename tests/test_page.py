@@ -141,3 +141,6 @@ def test_settings_show_what_the_service_needs(page):
     sync_api.expect(address).to_be_hidden()
     page.get_by_text("Autre service compatible OpenAI").click()
     sync_api.expect(address).to_be_visible()  # only this one has an address
+    # In the order things are set: the service, its access, then the model
+    titles = [" ".join(t.split()) for t in page.locator("section.panel h2:visible").all_inner_texts()]
+    assert titles[:4] == ["1 Service d'IA", "2 Accès", "3 Modèle", "4 Images des cartes"]

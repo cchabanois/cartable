@@ -158,7 +158,12 @@
       "noSound": {
         "one": "{count} card without sound",
         "other": "{count} cards without sound"
-      }
+      },
+      "converted": {
+        "one": "{count} of them moved to the new options (history kept)",
+        "other": "{count} of them moved to the new options (history kept)"
+      },
+      "oldAnkiConnect": "AnkiConnect is too old to change the options of cards already sent: they stay next to the new ones (update AnkiConnect, or use the Cartable add-on)"
     },
     "export": {
       "noSound": "Deck exported, but {count} card(s) without sound (text-to-speech unavailable).",

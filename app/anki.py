@@ -70,8 +70,27 @@ class NoteType:
     cloze: bool = False  # Anki makes one card per gap number
     variant: str = ""  # typed answer, dictation: part of the note type's id
 
+    @property
+    def family(self) -> str:
+        return family(self.name)
+
     def __hash__(self) -> int:
         return hash(self.name)
+
+
+# Note types of a family hold the same kind of card; their options (voice, reverse,
+# typed answer, dictation) differ. A note can change type within its family.
+FAMILIES = {
+    "Cartable recto/verso": "text",
+    "Cartable légendes": "diagram",
+    "Cartable image": "picture",
+    "Cartable texte à trous": "cloze",
+}
+
+
+def family(note_type_name: str) -> str:
+    """ "text", "diagram", "picture", "cloze", or "" for a note type not Cartable's."""
+    return next((f for prefix, f in FAMILIES.items() if note_type_name.startswith(prefix)), "")
 
 
 def _typed(template: dict, field: str) -> dict:

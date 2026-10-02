@@ -352,3 +352,40 @@ def test_deleting_a_lesson_deletes_its_notes(bridged, col):
     client.put(f"/api/lessons/{lesson['id']}", json=body)
     assert client.delete(f"/api/lessons/{lesson['id']}?anki=true").json()["anki_deleted"] == 6
     assert {d.name for d in col.decks.all_names_and_ids()} == {"Default"}
+
+
+def test_options_changed_after_a_send_keep_the_review_history(bridged, col):
+    client, _ = bridged
+    lesson = extract(client)
+    body = {"deck": lesson["deck"], "cards": lesson["cards"], "voice": VOICE, "lesson_id": lesson["id"]}
+    client.post("/api/anki/send", json=body)
+    (mother,) = col.find_notes('"Front:la mère"')
+    (card,) = col.get_note(mother).cards()
+    card.type = card.queue = 2  # reviewed: due in 12 days, after 5 reviews
+    card.ivl, card.reps, card.due = 12, 5, col.sched.today + 12
+    col.update_card(card)
+    notes_before = sorted(col.find_notes(""))
+
+    def cards():
+        note = col.get_note(mother)
+        return note.note_type()["name"], {c.template()["name"]: c for c in note.cards()}
+
+    # Reverse card and dictation switched on: same notes, new cards, the history kept
+    res = client.post("/api/anki/send", json={**body, "reverse": True, "dictation": True}).json()
+    assert (res["added"], res["converted"]) == (0, 6)
+    assert sorted(col.find_notes("")) == notes_before
+    name, by_template = cards()
+    assert name == "Cartable recto/verso + inverse + dictée (audio)"
+    assert set(by_template) == {"Recto → Verso", "Verso → Recto", "Dictée"}
+    recto = by_template["Recto → Verso"]
+    assert (recto.id, recto.ivl, recto.reps) == (card.id, 12, 5)
+    dictation_id = by_template["Dictée"].id
+
+    # Reverse card switched off again: only that card goes, the others stay as they were
+    res = client.post("/api/anki/send", json={**body, "dictation": True}).json()
+    assert res["converted"] == 6
+    name, by_template = cards()
+    assert name == "Cartable recto/verso + dictée (audio)"
+    assert set(by_template) == {"Recto → Verso", "Dictée"}  # matched by name, not by position
+    assert (by_template["Recto → Verso"].id, by_template["Recto → Verso"].ivl) == (card.id, 12)
+    assert by_template["Dictée"].id == dictation_id

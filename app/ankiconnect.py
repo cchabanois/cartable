@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import httpx
 
 from . import settings
-from .anki import TAG_PREFIX, Note
+from .anki import TAG_PREFIX, Note, family
 from .errors import AppError
 
 TIMEOUT = 30.0
@@ -36,6 +36,8 @@ class SendResult:
     synced: bool
     sync_error: dict | None = None  # {"code", "params"}, translated by the page
     sync_skipped: bool = False  # the profile isn't logged in to AnkiWeb: not tried
+    converted: int = 0  # of the updated notes, those moved to another note type (options changed)
+    conversion_unsupported: bool = False  # AnkiConnect too old to change a note's type: added instead
 
 
 async def _invoke(client: httpx.AsyncClient, action: str, **params):
@@ -124,8 +126,10 @@ async def send(notes: list[Note]) -> SendResult:
                 client, "storeMediaFile", filename=path.name, data=base64.b64encode(path.read_bytes()).decode()
             )
 
-        added = updated = 0
+        added = updated = converted = 0
+        unsupported = False
         retag: dict[str, list[int]] = {}  # notes sent before they had the lesson's tag
+        others: dict[str, dict] = {}  # per deck: its notes of the other Cartable note types
         for deck, nt in dict.fromkeys((n.deck, n.nt) for n in notes):
             # createDeck returns the id of the deck, existing or new. Searching by id
             # and comparing keys here avoids escaping names in Anki's search syntax.
@@ -139,26 +143,57 @@ async def send(notes: list[Note]) -> SendResult:
                     for tag in (t for t in note.tags if t.startswith(TAG_PREFIX)):
                         retag.setdefault(tag, []).append(existing[note.key])
                     updated += 1
-                else:
-                    await _invoke(
-                        client,
-                        "addNote",
-                        note={
-                            "deckName": deck,
-                            "modelName": nt.name,
-                            "fields": note.fields,
-                            "tags": note.tags,
-                            "options": {"allowDuplicate": True},  # same front in another deck is fine
-                        },
-                    )
-                    added += 1
+                    continue
+                if deck not in others:
+                    others[deck] = await _other_cartable_notes(client, deck)
+                # Sent before with other options (voice, reverse, typing, dictation): the same
+                # note moves to the new note type, keeping its review history
+                old = others[deck].get((nt.family, nt.key, note.key))
+                if old and old["modelName"] != nt.name and not unsupported:
+                    try:
+                        tags = sorted({*old["tags"], *note.tags})
+                        changed = {"id": old["noteId"], "modelName": nt.name, "fields": note.fields, "tags": tags}
+                        await _invoke(client, "updateNoteModel", note=changed)
+                        del others[deck][(nt.family, nt.key, note.key)]
+                        updated += 1
+                        converted += 1
+                        continue
+                    except AnkiConnectError as e:
+                        if "unsupported action" not in str(e.params.get("detail", "")):
+                            raise
+                        unsupported = True  # an old AnkiConnect: added next to it, as before
+                await _invoke(
+                    client,
+                    "addNote",
+                    note={
+                        "deckName": deck,
+                        "modelName": nt.name,
+                        "fields": note.fields,
+                        "tags": note.tags,
+                        "options": {"allowDuplicate": True},  # same front in another deck is fine
+                    },
+                )
+                added += 1
 
         for tag, ids in retag.items():
             await _invoke(client, "addTags", notes=ids, tags=tag)
 
-        result = SendResult(added, updated, synced=False)
+        result = SendResult(added, updated, synced=False, converted=converted, conversion_unsupported=unsupported)
         await _sync(client, result)
         return result
+
+
+async def _other_cartable_notes(client: httpx.AsyncClient, deck: str) -> dict[tuple, dict]:
+    """The deck's Cartable notes (not its subdecks'), by (family, key field, key value)."""
+    name = _search(deck)
+    ids = await _invoke(client, "findNotes", query=f'"deck:{name}" -"deck:{name}::*" "note:Cartable*"')
+    found = {}
+    for info in await _invoke(client, "notesInfo", notes=ids) if ids else []:
+        kind = family(info.get("modelName", ""))
+        for key in ("Front", "Id"):
+            if kind and key in info["fields"]:
+                found[(kind, key, info["fields"][key]["value"])] = info
+    return found
 
 
 async def _sync(client: httpx.AsyncClient, result: SendResult) -> None:

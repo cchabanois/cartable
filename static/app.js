@@ -1026,12 +1026,14 @@ document.addEventListener("alpine:init", () => {
         const parts = [];
         if (r.added) parts.push(t("app.send.added", { count: r.added }));
         if (r.updated) parts.push(t("app.send.updated", { count: r.updated }));
+        if (r.converted) parts.push(t("app.send.converted", { count: r.converted }));
         let message = t("app.send.done", { parts: parts.join(", ") || t("app.send.nothing") });
         if (r.synced) message += " " + t("app.send.synced");
         this.notify(message, true);
         const warnings = [];
         if (r.sync_error) warnings.push(t("app.send.noSync", { reason: errorMessage(r.sync_error) }));
         if (r.audio_failures) warnings.push(t("app.send.noSound", { count: r.audio_failures }));
+        if (r.conversion_unsupported) warnings.push(t("app.send.oldAnkiConnect"));
         if (warnings.length) this.error = t("app.send.butWarning", { warnings: warnings.join(" ; ") });
       } catch (e) {
         this.error = e.message;

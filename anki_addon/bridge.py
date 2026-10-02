@@ -117,7 +117,7 @@ def _notes_info(p: dict) -> list[dict]:
     for note_id in p["notes"]:
         note = _col().get_note(note_id)
         fields = {name: {"value": value, "order": i} for i, (name, value) in enumerate(note.items())}
-        result.append({"noteId": note.id, "fields": fields, "tags": note.tags})
+        result.append({"noteId": note.id, "modelName": note.note_type()["name"], "fields": fields, "tags": note.tags})
     return result
 
 
@@ -127,6 +127,36 @@ def _update_note_fields(p: dict) -> None:
         if name in note:
             note[name] = value
     _col().update_note(note)
+    _schedule_refresh()
+
+
+def _update_note_model(p: dict) -> None:
+    """Move a note to another note type (its options changed), then set its fields and
+    tags. Fields and cards go to those of the same name, so a card keeps its review
+    history; a card whose template is gone is deleted, a new template makes a card."""
+    col = _col()
+    spec = p["note"]
+    note = col.get_note(spec["id"])
+    old, new = note.note_type(), col.models.by_name(spec["modelName"])
+    if new is None:
+        raise BridgeError(f"unknown note type: {spec['modelName']}")
+    if old["id"] != new["id"]:
+        request = col.models.change_notetype_info(old_notetype_id=old["id"], new_notetype_id=new["id"]).input
+        old_fields = [f["name"] for f in old["flds"]]
+        old_templates = [t["name"] for t in old["tmpls"]]
+        request.new_fields[:] = [old_fields.index(f["name"]) if f["name"] in old_fields else -1 for f in new["flds"]]
+        request.new_templates[:] = [
+            old_templates.index(t["name"]) if t["name"] in old_templates else -1 for t in new["tmpls"]
+        ]
+        request.note_ids[:] = [note.id]
+        col.models.change_notetype_of_notes(request)
+        note = col.get_note(note.id)
+    for name, value in spec.get("fields", {}).items():
+        if name in note:
+            note[name] = value
+    if "tags" in spec:
+        note.tags = list(spec["tags"])
+    col.update_note(note)
     _schedule_refresh()
 
 
@@ -203,6 +233,7 @@ ACTIONS: dict[str, Callable[[dict], Any]] = {
     "findNotes": _find_notes,
     "notesInfo": _notes_info,
     "updateNoteFields": _update_note_fields,
+    "updateNoteModel": _update_note_model,
     "findCards": _find_cards,
     "addTags": _add_tags,
     "deleteNotes": _delete_notes,

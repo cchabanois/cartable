@@ -158,7 +158,12 @@
       "noSound": {
         "one": "{count} carte sans son",
         "other": "{count} cartes sans son"
-      }
+      },
+      "converted": {
+        "one": "dont {count} passée aux nouvelles options (historique gardé)",
+        "other": "dont {count} passées aux nouvelles options (historique gardé)"
+      },
+      "oldAnkiConnect": "AnkiConnect est trop ancien pour changer les options des cartes déjà envoyées : elles restent à côté des nouvelles (mets à jour AnkiConnect, ou utilise le greffon Cartable)"
     },
     "export": {
       "noSound": "Paquet exporté, mais {count} carte(s) sans son (synthèse vocale indisponible).",

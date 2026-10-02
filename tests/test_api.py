@@ -432,10 +432,11 @@ def test_revision_errors(client, monkeypatch):
 class FakeAnki:
     """In-memory AnkiConnect, enough for Cartable's calls."""
 
-    def __init__(self, fail_sync=False, profile="Léa"):
+    def __init__(self, fail_sync=False, profile="Léa", note_model=True):
         self.models, self.decks, self.media, self.notes = {}, {}, {}, {}
         self.profile = profile
         self.calls, self.keys, self.fail_sync = [], [], fail_sync
+        self.note_model = note_model  # AnkiConnect recent enough for updateNoteModel
 
     def handle(self, request):
         body = json.loads(request.content)
@@ -463,6 +464,12 @@ class FakeAnki:
             q = p["query"]
             if tag := re.fullmatch(r'"tag:(.+)"', q):
                 result = [i for i, n in self.notes.items() if tag[1] in n["tags"]]
+            elif cartable := re.fullmatch(r'"deck:(.+)" -"deck:.+::\*" "note:Cartable\*"', q):
+                result = [
+                    i
+                    for i, n in self.notes.items()
+                    if n["deckName"] == cartable[1] and n["modelName"].startswith("Cartable")
+                ]
             elif deck := re.fullmatch(r'"note:(.+)" "deck:(.+)" -"deck:.+::\*"', q):
                 result = [i for i, n in self.notes.items() if (n["modelName"], n["deckName"]) == deck.groups()]
             else:
@@ -485,9 +492,20 @@ class FakeAnki:
                 self.decks.pop(name, None)
         elif action == "notesInfo":
             result = [
-                {"noteId": i, "fields": {k: {"value": v} for k, v in self.notes[i]["fields"].items()}}
+                {
+                    "noteId": i,
+                    "modelName": self.notes[i]["modelName"],
+                    "fields": {k: {"value": v} for k, v in self.notes[i]["fields"].items()},
+                    "tags": self.notes[i]["tags"],
+                }
                 for i in p["notes"]
             ]
+        elif action == "updateNoteModel":
+            if not self.note_model:
+                error = "unsupported action"
+            else:
+                note = self.notes[p["note"]["id"]]
+                note.update(modelName=p["note"]["modelName"], fields=p["note"]["fields"], tags=p["note"]["tags"])
         elif action == "updateNoteFields":
             self.notes[p["note"]["id"]]["fields"] = p["note"]["fields"]
         elif action == "addNote":
@@ -537,6 +555,8 @@ def test_direct_send_to_anki(anki, client):
         "synced": True,
         "sync_error": None,
         "sync_skipped": False,
+        "converted": 0,
+        "conversion_unsupported": False,
         "audio_failures": 0,
     }
 
@@ -1484,3 +1504,31 @@ def test_anki_notes_only_in_the_owners_profile(anki, client):
     assert (r.status_code, r.json()["detail"]["code"]) == (502, "anki.unreachable")
     anki.profile = "Léa"
     assert client.get(f"/api/admin/lessons/{lesson['id']}/anki-notes", headers=admin).json()["count"] == 6
+
+
+def test_options_changed_after_a_send_keep_the_notes(anki, client):
+    lesson = _extract(client)
+    body = {"deck": "Espagnol", "cards": lesson["cards"], "voice": "es_ES", "lesson_id": lesson["id"]}
+    assert client.post("/api/anki/send", json=body).json()["added"] == 6
+    ids = sorted(anki.notes)
+
+    # Typed answer and reverse card switched on: the same notes, moved to the new note type
+    res = client.post("/api/anki/send", json={**body, "typing": True, "reverse": True}).json()
+    assert (res["added"], res["updated"], res["converted"]) == (0, 6, 6)
+    assert sorted(anki.notes) == ids
+    assert {n["modelName"] for n in anki.notes.values()} == {"Cartable recto/verso + inverse à taper (TTS Anki es_ES)"}
+    assert all(f"cartable::{lesson['id']}" in n["tags"] for n in anki.notes.values())
+
+    # Sent again unchanged: plain updates
+    res = client.post("/api/anki/send", json={**body, "typing": True, "reverse": True}).json()
+    assert (res["added"], res["updated"], res["converted"]) == (0, 6, 0)
+
+
+def test_options_changed_with_an_old_ankiconnect(client, monkeypatch):
+    fake = FakeAnki(note_model=False)
+    monkeypatch.setattr(ankiconnect, "_transport", httpx.MockTransport(fake.handle))
+    lesson = _extract(client)
+    body = {"deck": "Espagnol", "cards": lesson["cards"], "voice": "es_ES", "lesson_id": lesson["id"]}
+    client.post("/api/anki/send", json=body)
+    res = client.post("/api/anki/send", json={**body, "typing": True}).json()
+    assert (res["added"], res["converted"], res["conversion_unsupported"]) == (6, 0, True)  # as before, and said

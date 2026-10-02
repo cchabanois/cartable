@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Changing a lesson's options after it was sent (voice, reverse card, typed answer, dictation) no longer duplicates its cards in Anki: the notes move to the new note type and keep their review history; a card whose option was switched off goes, a new option adds its card. Through the add-on and recent AnkiConnect versions (`updateNoteModel`; an older one is said to add them as before). Re-importing an `.apkg` already did it.
+
 - Starting a new lesson is clearer: "＋ New" in the app bar (it was a bare "＋"), and "＋ New lesson" in the message after a send to Anki or an export; leaving a lesson says it stays in 📚 Lessons. On phones the lessons button shows its icon and count only, so the app bar fits.
 
 - "✏️ Free" prompt, first of the chips: write a prompt for this time only, not saved (it stays with the lesson; "💾 Save as a new prompt" if it's worth keeping). Its voice is "auto". The chip that creates a saved prompt is now "💾 New".

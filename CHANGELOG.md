@@ -69,6 +69,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Fixed
 
+- The settings no longer offer OpenRouter's `:batch` models: half price, but answered up to hours later, while a lesson is waited for.
 - In the settings page, deleting a lesson showed an error (it was deleted anyway) and never offered to delete its cards in Anki.
 - The home screen icon: phones were given an SVG only, so Android made a plain letter icon. PNG icons now (192, 512, a maskable one for Android's shapes, 180 for iPhone), made from `icon.svg` by `tools/make_icons.py`.
 - Note types with a dictation card, with and without the reverse card, had the same id: in a package, Anki took them for one.

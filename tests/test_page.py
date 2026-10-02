@@ -63,6 +63,8 @@ def page(browser, server, tmp_path, monkeypatch):
     monkeypatch.setenv("CARTABLE_DATA", str(tmp_path / "data"))
     monkeypatch.setenv("CARTABLE_LLM", "fake")
     monkeypatch.setenv("CARTABLE_ANKICONNECT_URL", "http://127.0.0.1:1")  # Anki closed
+    for key in ("GEMINI_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "OPENROUTER_API_KEY"):
+        monkeypatch.delenv(key, raising=False)  # the same on every computer: no key (.env)
     monkeypatch.setattr(tts, "_synthesize", fake_synthesize)
     context = browser.new_context(locale="fr-FR", viewport={"width": 390, "height": 844}, base_url=server)
     page = context.new_page()
@@ -136,7 +138,7 @@ def test_settings_show_what_the_service_needs(page):
     page.locator("input[autocomplete=new-password]").nth(1).fill("secret")
     page.get_by_role("button", name="Créer et continuer").click()
     address = page.get_by_placeholder("http://localhost:11434/v1")
-    page.get_by_text("OpenRouter", exact=True).click()
+    page.locator(".options .option", has_text="OpenRouter").click()
     sync_api.expect(page.get_by_text("Clé API OpenRouter")).to_be_visible()
     sync_api.expect(address).to_be_hidden()
     # Its suggested models are buttons; the field suggests every model as one types
@@ -149,8 +151,12 @@ def test_settings_show_what_the_service_needs(page):
     sync_api.expect(page.get_by_role("button", name="⭐ gemini-flash")).to_be_visible()
     assert page.locator("#model-suggestions option").count() == 3
     sync_api.expect(page.get_by_text("Ou tape le nom d'un des 3 modèles")).to_be_visible()
-    page.get_by_text("Autre service compatible OpenAI").click()
+    page.locator(".options .option", has_text="Autre service compatible OpenAI").click()
     sync_api.expect(address).to_be_visible()  # only this one has an address
+    # It can't draw, and no other service has a key: said where the pictures are set
+    sync_api.expect(page.locator(".picture-summary")).to_contain_text(
+        "ne dessine pas, et aucun autre service n'a de clé"
+    )
     # In the order things are set: the service, its access, then the model
     titles = [" ".join(t.split()) for t in page.locator("section.panel h2:visible").all_inner_texts()]
     assert titles[:4] == ["1 Service d'IA", "2 Accès", "3 Modèle", "4 Images des cartes"]

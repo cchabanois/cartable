@@ -164,16 +164,30 @@
         <!-- 4. Pictures on cards: an image model of its own (Claude can't draw) -->
         <section class="panel">
           <h2><span class="step" x-text="form.llm === 'fake' ? 2 : 4"></span> <span x-text="$t('admin.pictures.title')"></span></h2>
-          <label class="field">
+          <!-- Who draws: said plainly; by default the cards' own service -->
+          <p class="picture-summary" x-text="pictureSummary()"></p>
+          <div class="field">
+            <span x-text="$t('admin.pictures.service')"></span>
+            <div class="chips">
+              <button type="button" class="chip" :class="{ active: !form.picture_service }" @click="setPictureService('')"
+                      x-text="pictureServices.includes(form.llm) ? $t('admin.pictures.sameAsCards') : $t('admin.pictures.auto')"></button>
+              <template x-for="id in pictureServices" :key="id">
+                <button type="button" class="chip" :class="{ active: form.picture_service === id }" :disabled="!hasKey(id)"
+                        @click="setPictureService(id)" :title="hasKey(id) ? '' : $t('admin.pictures.noKey')"
+                        x-text="$t(`admin.provider.${id}.name`)"></button>
+              </template>
+              <button type="button" class="chip" :class="{ active: form.picture_service === 'none' }" @click="setPictureService('none')"
+                      x-text="$t('admin.pictures.noneChip')"></button>
+            </div>
+          </div>
+          <label class="field" x-show="drawingService()">
             <span x-text="$t('admin.pictures.model')"></span>
             <input x-model="form.picture_model" list="picture-models"
-                   :placeholder="saved.picture_default ? $t('admin.pictures.auto', { model: saved.picture_default }) : $t('admin.pictures.none')">
+                   :placeholder="$t('admin.provider.default', { model: saved.pictures.default_models[drawingService()] ?? '' })">
             <datalist id="picture-models">
-              <option value="google/gemini-3.1-flash-lite-image"></option>
-              <option value="google/gemini-3.1-flash-image"></option>
-              <option value="openai/gpt-5-image-mini"></option>
-              <option value="gemini-3.1-flash-lite-image"></option>
-              <option value="gemini-3.1-flash-image"></option>
+              <template x-for="m in PICTURE_MODELS[drawingService()] ?? []" :key="m">
+                <option :value="m"></option>
+              </template>
             </datalist>
             <small x-text="$t('admin.pictures.hint')"></small>
           </label>

@@ -191,6 +191,7 @@ class SettingsUpdate(BaseModel):
     anki_sync: bool | None = None
     instructions: str | None = Field(default=None, max_length=4000)
     profile_instructions: dict[str, str] | None = None  # replaces them all ("" removes one)
+    picture_service: Literal["", "gemini", "openai", "openrouter", "none"] | None = None
     picture_model: str | None = None
 
 

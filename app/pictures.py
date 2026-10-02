@@ -1,9 +1,9 @@
 """Pictures for cards ("front: the picture of the word"), drawn by an image model.
 
 The AI that writes the cards says what to draw (Card.picture_prompt); an image
-model draws it. Claude can't draw: the image model is a setting of its own
-(`picture_model`), used through OpenRouter ("google/…", "openai/…"), Gemini
-("gemini-…") or OpenAI ("gpt-image-…"), with the matching key.
+model draws it, by default through the cards' own service. Claude and local models
+can't draw: then another service does (`picture_service`, see `service`), with its
+own key.
 """
 
 import asyncio
@@ -40,34 +40,52 @@ class PictureError(AppError):
     status = 502
 
 
+# The services that can draw, and the model each uses by default (Gemini Flash Lite
+# Image: fast and the cheapest; OpenAI's smaller image model).
+DEFAULT_MODELS = {
+    "gemini": "gemini-3.1-flash-lite-image",
+    "openai": "gpt-image-1-mini",
+    "openrouter": "google/gemini-3.1-flash-lite-image",
+}
+# When the cards' service can't draw (Claude, a local model…): the first with a key
+FALLBACK = ("openrouter", "gemini", "openai")
+
+
+def _key(s: Settings, service: str) -> str:
+    return {"gemini": s.gemini_api_key, "openai": s.openai_api_key, "openrouter": s.openrouter_api_key}[service]
+
+
+def service(s: Settings) -> str:
+    """The service drawing the pictures: the one chosen, else the cards' own when it can
+    draw, else the first with a key. "" when none can (no key, or "no pictures")."""
+    chosen = s.picture_service.strip()
+    if chosen == "none":
+        return ""
+    if chosen:
+        return chosen if _key(s, chosen) else ""
+    if s.llm in DEFAULT_MODELS:
+        return s.llm if _key(s, s.llm) else ""
+    return next((name for name in FALLBACK if _key(s, name)), "")
+
+
 def model(s: Settings) -> str:
-    """The image model: the one set, or Gemini Flash Lite Image (fast, the cheapest)
-    through the service used for the cards when it can draw, else through OpenRouter,
-    else Gemini. A free Gemini key can't draw: it comes last. "" when no key allows any."""
-    if s.picture_model.strip():
-        return s.picture_model.strip()
-    if s.llm == "gemini" and s.gemini_api_key:
-        return "gemini-3.1-flash-lite-image"
-    if s.openrouter_api_key:
-        return "google/gemini-3.1-flash-lite-image"
-    if s.gemini_api_key:
-        return "gemini-3.1-flash-lite-image"
-    return ""
+    """The image model, in the drawing service: the one set, else its default ("" when
+    there is no service to draw)."""
+    drawing = service(s)
+    return (s.picture_model.strip() or DEFAULT_MODELS[drawing]) if drawing else ""
 
 
 async def draw(s: Settings, subject: str) -> bytes:
     """One picture (PNG/JPEG bytes from the model), its cost recorded."""
-    name = model(s)
-    if not name:
+    drawing, name = service(s), model(s)
+    if not drawing:
         raise PictureError("picture.no_model")
     prompt = STYLE.format(subject=subject.strip())
-    if "/" in name:
+    if drawing == "openrouter":
         return await _openrouter(s, name, prompt)
-    if name.startswith("gemini"):
+    if drawing == "gemini":
         return await _gemini(s, name, prompt)
-    if name.startswith(("gpt-image", "dall-e")):
-        return await _openai(s, name, prompt)
-    raise PictureError("picture.unknown_model", model=name)
+    return await _openai(s, name, prompt)
 
 
 async def _openrouter(s: Settings, name: str, prompt: str) -> bytes:

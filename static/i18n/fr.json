@@ -272,7 +272,7 @@
     "saving": "Enregistrement…",
     "testing": "Test en cours…",
     "provider": {
-      "title": "Modèle d'IA",
+      "title": "Service d'IA",
       "gemini": {
         "name": "Gemini (Google)",
         "description": "Rapide et peu cher. Offre gratuite possible, mais parfois surchargée."
@@ -437,7 +437,8 @@
       "model": "Modèle d'images (images sur les cartes)",
       "hint": "Pour les consignes du type « recto : image du mot ». Environ 3 à 7 ¢ US par image. Claude ne sait pas dessiner : une clé Gemini ou OpenRouter est utilisée.",
       "auto": "automatique : {model}",
-      "none": "aucun (pas de clé Gemini ni OpenRouter)"
+      "none": "aucun (pas de clé Gemini ni OpenRouter)",
+      "title": "Images des cartes"
     },
     "phones": {
       "title": "📱 Téléphones",
@@ -448,6 +449,9 @@
       "confirmUnpair": "Déconnecter tous les téléphones ? Chacun devra scanner à nouveau le QR code (utile si un téléphone a été perdu ou prêté).",
       "unpaired": "Téléphones déconnectés : scanne le nouveau QR code sur chacun.",
       "thisDevice": "Ou autoriser l'appareil où tu lis cette page (Docker, autre ordinateur)"
+    },
+    "model": {
+      "title": "Modèle"
     }
   },
   "errors": {

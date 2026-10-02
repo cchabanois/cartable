@@ -75,7 +75,7 @@
 
     <template x-if="unlocked && form">
       <div>
-        <!-- Provider -->
+        <!-- 1. Which AI service -->
         <section class="panel">
           <h2><span class="step">1</span> <span x-text="$t('admin.provider.title')"></span></h2>
           <div class="options">
@@ -87,75 +87,18 @@
               </label>
             </template>
           </div>
-
           <p class="hint warn" x-show="form.llm === 'fake'" x-text="$t('admin.provider.fake.warning')"></p>
-          <template x-if="form.llm !== 'fake'">
-            <div>
-              <!-- Another OpenAI-compatible service: its address -->
-              <label class="field" x-show="form.llm === 'compatible'">
-                <span x-text="$t('admin.access.apiAddress')"></span>
-                <input x-model="form.compatible_base_url" placeholder="http://localhost:11434/v1">
-                <small x-html="$t('admin.access.ollamaHint')"></small>
-              </label>
-
-              <label class="field">
-                <span x-text="$t('admin.provider.model')"></span>
-                <input x-model="form.model" list="model-suggestions"
-                       :placeholder="saved.default_models[form.llm] ? $t('admin.provider.default', { model: saved.default_models[form.llm] }) : ''">
-                <datalist id="model-suggestions">
-                  <template x-for="m in modelSuggestions()" :key="m">
-                    <option :value="m"></option>
-                  </template>
-                </datalist>
-                <small x-show="!openaiLike()" x-text="$t('admin.provider.modelHint')"></small>
-                <small x-show="openaiLike() && !modelAliases.length" x-text="$t('admin.service.vision')"></small>
-              </label>
-              <!-- OpenRouter: the latest model of each main family, the others on demand -->
-              <div class="field" x-show="openaiLike() && modelAliases.length">
-                <span x-text="$t('admin.service.aliases')"></span>
-                <div class="chips">
-                  <template x-for="id in modelAliases" :key="id">
-                    <button type="button" class="chip" :class="{ active: (form.model || saved.default_models[form.llm]) === id }"
-                            @click="form.model = id"
-                            :title="id" x-text="(id === recommendedModel ? '⭐ ' : '') + modelLabel(id)"></button>
-                  </template>
-                </div>
-                <small x-text="$t('admin.service.aliasesHint')"></small>
-                <button type="button" class="link-btn" @click="showAllModels = !showAllModels"
-                        x-text="showAllModels ? $t('admin.service.fewerModels') : $t('admin.service.allModels', { count: loadedModels.length })"></button>
-              </div>
-              <div class="field" x-show="openaiLike()">
-                <button type="button" class="btn soft" @click="loadModels()" :disabled="loadingModels"
-                        x-text="loadingModels ? $t('admin.service.loading') : $t('admin.service.loadModels')"></button>
-                <p class="hint" x-show="modelsInfo" x-text="modelsInfo"></p>
-              </div>
-              <label class="field" x-show="form.llm === 'gemini'">
-                <span x-text="$t('admin.provider.fallbacks')"></span>
-                <input x-model="form.fallback_models" placeholder="gemini-3.5-flash-lite">
-                <small x-text="$t('admin.provider.fallbacksHint')"></small>
-              </label>
-            </div>
-          </template>
-          <!-- Pictures on cards: an image model of its own (Claude can't draw) -->
-          <label class="field">
-            <span x-text="$t('admin.pictures.model')"></span>
-            <input x-model="form.picture_model" list="picture-models"
-                   :placeholder="saved.picture_default ? $t('admin.pictures.auto', { model: saved.picture_default }) : $t('admin.pictures.none')">
-            <datalist id="picture-models">
-              <option value="google/gemini-3.1-flash-lite-image"></option>
-              <option value="google/gemini-3.1-flash-image"></option>
-              <option value="openai/gpt-5-image-mini"></option>
-              <option value="gemini-3.1-flash-lite-image"></option>
-              <option value="gemini-3.1-flash-image"></option>
-            </datalist>
-            <small x-text="$t('admin.pictures.hint')"></small>
-          </label>
         </section>
 
-        <!-- Keys -->
+        <!-- 2. Access: its key (and address); then its models can be listed -->
         <section class="panel" x-show="form.llm !== 'fake'">
           <h2><span class="step">2</span> <span x-text="$t('admin.access.title')"></span></h2>
-
+          <!-- Another OpenAI-compatible service: its address -->
+          <label class="field" x-show="form.llm === 'compatible'">
+            <span x-text="$t('admin.access.apiAddress')"></span>
+            <input x-model="form.compatible_base_url" placeholder="http://localhost:11434/v1">
+            <small x-html="$t('admin.access.ollamaHint')"></small>
+          </label>
           <template x-for="k in keysForProvider()" :key="k.field">
             <div class="field">
               <label :for="k.field"><span x-text="$t(k.label)"></span></label>
@@ -173,18 +116,74 @@
               <small class="warn" x-show="keys[k.field] === null" x-text="$t('admin.access.willBeCleared')"></small>
             </div>
           </template>
+        </section>
 
-
-
+        <!-- 3. The model, and the test that it reads a photo and answers in JSON -->
+        <section class="panel" x-show="form.llm !== 'fake'">
+          <h2><span class="step">3</span> <span x-text="$t('admin.model.title')"></span></h2>
+          <label class="field">
+            <span x-text="$t('admin.provider.model')"></span>
+            <input x-model="form.model" list="model-suggestions"
+                   :placeholder="saved.default_models[form.llm] ? $t('admin.provider.default', { model: saved.default_models[form.llm] }) : ''">
+            <datalist id="model-suggestions">
+              <template x-for="m in modelSuggestions()" :key="m">
+                <option :value="m"></option>
+              </template>
+            </datalist>
+            <small x-show="!openaiLike()" x-text="$t('admin.provider.modelHint')"></small>
+            <small x-show="openaiLike() && !modelAliases.length" x-text="$t('admin.service.vision')"></small>
+          </label>
+          <!-- OpenRouter: the latest model of each main family, the others on demand -->
+          <div class="field" x-show="openaiLike() && modelAliases.length">
+            <span x-text="$t('admin.service.aliases')"></span>
+            <div class="chips">
+              <template x-for="id in modelAliases" :key="id">
+                <button type="button" class="chip" :class="{ active: (form.model || saved.default_models[form.llm]) === id }"
+                        @click="form.model = id"
+                        :title="id" x-text="(id === recommendedModel ? '⭐ ' : '') + modelLabel(id)"></button>
+              </template>
+            </div>
+            <small x-text="$t('admin.service.aliasesHint')"></small>
+            <button type="button" class="link-btn" @click="showAllModels = !showAllModels"
+                    x-text="showAllModels ? $t('admin.service.fewerModels') : $t('admin.service.allModels', { count: loadedModels.length })"></button>
+          </div>
+          <div class="field" x-show="openaiLike()">
+            <button type="button" class="btn soft" @click="loadModels()" :disabled="loadingModels"
+                    x-text="loadingModels ? $t('admin.service.loading') : $t('admin.service.loadModels')"></button>
+            <p class="hint" x-show="modelsInfo" x-text="modelsInfo"></p>
+          </div>
+          <label class="field" x-show="form.llm === 'gemini'">
+            <span x-text="$t('admin.provider.fallbacks')"></span>
+            <input x-model="form.fallback_models" placeholder="gemini-3.5-flash-lite">
+            <small x-text="$t('admin.provider.fallbacksHint')"></small>
+          </label>
           <button type="button" class="btn soft wide" @click="test()" :disabled="testing">
             <span x-text="testing ? $t('admin.testing') : $t('admin.access.test')"></span>
           </button>
           <p class="test-result" x-show="testResult" :class="testResult?.ok ? 'ok' : 'ko'" x-text="testResult?.text"></p>
         </section>
 
+        <!-- 4. Pictures on cards: an image model of its own (Claude can't draw) -->
+        <section class="panel">
+          <h2><span class="step" x-text="form.llm === 'fake' ? 2 : 4"></span> <span x-text="$t('admin.pictures.title')"></span></h2>
+          <label class="field">
+            <span x-text="$t('admin.pictures.model')"></span>
+            <input x-model="form.picture_model" list="picture-models"
+                   :placeholder="saved.picture_default ? $t('admin.pictures.auto', { model: saved.picture_default }) : $t('admin.pictures.none')">
+            <datalist id="picture-models">
+              <option value="google/gemini-3.1-flash-lite-image"></option>
+              <option value="google/gemini-3.1-flash-image"></option>
+              <option value="openai/gpt-5-image-mini"></option>
+              <option value="gemini-3.1-flash-lite-image"></option>
+              <option value="gemini-3.1-flash-image"></option>
+            </datalist>
+            <small x-text="$t('admin.pictures.hint')"></small>
+          </label>
+        </section>
+
         <!-- Voice -->
         <section class="panel">
-          <h2><span class="step" x-text="form.llm === 'fake' ? 2 : 3"></span> <span x-text="$t('admin.voice.title')"></span></h2>
+          <h2><span class="step" x-text="form.llm === 'fake' ? 3 : 5"></span> <span x-text="$t('admin.voice.title')"></span></h2>
           <label class="field">
             <span x-text="$t('admin.voice.rate')"></span>
             <select x-model="form.tts_rate">

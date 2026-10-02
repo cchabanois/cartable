@@ -272,7 +272,7 @@
     "saving": "Saving…",
     "testing": "Testing…",
     "provider": {
-      "title": "AI model",
+      "title": "AI service",
       "gemini": {
         "name": "Gemini (Google)",
         "description": "Fast and cheap. A free tier exists, but it is sometimes overloaded."
@@ -437,7 +437,8 @@
       "model": "Image model (pictures on cards)",
       "hint": "For prompts like \"front: the picture of the word\". About 3 to 7 US¢ per picture. Claude can't draw: a Gemini or OpenRouter key is used.",
       "auto": "automatic: {model}",
-      "none": "none (no Gemini or OpenRouter key)"
+      "none": "none (no Gemini or OpenRouter key)",
+      "title": "Pictures on cards"
     },
     "phones": {
       "title": "📱 Phones",
@@ -448,6 +449,9 @@
       "confirmUnpair": "Disconnect every phone? Each one will have to scan the QR code again (useful if a phone was lost or lent).",
       "unpaired": "Phones disconnected: scan the new QR code on each one.",
       "thisDevice": "Or allow the device you're reading this on (Docker, another computer)"
+    },
+    "model": {
+      "title": "Model"
     }
   },
   "errors": {

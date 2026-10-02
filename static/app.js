@@ -101,6 +101,7 @@ document.addEventListener("alpine:init", () => {
     picker: { open: false, query: "" },
     // Natural-language correction of the cards; `undo` holds the previous version.
     revision: { text: "", busy: false, summary: "", stats: "", undo: null },
+    removal: { open: false, lesson: null, checking: false, available: false, count: 0, anki: false, busy: false },
     editor: { open: false, id: null, name: "", text: "", deck: "", voice: "", error: "" },
     error: "",
     success: "",
@@ -508,10 +509,26 @@ document.addEventListener("alpine:init", () => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
 
+    // Asks first; its cards in Anki only go when ticked (their review history goes with them)
     async deleteLesson(l) {
-      if (!confirm(t("app.lessons.confirmDelete", { deck: l.deck }))) return;
+      this.removal = { open: true, lesson: l, checking: true, available: false, count: 0, anki: false, busy: false };
       try {
-        await api(`/api/lessons/${l.id}`, { method: "DELETE" });
+        const found = await (await api(`/api/lessons/${l.id}/anki-notes`)).json();
+        if (this.removal.lesson?.id === l.id) Object.assign(this.removal, found);  // still this lesson's dialog
+      } catch {}  // Anki unknown: the lesson alone
+      if (this.removal.lesson?.id === l.id) this.removal.checking = false;
+    },
+
+    async confirmDeleteLesson() {
+      const { lesson: l, anki } = this.removal;
+      this.removal.busy = true;
+      try {
+        const r = await (await api(`/api/lessons/${l.id}?anki=${anki}`, { method: "DELETE" })).json();
+        this.removal.open = false;
+        if (r.anki_deleted) {
+          this.success = t("app.lessons.deletedInAnki", { count: r.anki_deleted }) + (r.synced ? " " + t("app.send.synced") : "");
+        }
+        if (r.sync_error) this.error = t("app.lessons.deletedNoSync", { reason: errorMessage(r.sync_error) });
         if (l.id === this.lessonId) {
           clearTimeout(this.saveTimer);
           this.saveTimer = null;

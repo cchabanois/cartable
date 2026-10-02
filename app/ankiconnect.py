@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import httpx
 
 from . import settings
-from .anki import Note
+from .anki import TAG_PREFIX, Note
 from .errors import AppError
 
 TIMEOUT = 30.0
@@ -125,6 +125,7 @@ async def send(notes: list[Note]) -> SendResult:
             )
 
         added = updated = 0
+        retag: dict[str, list[int]] = {}  # notes sent before they had the lesson's tag
         for deck, nt in dict.fromkeys((n.deck, n.nt) for n in notes):
             # createDeck returns the id of the deck, existing or new. Searching by id
             # and comparing keys here avoids escaping names in Anki's search syntax.
@@ -135,6 +136,8 @@ async def send(notes: list[Note]) -> SendResult:
             for note in (n for n in notes if (n.deck, n.nt) == (deck, nt)):
                 if note.key in existing:
                     await _invoke(client, "updateNoteFields", note={"id": existing[note.key], "fields": note.fields})
+                    for tag in (t for t in note.tags if t.startswith(TAG_PREFIX)):
+                        retag.setdefault(tag, []).append(existing[note.key])
                     updated += 1
                 else:
                     await _invoke(
@@ -150,13 +153,63 @@ async def send(notes: list[Note]) -> SendResult:
                     )
                     added += 1
 
+        for tag, ids in retag.items():
+            await _invoke(client, "addTags", notes=ids, tags=tag)
+
         result = SendResult(added, updated, synced=False)
-        if settings.current().anki_sync and await sync_configured() is False:
-            result.sync_skipped = True  # no AnkiWeb login on this profile: nothing to warn about at each send
-        elif settings.current().anki_sync:
-            try:
-                await _invoke(client, "sync")
-                result.synced = True
-            except AnkiConnectError as e:  # the notes are in Anki anyway
-                result.sync_error = e.detail()
+        await _sync(client, result)
+        return result
+
+
+async def _sync(client: httpx.AsyncClient, result: SendResult) -> None:
+    """Sync with AnkiWeb when the settings ask for it; a failure is told, not fatal."""
+    if not settings.current().anki_sync:
+        return
+    if await sync_configured() is False:
+        result.sync_skipped = True  # no AnkiWeb login on this profile: nothing to warn about at each change
+        return
+    try:
+        await _invoke(client, "sync")
+        result.synced = True
+    except AnkiConnectError as e:  # the change is in Anki anyway
+        result.sync_error = e.detail()
+
+
+def _search(text: str) -> str:
+    """A name inside a quoted Anki search: its quotes, backslashes and wildcards escaped."""
+    return "".join("\\" + c if c in '\\"*_' else c for c in text)
+
+
+async def find_lesson_notes(lesson_id: str, notes: list[Note]) -> list[int]:
+    """The lesson's notes in the open profile: those with its tag, and those sent before
+    notes had it (same note type and deck, same key). Never another note."""
+    async with _client() as client:
+        found = set(await _invoke(client, "findNotes", query=f'"tag:{_search(TAG_PREFIX + lesson_id)}"'))
+        for deck, nt in dict.fromkeys((n.deck, n.nt) for n in notes):
+            keys = {n.key for n in notes if (n.deck, n.nt) == (deck, nt)}
+            name = _search(deck)
+            query = f'"note:{_search(nt.name)}" "deck:{name}" -"deck:{name}::*"'  # this deck, not its subdecks
+            ids = await _invoke(client, "findNotes", query=query)
+            infos = await _invoke(client, "notesInfo", notes=ids) if ids else []
+            found.update(i["noteId"] for i in infos if i["fields"].get(nt.key, {}).get("value") in keys)
+        return sorted(found)
+
+
+def _with_parents(decks: list[str]) -> set[str]:
+    return {"::".join(d.split("::")[: n + 1]) for d in decks for n in range(d.count("::") + 1)}
+
+
+async def delete_notes(ids: list[int], decks: list[str]) -> SendResult:
+    """Delete these notes (their review history with them), then `decks` and their parent
+    decks left without any card (a deck still holding cards, even in a subdeck, stays;
+    Anki's "Default" too), then sync."""
+    async with _client() as client:
+        if ids:
+            await _invoke(client, "deleteNotes", notes=ids)
+        parents_too = _with_parents(decks) - {"Default"}
+        for deck in sorted(parents_too, key=lambda d: d.count("::"), reverse=True):  # subdecks first
+            if not await _invoke(client, "findCards", query=f'"deck:{_search(deck)}"'):
+                await _invoke(client, "deleteDecks", decks=[deck], cardsToo=True)
+        result = SendResult(added=0, updated=0, synced=False)
+        await _sync(client, result)
         return result

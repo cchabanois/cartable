@@ -134,6 +134,9 @@
           <span x-show="saveState === 'pending' || saveState === 'saving'" x-text="$t('app.review.saving')"></span>
           <span x-show="saveState === 'error'" x-text="$t('app.review.notSaved')"></span>
         </span>
+        <!-- The open lesson can be deleted here too (same confirmation as in the list) -->
+        <button class="icon-btn muted" x-show="lessonId && !readOnly()" @click="deleteLesson({ id: lessonId, deck })"
+                :aria-label="$t('app.lessons.delete')" :title="$t('app.lessons.delete')">🗑</button>
       </div>
 
       <label class="field deck">
@@ -467,6 +470,34 @@
                 x-text="editor.builtin ? $t('app.editor.duplicateToChange') : editor.id ? $t('common.save') : $t('app.editor.create')"></button>
       </div>
     </form>
+  </aside>
+
+  <!-- Deleting a lesson: its cards in Anki too? (asked, never by default) -->
+  <div class="sheet-backdrop top" x-cloak x-show="removal.open" x-transition.opacity @click="removal.open = false"></div>
+  <aside class="sheet top" x-cloak x-show="removal.open"
+         x-transition:enter="sheet-anim" x-transition:enter-start="sheet-down"
+         x-transition:leave="sheet-anim" x-transition:leave-end="sheet-down"
+         @keydown.escape.window="removal.open = false" :aria-label="$t('app.lessons.delete')">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <h2 x-text="$t('app.lessons.confirmDelete', { deck: removal.lesson?.deck ?? '' })"></h2>
+      <button class="icon-btn" @click="removal.open = false" :aria-label="$t('common.close')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <p class="hint" x-show="removal.checking" x-text="$t('app.lessons.checkingAnki')"></p>
+      <label class="switch" x-show="!removal.checking && removal.count">
+        <input type="checkbox" x-model="removal.anki">
+        <span class="track"><span class="knob"></span></span>
+        <span><span x-text="$t('app.lessons.alsoAnki', { count: removal.count })"></span>
+          <small x-text="$t('app.lessons.alsoAnkiHint')"></small></span>
+      </label>
+      <p class="hint" x-show="!removal.checking && !removal.available" x-text="$t('app.lessons.ankiClosed')"></p>
+      <div class="sheet-actions">
+        <button type="button" class="btn soft" @click="removal.open = false" x-text="$t('common.cancel')"></button>
+        <button type="button" class="btn danger-soft" @click="confirmDeleteLesson()" :disabled="removal.busy || removal.checking"
+                x-text="removal.anki ? $t('app.lessons.deleteBoth', { count: removal.count }) : $t('app.lessons.deleteLesson')"></button>
+      </div>
+    </div>
   </aside>
 
 </div>

@@ -1,5 +1,6 @@
 import base64
 import json
+import re
 import sqlite3
 import sys
 import zipfile
@@ -269,7 +270,7 @@ def test_lesson_deleted(client):
     photos = lessons.folder(lesson["id"])
     assert photos.is_dir()
 
-    assert client.delete(f"/api/lessons/{lesson['id']}").status_code == 204
+    assert client.delete(f"/api/lessons/{lesson['id']}").status_code == 200
     assert not photos.exists()
     assert client.get(f"/api/lessons/{lesson['id']}").status_code == 404
     assert client.get("/api/lessons").json() == []
@@ -459,11 +460,29 @@ class FakeAnki:
         elif action == "storeMediaFile":
             self.media[p["filename"]] = base64.b64decode(p["data"])
         elif action == "findNotes":
+            q = p["query"]
+            if tag := re.fullmatch(r'"tag:(.+)"', q):
+                result = [i for i, n in self.notes.items() if tag[1] in n["tags"]]
+            elif deck := re.fullmatch(r'"note:(.+)" "deck:(.+)" -"deck:.+::\*"', q):
+                result = [i for i, n in self.notes.items() if (n["modelName"], n["deckName"]) == deck.groups()]
+            else:
+                result = [
+                    i for i, n in self.notes.items() if q == f'"note:{n["modelName"]}" did:{self.decks[n["deckName"]]}'
+                ]
+        elif action == "findCards":
+            name = re.fullmatch(r'"deck:(.+)"', p["query"])[1]
             result = [
-                i
-                for i, n in self.notes.items()
-                if p["query"] == f'"note:{n["modelName"]}" did:{self.decks[n["deckName"]]}'
+                i for i, n in self.notes.items() if n["deckName"] == name or n["deckName"].startswith(name + "::")
             ]
+        elif action == "addTags":
+            for i in p["notes"]:
+                self.notes[i]["tags"] = [*self.notes[i]["tags"], p["tags"]]
+        elif action == "deleteNotes":
+            for i in p["notes"]:
+                del self.notes[i]
+        elif action == "deleteDecks":
+            for name in p["decks"]:
+                self.decks.pop(name, None)
         elif action == "notesInfo":
             result = [
                 {"noteId": i, "fields": {k: {"value": v} for k, v in self.notes[i]["fields"].items()}}
@@ -526,7 +545,7 @@ def test_direct_send_to_anki(anki, client):
     assert set(anki.decks) == {"Espagnol::Leçon 5::Vocabulaire", "Espagnol::Leçon 5"}
     mother = anki.notes[1]
     assert mother["fields"]["Audio"] == f"[sound:{tts.filename('la madre', 'es-ES-ElviraNeural')}]"
-    assert mother["tags"] == ["famille_proche"]
+    assert mother["tags"] == ["famille_proche", f"cartable::{lesson['id']}"]  # its lesson, to find it again
     assert anki.notes[2]["fields"]["Front"] == "&lt;b&gt;"
     assert set(anki.media) == {
         tts.filename("la madre", "es-ES-ElviraNeural"),
@@ -1027,7 +1046,7 @@ def test_only_the_owner_changes_a_lesson(anki, client):
     # Back in Léa's profile: hers to change; updates that don't mention sharing leave it alone
     anki.profile = "Léa"
     assert client.put(url, json={"deck": "D", "cards": []}).json()["shared"] is True
-    assert client.delete(url).status_code == 204
+    assert client.delete(url).status_code == 200
 
 
 def test_lesson_without_owner_is_everyones(client):
@@ -1035,7 +1054,7 @@ def test_lesson_without_owner_is_everyones(client):
     assert lesson["owner"] == ""
     url = f"/api/lessons/{lesson['id']}"
     assert client.put(url, json={"deck": "D", "cards": []}).status_code == 200
-    assert client.delete(url).status_code == 204
+    assert client.delete(url).status_code == 200
 
 
 def test_other_profiles_private_lessons_hidden(anki, client):
@@ -1110,7 +1129,7 @@ def test_admin_manages_every_lesson(anki, admin):
 
     # A lesson whose owner left Anki can be deleted from the settings
     admin.put(url, headers=ADMIN, json={"owner": "Ghost"})
-    assert admin.delete(url, headers=ADMIN).status_code == 204
+    assert admin.delete(url, headers=ADMIN).status_code == 200
     assert admin.get(f"/api/lessons/{lea['id']}").status_code == 404
     assert admin.delete(url, headers=ADMIN).status_code == 404
     assert admin.put(url, headers=ADMIN, json={"owner": "Paul"}).status_code == 404
@@ -1418,3 +1437,50 @@ def test_regenerate_replaces_the_lesson(client, tmp_path):
     # Pictures no card uses any more go at the next export
     client.post("/api/export", json={**old, "lesson_id": lesson["id"]})
     assert not (folder / "images" / "picture-old-12345678.jpg").exists()
+
+
+def test_delete_a_lesson_and_its_anki_notes(anki, client):
+    lesson = _extract(client)
+    body = {"deck": "Espagnol::Leçon 5", "cards": lesson["cards"], "lesson_id": lesson["id"]}
+    client.post("/api/anki/send", json=body)
+    sent = len(anki.notes)
+    # A note of the user's own in the same deck, and one sent before notes had the lesson's tag
+    anki.notes[100] = {"deckName": "Espagnol::Leçon 5", "modelName": "Basic", "fields": {}, "tags": []}
+    older = next(i for i, n in anki.notes.items() if n["fields"].get("Front") == "la mère")
+    anki.notes[older]["tags"] = []
+    url = f"/api/lessons/{lesson['id']}"
+    client.put(url, json=body)  # the lesson as sent
+
+    assert client.get(f"{url}/anki-notes").json() == {"available": True, "count": sent}
+    res = client.delete(f"{url}?anki=true").json()
+    assert res["anki_deleted"] == sent and res["synced"] is True
+    assert list(anki.notes) == [100]  # the user's own note stays...
+    assert "Espagnol::Leçon 5" in anki.decks  # ...and so does its deck
+    assert "Espagnol::Leçon 5::Vocabulaire" not in anki.decks  # an emptied subdeck goes
+    assert client.get(url).status_code == 404
+
+
+def test_delete_a_lesson_keeping_its_anki_notes(anki, client):
+    lesson = _extract(client)
+    client.post("/api/anki/send", json={"deck": lesson["deck"], "cards": lesson["cards"], "lesson_id": lesson["id"]})
+    notes = dict(anki.notes)
+    res = client.delete(f"/api/lessons/{lesson['id']}").json()
+    assert res["anki_deleted"] == 0 and anki.notes == notes and "deleteNotes" not in anki.calls
+
+
+def test_anki_notes_only_in_the_owners_profile(anki, client):
+    lesson = _extract(client)  # Léa's
+    client.post("/api/anki/send", json={"deck": lesson["deck"], "cards": lesson["cards"], "lesson_id": lesson["id"]})
+    client.put(f"/api/lessons/{lesson['id']}", json={"deck": lesson["deck"], "cards": lesson["cards"], "shared": True})
+    anki.profile = "Paul"  # another profile can't delete it, nor see notes it can't have
+    assert client.get(f"/api/lessons/{lesson['id']}/anki-notes").status_code == 403
+    client.post("/api/admin/password", json={"new": "secret"})
+    admin = {"X-Admin-Password": "secret"}
+    assert client.get(f"/api/admin/lessons/{lesson['id']}/anki-notes", headers=admin).json() == {
+        "available": False,
+        "count": 0,
+    }
+    r = client.delete(f"/api/admin/lessons/{lesson['id']}?anki=true", headers=admin)
+    assert (r.status_code, r.json()["detail"]["code"]) == (502, "anki.unreachable")
+    anki.profile = "Léa"
+    assert client.get(f"/api/admin/lessons/{lesson['id']}/anki-notes", headers=admin).json()["count"] == 6

@@ -330,6 +330,7 @@ h2 {
 
 /* ---- Review ------------------------------------------------------------ */
 .review-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.review-head h2 { margin-right: auto; }
 .save-pill {
   margin-bottom: .9rem;
   padding: .15rem .6rem;
@@ -519,6 +520,8 @@ h2 {
 
 /* ---- Lessons sheet ----------------------------------------------------- */
 .sheet-backdrop { position: fixed; inset: 0; z-index: 30; background: rgb(10 12 20 / .4); }
+.sheet-backdrop.top { z-index: 32; }
+.sheet.top { z-index: 33; }
 .sheet {
   position: fixed;
   z-index: 31;

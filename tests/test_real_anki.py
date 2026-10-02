@@ -314,3 +314,41 @@ def test_typed_answer_and_dictation_on_a_real_collection(bridged, col):
     assert "[anki:play:q:0]" in dictation.question() and "[[type:Back]]" in dictation.question()  # heard, typed
     assert dictation.question_av_tags()[0].filename == tts.filename("la madre", VOICE)
     assert "la mère" in dictation.answer()
+
+
+def test_deleting_a_lesson_deletes_its_notes(bridged, col):
+    client, _ = bridged
+    lesson = extract(client)
+    body = {"deck": lesson["deck"], "cards": lesson["cards"], "voice": VOICE, "lesson_id": lesson["id"]}
+    assert client.post("/api/anki/send", json=body).json()["added"] == 6
+    tag = f"cartable::{lesson['id']}"
+    assert len(col.find_notes(f'"tag:{tag}"')) == 6
+
+    # A note sent before notes had the lesson's tag, and one of the user's own in the deck
+    mother = col.find_notes('"Front:la mère"')[0]
+    col.tags.bulk_remove([mother], tag)
+    own = col.new_note(col.models.by_name("Basic"))
+    own["Front"], own["Back"] = "mine", "mine"
+    col.add_note(own, col.decks.id(lesson["deck"]))
+
+    # Sent again: the older note gets the tag back
+    client.post("/api/anki/send", json=body)
+    assert mother in col.find_notes(f'"tag:{tag}"')
+    col.tags.bulk_remove([mother], tag)
+
+    url = f"/api/lessons/{lesson['id']}"
+    assert client.get(f"{url}/anki-notes").json() == {"available": True, "count": 6}
+    assert client.delete(f"{url}?anki=true").json()["anki_deleted"] == 6
+    assert col.find_notes("") == [own.id]  # only the user's note is left
+    decks = {d.name for d in col.decks.all_names_and_ids()}
+    assert lesson["deck"] in decks  # it still holds the user's note
+    assert not any(d.startswith(lesson["deck"] + "::") for d in decks)  # the emptied subdecks are gone
+
+    # Another lesson, alone in its decks: they all go, the parent "Espagnol" too once empty
+    col.remove_notes([own.id])
+    lesson = extract(client)
+    body = {"deck": "Espagnol::Leçon 6", "cards": lesson["cards"], "lesson_id": lesson["id"]}
+    client.post("/api/anki/send", json=body)
+    client.put(f"/api/lessons/{lesson['id']}", json=body)
+    assert client.delete(f"/api/lessons/{lesson['id']}?anki=true").json()["anki_deleted"] == 6
+    assert {d.name for d in col.decks.all_names_and_ids()} == {"Default"}

@@ -195,13 +195,19 @@ async def find_lesson_notes(lesson_id: str, notes: list[Note]) -> list[int]:
         return sorted(found)
 
 
+def _with_parents(decks: list[str]) -> set[str]:
+    return {"::".join(d.split("::")[: n + 1]) for d in decks for n in range(d.count("::") + 1)}
+
+
 async def delete_notes(ids: list[int], decks: list[str]) -> SendResult:
-    """Delete these notes (their review history with them), then those of `decks` left
-    empty (a deck still holding other cards stays), then sync."""
+    """Delete these notes (their review history with them), then `decks` and their parent
+    decks left without any card (a deck still holding cards, even in a subdeck, stays;
+    Anki's "Default" too), then sync."""
     async with _client() as client:
         if ids:
             await _invoke(client, "deleteNotes", notes=ids)
-        for deck in sorted(set(decks), key=lambda d: d.count("::"), reverse=True):  # subdecks first
+        parents_too = _with_parents(decks) - {"Default"}
+        for deck in sorted(parents_too, key=lambda d: d.count("::"), reverse=True):  # subdecks first
             if not await _invoke(client, "findCards", query=f'"deck:{_search(deck)}"'):
                 await _invoke(client, "deleteDecks", decks=[deck], cardsToo=True)
         result = SendResult(added=0, updated=0, synced=False)

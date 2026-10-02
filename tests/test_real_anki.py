@@ -343,3 +343,12 @@ def test_deleting_a_lesson_deletes_its_notes(bridged, col):
     decks = {d.name for d in col.decks.all_names_and_ids()}
     assert lesson["deck"] in decks  # it still holds the user's note
     assert not any(d.startswith(lesson["deck"] + "::") for d in decks)  # the emptied subdecks are gone
+
+    # Another lesson, alone in its decks: they all go, the parent "Espagnol" too once empty
+    col.remove_notes([own.id])
+    lesson = extract(client)
+    body = {"deck": "Espagnol::Leçon 6", "cards": lesson["cards"], "lesson_id": lesson["id"]}
+    client.post("/api/anki/send", json=body)
+    client.put(f"/api/lessons/{lesson['id']}", json=body)
+    assert client.delete(f"/api/lessons/{lesson['id']}?anki=true").json()["anki_deleted"] == 6
+    assert {d.name for d in col.decks.all_names_and_ids()} == {"Default"}

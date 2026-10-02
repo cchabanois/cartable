@@ -482,7 +482,7 @@ class FakeAnki:
                 del self.notes[i]
         elif action == "deleteDecks":
             for name in p["decks"]:
-                del self.decks[name]
+                self.decks.pop(name, None)
         elif action == "notesInfo":
             result = [
                 {"noteId": i, "fields": {k: {"value": v} for k, v in self.notes[i]["fields"].items()}}

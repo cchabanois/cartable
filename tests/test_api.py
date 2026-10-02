@@ -1008,6 +1008,8 @@ def test_only_the_owner_changes_a_lesson(anki, client):
     ]:
         r = client.request(method, path, json=body)
         assert (r.status_code, r.json()["detail"]) == (403, read_only), (method, path)
+    r = client.post(f"{url}/regenerate", data={"prompt": "Texte à trous"})
+    assert (r.status_code, r.json()["detail"]) == (403, read_only)
 
     # ...but Paul can still read it, send it to his own Anki and export it, without changing it
     assert client.get(url).status_code == 200
@@ -1387,3 +1389,32 @@ def test_automatic_prompt_says_what_the_ai_chose(client):
     saved = client.put(f"/api/lessons/{lesson['id']}", json={"deck": "Autre", "cards": lesson["cards"]}).json()
     assert saved["choice"] == lesson["choice"]  # not lost when the lesson is edited
     assert client.post("/api/extract", data={"prompt": "FR → ES"}).json()["choice"] == ""
+
+
+def test_regenerate_replaces_the_lesson(client, tmp_path):
+    lesson = _extract(client)
+    url = f"/api/lessons/{lesson['id']}"
+    folder = lessons.folder(lesson["id"])
+    (folder / "images").mkdir()
+    (folder / "images" / "picture-old-12345678.jpg").write_bytes(b"old picture")
+
+    # Another prompt, one photo instead of two: the same lesson, its content replaced
+    files = [("images", ("p.jpg", b"new photo", "image/jpeg"))]
+    new = client.post(f"{url}/regenerate", files=files, data={"prompt": "Texte à trous", "voice": "auto"}).json()
+    assert new["id"] == lesson["id"] and new["created_at"] == lesson["created_at"]
+    assert new["prompt"] == "Texte à trous" and new["deck"] == "Histoire::La Révolution française"
+    assert all("{{c" in c["front"] for c in new["cards"])
+    assert (new["photo_count"], (folder / "page-1.jpg").read_bytes()) == (1, b"new photo")
+    assert not (folder / "page-2.jpg").exists()
+    assert len(new["ai_calls"]) == 2  # the first generation's, then this one
+    assert [x["id"] for x in client.get("/api/lessons").json()] == [lesson["id"]]  # no second lesson
+    assert (folder / "images" / "picture-old-12345678.jpg").exists()  # kept for "Undo"
+
+    # "Undo": the page sends the old version back, prompt included
+    old = {k: lesson[k] for k in ("deck", "cards", "voice", "frames", "prompt", "choice")}
+    undone = client.put(url, json=old).json()
+    assert (undone["prompt"], undone["deck"], undone["cards"]) == (lesson["prompt"], lesson["deck"], lesson["cards"])
+
+    # Pictures no card uses any more go at the next export
+    client.post("/api/export", json={**old, "lesson_id": lesson["id"]})
+    assert not (folder / "images" / "picture-old-12345678.jpg").exists()

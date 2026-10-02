@@ -96,7 +96,12 @@ def create(
             _write(
                 tmp,
                 Lesson(
-                    **{**lesson.model_dump(), "owner": owner, "shared": False, "frames": list(frames)},
+                    **{
+                        **lesson.model_dump(exclude={"prompt", "choice"}),
+                        "owner": owner,
+                        "shared": False,
+                        "frames": list(frames),
+                    },
                     ai_calls=list(ai_calls),
                     choice=choice,
                     id=path.name,
@@ -149,6 +154,38 @@ def update(id: str, changes: LessonIn, exported: bool = False, share: bool | Non
         )
         _write(path, lesson)
     return lesson
+
+
+def regenerated(
+    id: str, content: LessonIn, prompt: str, photos: list[bytes], frames: list[Frame], calls: list[AiCall], choice: str
+) -> Lesson | None:
+    """A new generation in place of the lesson's content: its cards, photos, frames and
+    prompt replaced; its owner, sharing, dates and AI calls kept (the new ones added)."""
+    with storage.lock:
+        path = folder(id)
+        if not path:
+            return None
+        old = _read(path)
+        for photo in path.glob("page-*.jpg"):
+            photo.unlink()
+        for n, data in enumerate(photos, start=1):
+            (path / f"page-{n}.jpg").write_bytes(data)
+        # images/ is kept: "Undo" brings back the old cards with their pictures (pruned at export)
+        lesson = Lesson(
+            **{
+                **old.model_dump(),
+                **content.model_dump(include=set(LessonIn.model_fields) - {"shared"}, exclude_none=True),
+                "id": id,
+                "prompt": prompt,
+                "choice": choice,
+                "frames": list(frames),
+                "photo_count": len(photos),
+                "ai_calls": [*old.ai_calls, *calls],
+                "updated_at": storage.now(),
+            }
+        )
+        _write(path, lesson)
+    return _read(path)
 
 
 def add_ai_calls(id: str, calls: list[AiCall]) -> None:

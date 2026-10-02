@@ -51,9 +51,12 @@
       "regenerate": "✨ Generate again",
       "fromPrompt": "✨ Generate from the prompt alone",
       "fromPromptHint": "No photo? The AI creates the cards from your prompt: put the words in it, or ask for a topic. Check the cards carefully.",
-      "regenerateHint": "(new lesson)",
+      "regenerateHint": "(replaces the cards)",
       "unavailable": "Instructions unavailable: {message}",
-      "builtin": "Cartable's prompt: read-only, improved with the app"
+      "builtin": "Cartable's prompt: read-only, improved with the app",
+      "regenerateNewHint": "(new lesson)",
+      "regenerateExported": "Already sent to Anki: the cards sent stay there, the new ones are added at the next send.",
+      "regenerated": "✨ Cards generated again."
     },
     "review": {
       "title": "Review",

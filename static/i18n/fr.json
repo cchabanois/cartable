@@ -48,12 +48,15 @@
       "modified": "✏️ Modifiée pour cette fois seulement.",
       "edit": "✏️ Modifier la consigne",
       "saveAsNew": "💾 Enregistrer comme nouvelle consigne",
-      "regenerate": "✨ Générer à nouveau",
+      "regenerate": "✨ Régénérer",
       "fromPrompt": "✨ Générer à partir de la consigne seule",
       "fromPromptHint": "Pas de photo ? L'IA crée les cartes à partir de ta consigne : mets-y les mots, ou demande un thème. Vérifie bien les cartes.",
-      "regenerateHint": "(nouvelle leçon)",
+      "regenerateHint": "(remplace les cartes)",
       "unavailable": "Consignes indisponibles : {message}",
-      "builtin": "Consigne Cartable : en lecture seule, améliorée avec l'appli"
+      "builtin": "Consigne Cartable : en lecture seule, améliorée avec l'appli",
+      "regenerateNewHint": "(nouvelle leçon)",
+      "regenerateExported": "Déjà envoyée à Anki : les cartes envoyées y restent, les nouvelles s'y ajouteront au prochain envoi.",
+      "regenerated": "✨ Cartes régénérées."
     },
     "review": {
       "title": "Relecture",

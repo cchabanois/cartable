@@ -113,8 +113,10 @@
       </div>
 
       <button class="btn soft wide" x-show="cards.length" @click="extract()" :disabled="!canGenerate()">
-        <span x-text="$t('app.prompt.regenerate')"></span> <small x-text="$t('app.prompt.regenerateHint')"></small>
+        <span x-text="$t('app.prompt.regenerate')"></span>
+        <small x-text="regeneratesInPlace() ? $t('app.prompt.regenerateHint') : $t('app.prompt.regenerateNewHint')"></small>
       </button>
+      <p class="hint" x-show="cards.length && regeneratesInPlace() && lessonExported" x-text="$t('app.prompt.regenerateExported')"></p>
 
       <!-- No photo: the prompt alone (a word list, a topic…). Photos stay the main way. -->
       <div class="from-prompt" x-show="!cards.length && !photos.length">

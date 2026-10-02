@@ -86,6 +86,8 @@ document.addEventListener("alpine:init", () => {
     reverse: false,
     decks: [],                   // existing deck names, for the deck field
     lessonChoice: "",            // what the AI chose to make (prompt "Automatic")
+    lessonExported: false,       // already sent to Anki or exported
+    photosEdited: false,         // photos added or removed since the lesson was shown
     typing: false,               // the answer is typed in Anki
     dictation: false,            // a dictation card: hear the back, type it
     lessons: [],         // saved lesson summaries
@@ -157,6 +159,7 @@ document.addEventListener("alpine:init", () => {
         try {
           const blob = await resize(file);
           this.photos.push({ blob, url: URL.createObjectURL(blob) });
+          this.photosEdited = Boolean(this.lessonId);
         } catch {
           this.error = t("app.photos.unreadable", { name: file.name });
         }
@@ -189,6 +192,7 @@ document.addEventListener("alpine:init", () => {
     removePhoto(i) {
       URL.revokeObjectURL(this.photos[i].url);
       this.photos.splice(i, 1);
+      this.photosEdited = Boolean(this.lessonId);
     },
 
     // --- Prompts ---------------------------------------------------------
@@ -337,9 +341,19 @@ document.addEventListener("alpine:init", () => {
     },
 
     // --- Extraction -----------------------------------------------------
+    // A lesson open and ours: generating again replaces its cards (no second lesson).
+    // Someone else's: a new lesson of our own.
+    regeneratesInPlace() {
+      return Boolean(this.lessonId) && !this.readOnly();
+    },
+
     async extract() {
       this.error = "";
       this.loading = true;
+      if (this.saveTimer) await this.saveNow();
+      const inPlace = this.regeneratesInPlace();
+      // What "Undo" brings back; not when the photos changed (the old ones are gone)
+      const before = inPlace && !this.photosEdited ? this.undoState() : null;
       const body = new FormData();
       this.photos.forEach((p, i) => body.append("images", p.blob, `page-${i + 1}.jpg`));
       body.append("prompt", this.form.text);
@@ -349,11 +363,15 @@ document.addEventListener("alpine:init", () => {
       body.append("dictation", Boolean(this.form.dictation));
       if (this.selectedId) body.append("prompt_id", this.selectedId);
       try {
-        const lesson = await (await api("/api/extract", { method: "POST", body })).json();
+        const url = inPlace ? `/api/lessons/${this.lessonId}/regenerate` : "/api/extract";
+        const lesson = await (await api(url, { method: "POST", body })).json();
         const used = this.current();
         if (used) used.used_at = new Date().toISOString();  // moves it to the front of the chips
         await this.loadPhotos(lesson);  // as saved: the server turns sideways photos upright
         this.show(lesson);
+        if (inPlace) {
+          this.revision = { text: "", busy: false, summary: t("app.prompt.regenerated"), stats: "", undo: before };
+        }
         this.loadLessons();
         if (!this.cards.length) this.error = t("app.review.noCards");
         this.drawPictures();  // the cards show now, their pictures when drawn
@@ -415,6 +433,8 @@ document.addEventListener("alpine:init", () => {
       this.lessonShared = lesson.shared ?? false;
       this.lessonPrompt = lesson.prompt ?? "";
       this.lessonChoice = lesson.choice ?? "";
+      this.lessonExported = Boolean(lesson.exported_at);
+      this.photosEdited = false;
       this.frames = lesson.frames ?? [];
       this.deck = lesson.deck;
       this.cards = lesson.cards.map(withKey);
@@ -477,6 +497,8 @@ document.addEventListener("alpine:init", () => {
       this.saveState = "";
       this.lessonPrompt = "";
       this.lessonChoice = "";
+      this.lessonExported = false;
+      this.photosEdited = false;
       this.frames = [];
       // Back to the saved prompt picked last (a reopened lesson may have left its own text)
       if (!this.current()) {
@@ -519,6 +541,8 @@ document.addEventListener("alpine:init", () => {
         dictation: this.dictation,
         shared: this.lessonShared,
         frames: this.frames,
+        prompt: this.lessonPrompt,
+        choice: this.lessonChoice,
       };
     },
 
@@ -613,10 +637,28 @@ document.addEventListener("alpine:init", () => {
       return { cards, stats: parts.join(" · ") || t("app.revise.noChange") };
     },
 
+    // The lesson as it was, for "Undo" after a regeneration (a correction only needs
+    // the deck and cards)
+    undoState() {
+      return {
+        deck: this.deck,
+        cards: this.cards.map((c) => ({ ...c, _state: undefined })),
+        frames: this.frames,
+        lessonPrompt: this.lessonPrompt,
+        lessonChoice: this.lessonChoice,
+        voice: this.form.voice,
+        reverse: this.reverse,
+        typing: this.typing,
+        dictation: this.dictation,
+      };
+    },
+
     undoRevision() {
-      const { deck, cards } = this.revision.undo;
+      const { deck, cards, voice, ...rest } = this.revision.undo;
       this.deck = deck;
       this.cards = cards;  // autosave sends the restored version
+      if (voice !== undefined) this.form.voice = voice;
+      Object.assign(this, rest);  // after a regeneration: frames, prompt, options
       this.revision = { text: "", busy: false, summary: t("app.revise.undone"), stats: "", undo: null };
     },
 
@@ -940,6 +982,7 @@ document.addEventListener("alpine:init", () => {
           body: JSON.stringify({ ...this.payload(), lesson_id: this.lessonId }),
         })).json();
         this.lastSaved = this.snapshot();  // sending also saves the lesson
+        this.lessonExported = true;
         clearTimeout(this.saveTimer);
         this.saveTimer = null;
         this.saveState = "saved";
@@ -974,6 +1017,7 @@ document.addEventListener("alpine:init", () => {
           body: JSON.stringify({ ...this.payload(), lesson_id: this.lessonId }),
         });
         this.lastSaved = this.snapshot();  // exporting also saves the lesson
+        this.lessonExported = true;
         clearTimeout(this.saveTimer);
         this.saveTimer = null;
         this.saveState = "saved";

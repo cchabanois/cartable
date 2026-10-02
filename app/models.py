@@ -101,6 +101,10 @@ class LessonIn(Deck):
     shared: bool | None = None
     # Diagram frames: what Anki shows of each photo (None in an update = unchanged)
     frames: list[Frame] | None = None
+    # The prompt it was generated with and what the AI chose, sent back when a
+    # regeneration is undone (None in an update = unchanged)
+    prompt: str | None = None
+    choice: str | None = None
 
 
 class AiCall(BaseModel):

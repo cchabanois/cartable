@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- "✨ Generate again" replaces the lesson's cards (same photos, or the photos as changed, with the prompt now chosen) instead of making a second lesson; "↩ Undo" brings the previous cards and prompt back. Warned when the lesson was already sent to Anki (the cards sent stay there). Someone else's lesson still gives a new lesson of one's own.
+
 - Cartable prompt ⭐ "Automatic (from the lesson)", first in the list (so picked when nothing was picked before): the AI looks at the lesson and chooses the cards (vocabulary, questions, cloze, formulas, diagram to complete, or a mix), with the voice of the language if any. One line in the review says what it chose.
 
 - Existing decks reused: the AI gets the decks of the open Anki profile and of the lessons it sees, and puts a lesson into the matching one ("Maths" if it exists, not a new "Mathématiques"), or makes a new name when none matches. The deck field suggests them. The add-on answers `deckNames`.

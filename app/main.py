@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import time
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -23,6 +24,7 @@ from .errors import AppError
 from .llm import Image, check, extract_cards, list_models, revise_cards
 from .models import (
     AdminPassword,
+    AiCall,
     Deck,
     ExportRequest,
     Lesson,
@@ -113,18 +115,20 @@ def duplicate_prompt(id: str, lang: str = Depends(page_lang)) -> Prompt:
 # --- Extraction & export ---------------------------------------------------
 
 
-@app.post("/api/extract", status_code=201)
-async def extract(
-    images: list[UploadFile] = File([]),
-    prompt: str = Form(...),
-    deck: str = Form(""),
-    voice: str = Form(""),
-    prompt_id: str | None = Form(None),
-    typing: bool = Form(False),
-    dictation: bool = Form(False),
-) -> Lesson:
-    """Read the photos (or, without photos, work from the prompt alone), then save the
-    lesson (photos + cards) so it can be reopened."""
+@dataclass
+class Generated:
+    content: LessonIn
+    photos: list[bytes]  # upright
+    found: llm.Extracted
+    calls: list[AiCall]
+    profile: str
+
+
+async def _generate(
+    images: list[UploadFile], prompt: str, deck: str, voice: str, prompt_id: str | None, typing: bool, dictation: bool
+) -> Generated:
+    """Read the photos (or, without photos, work from the prompt alone): the lesson's
+    new content, not saved yet."""
     if not images and not prompt.strip():
         raise AppError("extract.no_input")
     if len(images) > MAX_IMAGES:
@@ -139,7 +143,7 @@ async def extract(
         try:
             found = await extract_cards(data, prompt, deck, profile, await decks.known(profile))
         except Exception:
-            usage.add(calls, lesson_id=None)  # answered but unusable: paid for, no lesson
+            usage.add(calls, lesson_id=None)  # answered but unusable: paid for, no lesson saved
             raise
     if prompt_id is not None:
         prompts.mark_used(prompt_id)
@@ -147,10 +151,47 @@ async def extract(
     photos = diagrams.straighten([i.data for i in data], found.deck.cards, found.turns, found.frames)
     if voice.strip().lower() == "auto":  # the voice of the language the backs are in
         voice = await tts.voice_for(found.back_language)
-    lesson = LessonIn(**found.deck.model_dump(), voice=voice, typing=typing, dictation=dictation)
-    created = lessons.create(lesson, prompt, photos, profile, found.frames, calls, found.choice)
-    usage.add(calls, created.id, created.deck)
+    content = LessonIn(**found.deck.model_dump(), voice=voice, typing=typing, dictation=dictation)
+    return Generated(content, photos, found, calls, profile)
+
+
+@app.post("/api/extract", status_code=201)
+async def extract(
+    images: list[UploadFile] = File([]),
+    prompt: str = Form(...),
+    deck: str = Form(""),
+    voice: str = Form(""),
+    prompt_id: str | None = Form(None),
+    typing: bool = Form(False),
+    dictation: bool = Form(False),
+) -> Lesson:
+    """A new lesson (photos + cards), saved so it can be reopened."""
+    g = await _generate(images, prompt, deck, voice, prompt_id, typing, dictation)
+    created = lessons.create(g.content, prompt, g.photos, g.profile, g.found.frames, g.calls, g.found.choice)
+    usage.add(g.calls, created.id, created.deck)
     return created
+
+
+@app.post("/api/lessons/{id}/regenerate")
+async def regenerate(
+    id: str,
+    images: list[UploadFile] = File([]),
+    prompt: str = Form(...),
+    deck: str = Form(""),
+    voice: str = Form(""),
+    prompt_id: str | None = Form(None),
+    typing: bool = Form(False),
+    dictation: bool = Form(False),
+) -> Lesson:
+    """Generate the lesson again (other prompt, other photos) in its place, instead of
+    a second lesson. Only its owner's profile may."""
+    await _editable(id)
+    g = await _generate(images, prompt, deck, voice, prompt_id, typing, dictation)
+    lesson = lessons.regenerated(id, g.content, prompt, g.photos, g.found.frames, g.calls, g.found.choice)
+    if lesson is None:  # deleted meanwhile
+        raise AppError("lesson.not_found", 404)
+    usage.add(g.calls, id, lesson.deck)
+    return lesson
 
 
 def _filename(deck: str) -> str:
@@ -184,6 +225,7 @@ def _pictures(req: ExportRequest, lesson: Lesson | None) -> dict[int, Path]:
     folder = lessons.folder(lesson.id) if lesson else None
     if folder is None:
         return {}
+    pictures.prune(folder / "images", req.cards)  # pictures of cards gone (removed, regenerated)
     found = {i: folder / "images" / card.picture for i, card in enumerate(req.cards) if card.picture}
     return {i: path for i, path in found.items() if pictures.NAME.match(path.name) and path.is_file()}
 
@@ -382,7 +424,6 @@ async def draw_pictures(id: str) -> dict:
         finally:
             lessons.add_ai_calls(id, calls)
             usage.add(calls, id, lesson.deck)
-    pictures.prune(folder, cards)
     content = LessonIn(**{**lesson.model_dump(include=set(LessonIn.model_fields)), "cards": cards})
     return {"lesson": lessons.update(id, content), "failures": failures, "error": error}
 

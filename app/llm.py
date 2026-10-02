@@ -56,6 +56,8 @@ A hint may follow: "{{c1::1789::année}}". Hide what matters (dates, names, key 
 words), not small words. The back is empty, or a short extra shown with the answer. \
 In a gap, never write "}}" inside a formula: add a space ("} }"). Other cards have no \
 gaps.
+- Plain text in every field: no HTML tags and no Markdown (no <b>, no **bold**), even \
+for words in bold on the page; only the MathJax and cloze syntaxes above.
 - One idea per card; keep front and back short.
 - The "info" field is optional: leave it empty when there is nothing useful to add.
 - If the lesson naturally splits into parts (vocabulary, conjugation, sentences…) and \
@@ -204,6 +206,7 @@ class Extracted:
     turns: list[int]  # clockwise turn that puts each photo upright
     frames: list[Frame]  # diagram frames, as fractions of the photos (not turned yet)
     back_language: str = ""  # "es-ES": for a prompt whose voice is "auto"
+    choice: str = ""  # what the AI chose to make (prompt "Automatic")
 
 
 async def extract_cards(
@@ -214,7 +217,8 @@ async def extract_cards(
     s = settings.current()
     if s.llm == "fake":
         await record(s, "fake", "fake", 0, 0, cost=0.0)
-        return Extracted(_fake(images, prompt, deck), [0] * len(images), [], "es-ES")
+        choice = "Vocabulaire d'espagnol : français → espagnol" if _lets_choose(prompt) else ""
+        return Extracted(_fake(images, prompt, deck), [0] * len(images), [], "es-ES", choice)
     fmt = diagrams.box_format(s.model_for_provider())
     images, sizes = _prepare(images)
     text = standing_instructions(s, profile) + _user_text(prompt, deck, len(images), sizes, fmt, decks)
@@ -225,6 +229,7 @@ async def extract_cards(
         diagrams.turns(result.text_lines, sizes, fmt),
         diagrams.frames(result.frames, sizes, fmt),
         result.back_language.strip(),
+        result.choice.strip(),
     )
 
 
@@ -641,13 +646,12 @@ async def _openai[T: BaseModel](s: Settings, images: list[Image], text: str, sch
         raise ExtractionError("llm.invalid_answer") from e
 
 
-def _fake(images: list[Image], prompt: str, deck: str) -> Deck:
-    if images and any(w in prompt.lower() for w in ("diagram", "schéma", "schema")):
-        return _fake_diagram()
-    if any(w in prompt.lower() for w in ("picture", "image", "dessin")):
-        return _fake_pictures()
-    if any(w in prompt.lower() for w in ("cloze", "trous", "gaps")):
-        return _fake_cloze()
+def _lets_choose(prompt: str) -> bool:
+    return "choisis" in prompt or "choose" in prompt
+
+
+def _fake_vocabulary(images: list[Image], prompt: str) -> Deck:
+    """Demo mode, by default: Spanish vocabulary."""
     return Deck(
         deck="Espagnol::Leçon 5 - La famille",
         cards=[
@@ -663,6 +667,18 @@ def _fake(images: list[Image], prompt: str, deck: str) -> Deck:
             ),
         ],
     )
+
+
+def _fake(images: list[Image], prompt: str, deck: str) -> Deck:
+    if _lets_choose(prompt):  # "Automatic": the demo always chooses vocabulary
+        return _fake_vocabulary(images, prompt)
+    if images and any(w in prompt.lower() for w in ("diagram", "schéma", "schema")):
+        return _fake_diagram()
+    if any(w in prompt.lower() for w in ("picture", "image", "dessin")):
+        return _fake_pictures()
+    if any(w in prompt.lower() for w in ("cloze", "trous", "gaps")):
+        return _fake_cloze()
+    return _fake_vocabulary(images, prompt)
 
 
 def _fake_pictures() -> Deck:

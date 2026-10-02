@@ -18,11 +18,14 @@ def test_cartable_prompts(client):
     """Cartable's prompts: in the page's language, read-only, before the user's."""
     fr = client.get("/api/prompts", headers={"X-Cartable-Lang": "fr-FR"}).json()
     assert [p["id"] for p in fr] == [f"cartable:{k}" for k in prompts.BUILTIN]
-    assert all(p["builtin"] for p in fr) and fr[6]["name"] == "Schéma à compléter"
+    names = {p["id"]: p["name"] for p in fr}
+    assert all(p["builtin"] for p in fr) and names["cartable:diagram"] == "Schéma à compléter"
+    # First, so picked when nothing was picked before: the AI chooses from the lesson
+    assert fr[0]["name"] == "Automatique (d'après la leçon)" and fr[0]["voice"] == "auto"
     en = client.get("/api/prompts", headers={"X-Cartable-Lang": "en"}).json()
-    assert en[0]["name"] == "Vocabulary of a language"  # the same prompts, in English
+    assert en[1]["name"] == "Vocabulary of a language"  # the same prompts, in English
     de = client.get("/api/prompts", headers={"X-Cartable-Lang": "de"}).json()
-    assert de[0]["name"] == "Vocabulary of a language"  # no German file: English
+    assert de[1]["name"] == "Vocabulary of a language"  # no German file: English
 
     for method in ("PUT", "DELETE"):
         r = client.request(method, "/api/prompts/cartable:questions", json={"name": "x", "text": "y"})
@@ -1374,3 +1377,13 @@ def test_existing_decks_given_to_the_ai(anki, client, monkeypatch):
 def test_existing_decks_without_anki(client):
     lessons.create(LessonIn(deck="Anglais::Leçon 2", cards=[]), "p", [])
     assert client.get("/api/decks").json() == ["Anglais", "Anglais::Leçon 2"]
+
+
+def test_automatic_prompt_says_what_the_ai_chose(client):
+    (auto,) = [p for p in client.get("/api/prompts").json() if p["id"] == "cartable:auto"]
+    lesson = client.post("/api/extract", data={"prompt": auto["text"], "voice": "auto"}).json()
+    assert lesson["choice"] == "Vocabulaire d'espagnol : français → espagnol"  # demo mode's choice
+    assert client.get(f"/api/lessons/{lesson['id']}").json()["choice"] == lesson["choice"]  # kept
+    saved = client.put(f"/api/lessons/{lesson['id']}", json={"deck": "Autre", "cards": lesson["cards"]}).json()
+    assert saved["choice"] == lesson["choice"]  # not lost when the lesson is edited
+    assert client.post("/api/extract", data={"prompt": "FR → ES"}).json()["choice"] == ""

@@ -148,7 +148,7 @@ async def extract(
     if voice.strip().lower() == "auto":  # the voice of the language the backs are in
         voice = await tts.voice_for(found.back_language)
     lesson = LessonIn(**found.deck.model_dump(), voice=voice, typing=typing, dictation=dictation)
-    created = lessons.create(lesson, prompt, photos, profile, found.frames, calls)
+    created = lessons.create(lesson, prompt, photos, profile, found.frames, calls, found.choice)
     usage.add(calls, created.id, created.deck)
     return created
 

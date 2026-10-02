@@ -83,6 +83,7 @@ def create(
     owner: str = "",
     frames: list[Frame] = (),
     ai_calls: list[AiCall] = (),
+    choice: str = "",
 ) -> Lesson:
     with storage.lock:
         path = _new_folder(lesson.deck)
@@ -97,6 +98,7 @@ def create(
                 Lesson(
                     **{**lesson.model_dump(), "owner": owner, "shared": False, "frames": list(frames)},
                     ai_calls=list(ai_calls),
+                    choice=choice,
                     id=path.name,
                     prompt=prompt,
                     photo_count=len(photos),

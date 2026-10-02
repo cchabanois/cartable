@@ -75,6 +75,12 @@ class Extraction(Deck):
         description="Language of the card backs as a BCP 47 code, in the variety the lesson teaches "
         '(e.g. "es-ES", "en-GB", "de-DE"); empty when the backs aren\'t in a language being learned.',
     )
+    choice: str = Field(
+        default="",
+        description="Whenever the instructions let you choose the kind of cards: one short sentence, in the "
+        'language of the instructions, saying what you made (e.g. "Spanish vocabulary: French → Spanish"). '
+        "Otherwise empty.",
+    )
 
 
 class Revision(Deck):
@@ -118,6 +124,7 @@ class Lesson(LessonIn):
     photo_count: int
     frames: list[Frame] = []  # fractions of the photos: from the AI, then as the user set them
     ai_calls: list[AiCall] = []  # generation, then corrections
+    choice: str = ""  # what the AI chose to make, when the prompt let it choose
     created_at: str
     updated_at: str
     exported_at: str | None = None

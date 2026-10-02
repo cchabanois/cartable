@@ -138,6 +138,7 @@
         <span x-text="$t('app.review.deck')"></span>
         <input x-model="deck" :readonly="readOnly()" list="decks" @focus="loadDecks()">
       </label>
+      <p class="hint ai-choice" x-show="lessonChoice" x-text="$t('app.review.choice', { choice: lessonChoice })"></p>
       <datalist id="decks">
         <template x-for="d in decks" :key="d"><option :value="d"></option></template>
       </datalist>

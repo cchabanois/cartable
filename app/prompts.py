@@ -17,6 +17,7 @@ from .models import Prompt, PromptIn
 
 PREFIX = "cartable:"
 BUILTIN = (
+    "auto",
     "vocabulary",
     "sentences",
     "questions",

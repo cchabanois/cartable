@@ -86,6 +86,7 @@
       "noCards": "Aucune carte trouvée : vérifie les photos ou la consigne.",
       "owner": "👤 Leçon de <strong>{owner}</strong>",
       "sharedSwitch": "Partagée avec les autres profils",
+      "choice": "🤖 {choice}",
       "promptUsed": "📝 Consigne utilisée pour cette leçon",
       "clozeHint": "Texte à trous : {{c1::…}} cache ce qui est entre les accolades. Chaque numéro donne une carte dans Anki ; le même numéro cache plusieurs trous ensemble.",
       "diagramHint": "Schéma : fais glisser un masque rouge pour le déplacer, et son coin rond pour l'agrandir, afin qu'il cache tout le nom. Le cadre en pointillés est ce qu'Anki montrera de la photo : fais glisser ses coins bleus pour le recadrer.",
@@ -502,6 +503,12 @@
     "installDeclined": "Cartable n'est pas démarré. Pour l'installer plus tard : Outils → Cartable → Ouvrir Cartable."
   },
   "builtinPrompts": {
+    "auto": {
+      "name": "Automatique (d'après la leçon)",
+      "text": "Regarde la leçon et choisis les cartes les plus utiles pour la réviser :\n- vocabulaire d'une langue : une carte par mot ou expression, recto en français, verso dans la langue étudiée ;\n- leçon de cours (histoire, sciences, géographie…) : questions / réponses courtes, ou texte à trous pour les phrases à retenir ;\n- formules : une carte par formule (recto : ce qu'elle calcule, verso : la formule) ;\n- schéma avec des légendes : schéma à compléter, une carte par légende.\nMélange si la page contient plusieurs de ces choses.\nDis en une phrase ce que tu as choisi.",
+      "deck": "{matière}::{titre de la leçon}",
+      "voice": "auto"
+    },
     "vocabulary": {
       "name": "Vocabulaire d'une langue",
       "text": "Crée des cartes Anki avec le vocabulaire de la leçon de langue. Un mot ou une expression par carte. Recto dans ma langue, verso dans la langue étudiée, avec l'article pour les noms. Dans « info », indique le genre, le pluriel s'il est irrégulier, et un court exemple si la leçon en donne un.",

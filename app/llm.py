@@ -595,6 +595,9 @@ async def list_models(s: Settings) -> dict:
         models = [m async for m in client.models.list()]
     except openai.OpenAIError as e:
         raise _openai_error(e, s) from e
+    # OpenRouter's ":batch" variants: half price, answered up to hours later (the
+    # providers' batch APIs). A lesson is waited for: never offered.
+    models = [m for m in models if not m.id.endswith(":batch")]
 
     known = [_usable(m) for m in models]
     if any(k is not None for k in known):

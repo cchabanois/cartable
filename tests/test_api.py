@@ -802,6 +802,7 @@ def test_service_models(admin, monkeypatch):
         fake_openai(
             [
                 FakeModel("openai/gpt-6-luna", ["text", "image"], ["tools", "structured_outputs"]),
+                FakeModel("openai/gpt-6-luna:batch", ["text", "image"], ["structured_outputs"]),  # answers late
                 FakeModel("some/text-only", ["text"], ["structured_outputs"]),
                 FakeModel("anthropic/claude-sonnet-5", ["image", "text"], ["structured_outputs"]),
                 FakeModel("vision/no-json", ["image", "text"], ["tools", "response_format"]),

@@ -67,6 +67,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Fixed
 
+- The home screen icon: phones were given an SVG only, so Android made a plain letter icon. PNG icons now (192, 512, a maskable one for Android's shapes, 180 for iPhone), made from `icon.svg` by `tools/make_icons.py`.
 - Note types with a dictation card, with and without the reverse card, had the same id: in a package, Anki took them for one.
 - "Generate again" no longer switches off the options set in the review (reverse card, typed answer, dictation).
 - Deleting a lesson with its cards in Anki never deletes a card another lesson uses too (the same lesson made twice in a deck).

@@ -5,7 +5,9 @@ A single interface, `extract_cards`, and a provider chosen in the settings
 
 - "gemini" (default): Gemini, through the official google-genai SDK.
 - "anthropic": Claude, through the official SDK.
-- "openai":    any OpenAI-compatible API (Ollama…).
+- "openai":     OpenAI itself (GPT).
+- "openrouter": OpenRouter, every provider's models with one key.
+- "compatible": any other OpenAI-compatible service at its address (Ollama, LM Studio, Mistral…).
 - "fake":      canned cards, to work on the UI without a key or any cost.
 
 For Gemini, the fallback models take over when the main model is still
@@ -358,7 +360,7 @@ async def _generate[T: BaseModel](s: Settings, images: list[Image], text: str, s
         return await _gemini(s, images, text, schema)
     if s.llm == "anthropic":
         return await _anthropic(s, images, text, schema)
-    if s.llm == "openai":
+    if s.llm in settings.OPENAI_LIKE:
         return await _openai(s, images, text, schema)
     raise ExtractionError("llm.unknown_provider", provider=s.llm)
 
@@ -483,24 +485,26 @@ async def _anthropic[T: BaseModel](s: Settings, images: list[Image], text: str, 
 
 
 def _openai_service(s: Settings) -> str:
-    """Short name of the OpenAI-compatible service for messages: its host."""
+    """Short name of the OpenAI-like service for messages and costs: its host."""
     from urllib.parse import urlparse
 
-    return urlparse(s.openai_base_url).netloc or s.openai_base_url
+    return urlparse(s.base_url()).netloc or s.base_url()
 
 
 def _openai_base(s: Settings):
     import openai
 
-    if not s.openai_base_url.strip():
+    if not s.base_url():
         raise ExtractionError("llm.missing_url")
     # Local servers (Ollama, LM Studio) ignore the key but the SDK requires one.
-    return openai.AsyncOpenAI(base_url=s.openai_base_url, api_key=s.openai_key() or "none")
+    return openai.AsyncOpenAI(base_url=s.base_url(), api_key=s.api_key() or "none")
 
 
 def _openai_client(s: Settings):
     if not s.model_for_provider():
         raise ExtractionError("llm.missing_model")
+    if s.llm in ("openai", "openrouter") and not s.api_key():  # a compatible local server needs none
+        raise ExtractionError("llm.missing_key", provider={"openai": "OpenAI", "openrouter": "OpenRouter"}[s.llm])
     return _openai_base(s)
 
 
@@ -559,7 +563,7 @@ async def _local_vision_models(s: Settings) -> list[str] | None:
 
     import httpx
 
-    root = s.openai_base_url.strip().rstrip("/").removesuffix("/v1")
+    root = s.base_url().rstrip("/").removesuffix("/v1")
     if urlparse(root).scheme != "http":  # local servers; cloud services answer in /models
         return None
     async with httpx.AsyncClient(timeout=10) as client:
@@ -618,7 +622,7 @@ async def list_models(s: Settings) -> dict:
             "names": {m.id: name for m in usable if (name := (m.model_extra or {}).get("name"))},
             "recommended": RECOMMENDED if RECOMMENDED in aliases else None,
         }
-    local = await _local_vision_models(s)
+    local = await _local_vision_models(s) if s.llm == "compatible" else None
     if local is not None:
         return {"models": sorted(local), "vision_only": True, "aliases": [], "names": {}, "recommended": None}
     return {
@@ -657,7 +661,7 @@ async def _openai[T: BaseModel](s: Settings, images: list[Image], text: str, sch
                 "json_schema": {"name": schema.__name__.lower(), "schema": schema.model_json_schema()},
             },
             # OpenRouter tells the exact cost of the call when asked
-            extra_body={"usage": {"include": True}} if "openrouter.ai" in service else None,
+            extra_body={"usage": {"include": True}} if s.llm == "openrouter" else None,
         )
         usage = response.usage
         if usage:

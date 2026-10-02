@@ -4,32 +4,24 @@ const PASSWORD_KEY = "cartable.admin";  // kept for the browser session only
 const PROVIDERS = [
   { id: "gemini", models: ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"] },
   { id: "anthropic", models: ["claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"] },
-  { id: "openai", models: ["qwen2.5vl", "gemma3"] },
+  { id: "openai", models: ["gpt-6-luna", "gpt-6-sol", "gpt-6-astra"] },
+  { id: "openrouter", models: [] },  // its short list, loaded from OpenRouter
+  { id: "compatible", models: ["qwen2.5vl", "gemma3"] },
   { id: "fake", models: [] },
 ];
+// Speak OpenAI's API: their models can be listed from the service
+const OPENAI_LIKE = ["openai", "openrouter", "compatible"];
 
-// Services reachable through the OpenAI-compatible provider: picking one fills
-// the address and suggests a model accepting images ("" = load the list).
-// Others (Mistral, Ollama, LM Studio…) work through "Other" with their address.
-const SERVICES = [
-  { id: "openai", name: "OpenAI", url: "https://api.openai.com/v1", model: "gpt-6-luna",
-    keyUrl: "https://platform.openai.com/api-keys" },
-  { id: "openrouter", name: "OpenRouter", url: "https://openrouter.ai/api/v1", model: "~google/gemini-flash-latest",
-    keyUrl: "https://openrouter.ai/keys" },
-];
-
-const sameUrl = (a, b) => (a ?? "").trim().replace(/\/+$/, "") === b.replace(/\/+$/, "");
-// Same normalization as settings.service_id: each service keeps its own key.
-const serviceId = (url) => (url ?? "").trim().replace(/\/+$/, "").toLowerCase();
-
-// label / help: translation keys
+// label / help: translation keys; keyUrl: where to create the key
 const KEYS = {
   gemini: [{ field: "gemini_api_key", label: "admin.access.geminiKey", help: "admin.access.geminiHelp" }],
   anthropic: [{ field: "anthropic_api_key", label: "admin.access.anthropicKey", help: "admin.access.anthropicHelp" }],
-  openai: [{ field: "openai_api_key", label: "admin.access.openaiKey", help: "" }],
+  openai: [{ field: "openai_api_key", label: "admin.access.openaiKey", keyUrl: "https://platform.openai.com/api-keys" }],
+  openrouter: [{ field: "openrouter_api_key", label: "admin.access.openrouterKey", keyUrl: "https://openrouter.ai/keys" }],
+  compatible: [{ field: "compatible_api_key", label: "admin.access.compatibleKey" }],
 };
 
-const EDITABLE = ["llm", "model", "fallback_models", "openai_base_url", "tts_rate", "ankiconnect_url", "anki_sync",
+const EDITABLE = ["llm", "model", "fallback_models", "compatible_base_url", "tts_rate", "ankiconnect_url", "anki_sync",
                   "instructions", "profile_instructions", "picture_model"];
 
 function session(action, value) {
@@ -44,8 +36,7 @@ function session(action, value) {
 document.addEventListener("alpine:init", () => {
   Alpine.data("admin", () => ({
     providers: PROVIDERS,
-    services: SERVICES,
-    loadedModels: [],    // models listed by the OpenAI-compatible service
+    loadedModels: [],    // models listed by the OpenAI-like service
     modelAliases: [],    // OpenRouter: "~…-latest", the latest model of each main family (the short list)
     modelNames: {},      // id → name given by the service ("Google: Gemini Flash Latest")
     recommendedModel: null,
@@ -141,9 +132,7 @@ document.addEventListener("alpine:init", () => {
         this.loadLessons();
         this.loadAnkiStatus();
         this.loadPhone();
-        if (this.form.llm === "openai" && this.service()?.id === "openrouter" && this.savedKey("openai_api_key")) {
-          this.loadModels();
-        }
+        this.loadShortList();
       } catch (e) {
         this.error = e.message;
       }
@@ -177,13 +166,22 @@ document.addEventListener("alpine:init", () => {
       return PROVIDERS.find((p) => p.id === this.form.llm) ?? PROVIDERS[0];
     },
 
-    // A model belongs to its provider: switching provider picks that provider's
-    // model (the saved one when coming back to it, else its default / the
-    // service's suggestion) instead of keeping e.g. "claude-opus-5" for OpenAI.
+    // A model belongs to its provider: switching provider takes the saved one when
+    // coming back to it, else the provider's default (shown in the field) instead of
+    // keeping e.g. "claude-opus-5" for OpenAI.
     providerChanged() {
-      if (this.form.llm === this.saved.llm) this.form.model = this.saved.model;
-      else this.form.model = this.form.llm === "openai" ? (this.service()?.model ?? "") : "";
+      this.form.model = this.form.llm === this.saved.llm ? this.saved.model : "";
       this.clearModels();
+      this.loadShortList();
+    },
+
+    openaiLike() {
+      return OPENAI_LIKE.includes(this.form.llm);
+    },
+
+    // OpenRouter with its key: its short list shows without a click (listing is free)
+    loadShortList() {
+      if (this.form.llm === "openrouter" && this.saved.openrouter_api_key) this.loadModels();
     },
 
     clearModels() {
@@ -193,10 +191,9 @@ document.addEventListener("alpine:init", () => {
 
     // The short list (OpenRouter's aliases) unless all the models are asked for
     modelSuggestions() {
-      if (this.form.llm !== "openai") return this.provider().models;
-      const preset = this.service()?.model;
+      if (!this.openaiLike()) return this.provider().models;
       const shown = this.modelAliases.length && !this.showAllModels ? this.modelAliases : this.loadedModels;
-      return [...new Set([...(preset ? [preset] : []), ...shown])];
+      return [...new Set([...this.provider().models, ...shown])];
     },
 
     // "Google: Gemini Flash Latest" → "Gemini Flash"
@@ -205,23 +202,9 @@ document.addEventListener("alpine:init", () => {
       return name.replace(/^[^:]+:\s*/, "").replace(/\s+latest$/i, "").replace(/-latest$/, "");
     },
 
-    // Service matching the saved/typed address, null for "Other".
-    service() {
-      return SERVICES.find((s) => sameUrl(this.form.openai_base_url, s.url)) ?? null;
-    },
-
-    chooseService(s) {
-      this.form.openai_base_url = s ? s.url : "";
-      this.form.model = s ? s.model : "";
-      delete this.keys.openai_api_key;  // a key typed for the previous service isn't for this one
-      this.clearModels();
-    },
-
-    // Saved key (masked) for a key field; for the OpenAI-compatible provider,
-    // the key of the service currently chosen (or the .env default).
+    // Saved key (masked) for a key field
     savedKey(field) {
-      if (field !== "openai_api_key") return this.saved[field];
-      return this.saved.openai_keys?.[serviceId(this.form.openai_base_url)] || this.saved.openai_default_key;
+      return this.saved[field];
     },
 
     async loadModels() {

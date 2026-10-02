@@ -14,16 +14,32 @@ from pydantic import BaseModel
 
 from . import storage
 
-PROVIDERS = ("gemini", "anthropic", "openai", "fake")
+PROVIDERS = ("gemini", "anthropic", "openai", "openrouter", "compatible", "fake")
+
+# The three providers speaking OpenAI's API: OpenAI itself, OpenRouter (every
+# provider's models with one key), and any other compatible service at its address
+# (Ollama, LM Studio, Mistral…).
+OPENAI_URL = "https://api.openai.com/v1"
+OPENROUTER_URL = "https://openrouter.ai/api/v1"
+OPENAI_LIKE = ("openai", "openrouter", "compatible")
 
 DEFAULT_MODELS = {
     "gemini": "gemini-3.8-flash",
     "anthropic": "claude-opus-5",
-    "openai": "",  # depends on the service (OpenAI, OpenRouter…): chosen in the admin page
+    "openai": "gpt-6-luna",
+    "openrouter": "~google/gemini-flash-latest",  # always the latest Gemini Flash
+    "compatible": "",  # depends on the service: chosen in the admin page
     "fake": "",
 }
 
-SECRET_FIELDS = ("gemini_api_key", "anthropic_api_key", "openai_api_key", "ankiconnect_key")
+SECRET_FIELDS = (
+    "gemini_api_key",
+    "anthropic_api_key",
+    "openai_api_key",
+    "openrouter_api_key",
+    "compatible_api_key",
+    "ankiconnect_key",
+)
 
 # Settings field → environment variable giving its default value.
 ENV = {
@@ -32,8 +48,10 @@ ENV = {
     "fallback_models": "CARTABLE_FALLBACK_MODEL",
     "gemini_api_key": "GEMINI_API_KEY",
     "anthropic_api_key": "ANTHROPIC_API_KEY",
-    "openai_base_url": "CARTABLE_OPENAI_BASE_URL",
-    "openai_api_key": "CARTABLE_OPENAI_API_KEY",
+    "openai_api_key": "OPENAI_API_KEY",
+    "openrouter_api_key": "OPENROUTER_API_KEY",
+    "compatible_base_url": "CARTABLE_COMPATIBLE_BASE_URL",
+    "compatible_api_key": "CARTABLE_COMPATIBLE_API_KEY",
     "tts_rate": "CARTABLE_TTS_RATE",
     "ankiconnect_url": "CARTABLE_ANKICONNECT_URL",
     "ankiconnect_key": "CARTABLE_ANKICONNECT_KEY",
@@ -46,9 +64,10 @@ class Settings(BaseModel):
     fallback_models: str = "gemini-3.5-flash-lite"  # Gemini only, comma-separated
     gemini_api_key: str = ""
     anthropic_api_key: str = ""
-    openai_base_url: str = "https://api.openai.com/v1"
-    openai_api_key: str = ""  # default key (.env), for services without a key of their own
-    openai_keys: dict[str, str] = {}  # service address → its key: OpenAI, OpenRouter…
+    openai_api_key: str = ""  # OpenAI itself
+    openrouter_api_key: str = ""
+    compatible_base_url: str = ""  # e.g. http://localhost:11434/v1 (Ollama)
+    compatible_api_key: str = ""  # often none (local servers)
     tts_rate: str = "-10%"
     ankiconnect_url: str = "http://localhost:8765"  # Anki desktop with the AnkiConnect add-on
     ankiconnect_key: str = ""  # AnkiConnect "apiKey", if one is configured
@@ -63,29 +82,71 @@ class Settings(BaseModel):
     def model_for_provider(self) -> str:
         return self.model.strip() or DEFAULT_MODELS.get(self.llm, "")
 
-    def openai_key(self) -> str:
-        """Key of the OpenAI-compatible service at `openai_base_url`."""
-        return self.openai_keys.get(service_id(self.openai_base_url)) or self.openai_api_key
+    def base_url(self) -> str:
+        """Address of the OpenAI-like provider in use."""
+        return {"openai": OPENAI_URL, "openrouter": OPENROUTER_URL}.get(self.llm, self.compatible_base_url.strip())
 
-
-def service_id(url: str) -> str:
-    """Normalized service address, the key of `openai_keys`."""
-    return url.strip().rstrip("/").lower()
+    def api_key(self) -> str:
+        """Key of the OpenAI-like provider in use."""
+        return {
+            "openai": self.openai_api_key,
+            "openrouter": self.openrouter_api_key,
+            "compatible": self.compatible_api_key,
+        }.get(self.llm, "")
 
 
 def _path():
     return storage.data_dir() / "settings.json"
 
 
+def _same_url(a: str, b: str) -> bool:
+    return a.strip().rstrip("/").lower() == b.strip().rstrip("/").lower()
+
+
+def _split_openai(values: dict, url: str | None, keys: dict[str, str]) -> None:
+    """Before OpenAI, OpenRouter and the compatible services were providers of their
+    own, they were one ("openai") with an address and a key per address: the same
+    settings, put where they belong now. `url`: the address that was chosen."""
+    for address, key in keys.items():
+        if _same_url(address, OPENAI_URL):
+            values.setdefault("openai_api_key", key)
+        elif _same_url(address, OPENROUTER_URL):
+            values.setdefault("openrouter_api_key", key)
+        elif url and _same_url(address, url):
+            values.setdefault("compatible_api_key", key)
+    if url is None:
+        return
+    if _same_url(url, OPENROUTER_URL):
+        chosen = "openrouter"
+    elif _same_url(url, OPENAI_URL):
+        chosen = "openai"
+    else:
+        chosen = "compatible"
+        values.setdefault("compatible_base_url", url)
+    if values.get("llm") == "openai":
+        values["llm"] = chosen
+
+
 def _stored() -> dict:
     stored = storage.read_json(_path(), default={})
-    # Before keys per service, the OpenAI-compatible key was saved on its own:
-    # it belongs to the service saved with it, not to every service.
-    legacy = stored.pop("openai_api_key", None)
-    if legacy:
-        url = stored.get("openai_base_url") or Settings().openai_base_url
-        stored["openai_keys"] = {service_id(url): legacy, **stored.get("openai_keys", {})}
+    if "openai_base_url" in stored or "openai_keys" in stored:  # saved before the split
+        url = stored.pop("openai_base_url", None) or OPENAI_URL
+        keys = dict(stored.pop("openai_keys", {}))
+        if "openai_api_key" in stored:  # older still: one key, for the address saved with it
+            keys.setdefault(url, stored.pop("openai_api_key"))
+        _split_openai(stored, url, keys)
     return stored
+
+
+def _environment() -> dict:
+    values = {field: os.environ[var] for field, var in ENV.items() if var in os.environ}
+    # Before the split: CARTABLE_OPENAI_BASE_URL and CARTABLE_OPENAI_API_KEY (.env)
+    url = os.environ.get("CARTABLE_OPENAI_BASE_URL")
+    if url or "CARTABLE_OPENAI_API_KEY" in os.environ:
+        url = url or OPENAI_URL
+        key = os.environ.get("CARTABLE_OPENAI_API_KEY")
+        _split_openai(values, url, {url: key} if key else {})
+    return values
 
 
 # Set by the Anki add-on: the server talks to the add-on's bridge inside Anki,
@@ -99,7 +160,7 @@ def embedded() -> bool:
 
 def current() -> Settings:
     """Defaults ← environment ← saved values (← the add-on's bridge, when embedded)."""
-    values = {field: os.environ[var] for field, var in ENV.items() if var in os.environ}
+    values = _environment()
     values.update({k: v for k, v in _stored().items() if k in Settings.model_fields})
     if embedded():
         values.update({f: os.environ[ENV[f]] for f in EMBEDDED_FIELDS if ENV[f] in os.environ})
@@ -107,22 +168,10 @@ def current() -> Settings:
 
 
 def save(changes: dict) -> Settings:
-    """Save the given fields; None means "leave unchanged".
-
-    `openai_api_key` is the key of the service being saved (its address after
-    these changes): each OpenAI-compatible service keeps its own key."""
+    """Save the given fields; None means "leave unchanged" ("" clears an API key)."""
     changes = dict(changes)
-    openai_key = changes.pop("openai_api_key", None)
     with storage.lock:
         stored = _stored()
-        if openai_key is not None:
-            url = changes.get("openai_base_url") or stored.get("openai_base_url") or current().openai_base_url
-            keys = dict(stored.get("openai_keys", {}))
-            if openai_key.strip():
-                keys[service_id(url)] = openai_key.strip()
-            else:
-                keys.pop(service_id(url), None)
-            stored["openai_keys"] = keys
         if changes.get("profile_instructions") is not None:  # empty ones aren't kept
             changes["profile_instructions"] = {
                 profile: text.strip() for profile, text in changes["profile_instructions"].items() if text.strip()

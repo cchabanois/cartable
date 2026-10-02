@@ -59,8 +59,7 @@ def fake_completion(cost=None, model="google/gemini-3.8-flash", content=None):
 
 
 def test_openrouter_gives_the_exact_cost(client, monkeypatch):
-    monkeypatch.setenv("CARTABLE_LLM", "openai")
-    monkeypatch.setenv("CARTABLE_OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
+    monkeypatch.setenv("CARTABLE_LLM", "openrouter")
     monkeypatch.setenv("CARTABLE_MODEL", "google/gemini-3.8-flash")
     fake, completions = fake_completion(cost=0.0123)
     monkeypatch.setattr(llm, "_openai_client", lambda s: fake)
@@ -81,7 +80,6 @@ def test_openrouter_gives_the_exact_cost(client, monkeypatch):
 
 def test_other_services_get_an_estimate(client, monkeypatch):
     monkeypatch.setenv("CARTABLE_LLM", "openai")
-    monkeypatch.setenv("CARTABLE_OPENAI_BASE_URL", "https://api.openai.com/v1")
     monkeypatch.setenv("CARTABLE_MODEL", "gpt-6.1-sol")
     fake, completions = fake_completion(model="gpt-6.1-sol")
     monkeypatch.setattr(llm, "_openai_client", lambda s: fake)
@@ -93,8 +91,7 @@ def test_other_services_get_an_estimate(client, monkeypatch):
 def test_deleting_a_lesson_keeps_what_was_spent(admin, monkeypatch, tmp_path):
     from conftest import ADMIN
 
-    monkeypatch.setenv("CARTABLE_LLM", "openai")
-    monkeypatch.setenv("CARTABLE_OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
+    monkeypatch.setenv("CARTABLE_LLM", "openrouter")
     monkeypatch.setenv("CARTABLE_MODEL", "google/gemini-3.8-flash")
     fake, _ = fake_completion(cost=0.01)
     monkeypatch.setattr(llm, "_openai_client", lambda s: fake)

@@ -24,7 +24,7 @@ from .settings import Settings
 
 log = logging.getLogger("cartable")
 
-OPENROUTER = "https://openrouter.ai/api/v1"
+OPENROUTER = settings.OPENROUTER_URL
 NAME = re.compile(r"^picture-[a-z0-9]+-[a-f0-9]{8}\.jpg$")  # files we write; blocks "../"
 SIDE = 512  # on a card: clear enough, light to sync
 QUALITY = 80
@@ -46,10 +46,9 @@ def model(s: Settings) -> str:
     else Gemini. A free Gemini key can't draw: it comes last. "" when no key allows any."""
     if s.picture_model.strip():
         return s.picture_model.strip()
-    openrouter = bool(s.openai_keys.get(OPENROUTER))
     if s.llm == "gemini" and s.gemini_api_key:
         return "gemini-3.1-flash-lite-image"
-    if openrouter:
+    if s.openrouter_api_key:
         return "google/gemini-3.1-flash-lite-image"
     if s.gemini_api_key:
         return "gemini-3.1-flash-lite-image"
@@ -74,7 +73,7 @@ async def draw(s: Settings, subject: str) -> bytes:
 async def _openrouter(s: Settings, name: str, prompt: str) -> bytes:
     import openai
 
-    key = s.openai_keys.get(OPENROUTER)
+    key = s.openrouter_api_key
     if not key:
         raise PictureError("picture.missing_key", service="OpenRouter")
     client = openai.AsyncOpenAI(base_url=OPENROUTER, api_key=key)
@@ -124,7 +123,7 @@ async def _gemini(s: Settings, name: str, prompt: str) -> bytes:
 async def _openai(s: Settings, name: str, prompt: str) -> bytes:
     import openai
 
-    key = s.openai_keys.get("https://api.openai.com/v1") or s.openai_api_key
+    key = s.openai_api_key
     if not key:
         raise PictureError("picture.missing_key", service="OpenAI")
     client = openai.AsyncOpenAI(api_key=key)

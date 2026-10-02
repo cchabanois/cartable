@@ -661,11 +661,6 @@ def _settings_view() -> dict:
     s = current.model_dump()
     for field in settings.SECRET_FIELDS:
         s[field] = settings.masked(s[field])
-    # OpenAI-compatible: the key of each service, masked, so the page shows the
-    # right one when switching service; the .env key applies to the others.
-    s["openai_keys"] = {url: settings.masked(key) for url, key in current.openai_keys.items()}
-    s["openai_api_key"] = settings.masked(current.openai_key())
-    s["openai_default_key"] = settings.masked(current.openai_api_key)
     return {
         **s,
         "providers": settings.PROVIDERS,

@@ -144,10 +144,9 @@ def test_correction_keeps_ids_and_pictures():
 def test_image_model_from_the_keys():
     assert pictures.model(Settings()) == ""
     assert pictures.model(Settings(llm="gemini", gemini_api_key="k")) == "gemini-3.1-flash-lite-image"
-    openrouter = {pictures.OPENROUTER: "k"}
-    assert pictures.model(Settings(openai_keys=openrouter)) == "google/gemini-3.1-flash-lite-image"
+    assert pictures.model(Settings(openrouter_api_key="k")) == "google/gemini-3.1-flash-lite-image"
     # Cards through OpenRouter, a (free) Gemini key in .env: OpenRouter draws
-    both = Settings(llm="openai", gemini_api_key="free", openai_keys=openrouter)
+    both = Settings(llm="openrouter", gemini_api_key="free", openrouter_api_key="k")
     assert pictures.model(both) == "google/gemini-3.1-flash-lite-image"
     assert pictures.model(Settings(llm="anthropic", gemini_api_key="k")) == "gemini-3.1-flash-lite-image"
     assert pictures.model(Settings(picture_model="openai/gpt-5-image-mini")) == "openai/gpt-5-image-mini"

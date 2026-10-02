@@ -171,6 +171,32 @@ def check_password(password: str | None) -> bool:
     return hmac.compare_digest(_hash(password, salt), expected)
 
 
+# --- Paired devices -----------------------------------------------------------
+# Phones and other computers reach Cartable over the Wi-Fi: only those given this
+# token (the QR code in Anki or in the settings) can use it. Changing it unpairs them.
+
+
+def device_token() -> str:
+    with storage.lock:
+        stored = _stored()
+        if not stored.get("device_token"):
+            stored["device_token"] = secrets.token_urlsafe(24)
+            _write(stored)
+        return stored["device_token"]
+
+
+def new_device_token() -> str:
+    with storage.lock:
+        stored = _stored()
+        stored["device_token"] = secrets.token_urlsafe(24)
+        _write(stored)
+        return stored["device_token"]
+
+
+def is_device_token(value: str | None) -> bool:
+    return bool(value) and hmac.compare_digest(value, device_token())
+
+
 def masked(value: str) -> str:
     """ "AIzaSyD…a1b2" → "•••• a1b2" (empty stays empty)."""
     return f"•••• {value[-4:]}" if value else ""

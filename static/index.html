@@ -62,7 +62,15 @@
     <button @click="success = ''" :aria-label="$t('common.close')">✕</button>
   </div>
 
-  <main>
+  <!-- A device that never scanned the QR code: how to get in -->
+  <main x-cloak x-show="unpaired">
+    <section class="panel pairing">
+      <h2>📱 <span x-text="$t('app.pairing.title')"></span></h2>
+      <p x-text="$t('errors.device.not_paired')"></p>
+    </section>
+  </main>
+
+  <main x-show="!unpaired">
     <p class="tagline" x-show="!lessonId && !photos.length" x-text="$t('app.tagline')"></p>
 
     <!-- 1. Photos -->

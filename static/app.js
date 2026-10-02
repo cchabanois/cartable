@@ -119,6 +119,7 @@ document.addEventListener("alpine:init", () => {
     drawing: false,              // the pictures the cards ask for are being drawn
     pictureJobs: 0,              // a card's picture being redrawn, uploaded or removed
     katexReady: false,           // the formula previews can be drawn (KaTeX loaded)
+    unpaired: false,             // this device has no token yet: it must scan the QR code
 
     async init() {
       // Any change to the open lesson is saved automatically.
@@ -137,6 +138,14 @@ document.addEventListener("alpine:init", () => {
       else window.addEventListener("load", katexLoaded);
 
       await i18nReady;  // the language is needed for the first default prompts
+      try {
+        await api("/api/config");
+      } catch (e) {
+        if (e.detail?.code === "device.not_paired") {
+          this.unpaired = true;
+          return;
+        }
+      }
       try {
         this.settingsHere = (await (await fetch("/api/admin")).json()).allowed;
         const config = await (await api("/api/config")).json();
@@ -714,7 +723,7 @@ document.addEventListener("alpine:init", () => {
     },
 
     bottomBar() {
-      return true;  // always visible: it is the main call to action
+      return !this.unpaired;  // always visible: it is the main call to action
     },
 
     removeCard(card) {

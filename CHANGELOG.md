@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Only paired devices can use Cartable over the Wi-Fi: the computer itself always, other devices once they scanned the QR code (Tools → Cartable → Open on the phone, or the new ⚙️ → Phones section), which leaves a token in a long-lived cookie (`SameSite=Strict`, so other websites can't use it). The home screen icon carries it too (on an iPhone it doesn't share Safari's cookies). "Disconnect every phone" changes the token. Without HTTPS it stops the curious and other websites, not someone spying on the Wi-Fi; the README explains Tailscale for HTTPS. `CARTABLE_PUBLIC_URL` gives the address for the QR code where Cartable can't see it (Docker, proxy).
+
 - Changing a lesson's options after it was sent (voice, reverse card, typed answer, dictation) no longer duplicates its cards in Anki: the notes move to the new note type and keep their review history; a card whose option was switched off goes, a new option adds its card. Through the add-on and recent AnkiConnect versions (`updateNoteModel`; an older one is said to add them as before). Re-importing an `.apkg` already did it.
 
 - Starting a new lesson is clearer: "＋ New" in the app bar (it was a bare "＋"), and "＋ New lesson" in the message after a send to Anki or an export; leaving a lesson says it stays in 📚 Lessons. On phones the lessons button shows its icon and count only, so the app bar fits.
@@ -67,6 +69,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Fixed
 
+- In the settings page, deleting a lesson showed an error (it was deleted anyway) and never offered to delete its cards in Anki.
 - The home screen icon: phones were given an SVG only, so Android made a plain letter icon. PNG icons now (192, 512, a maskable one for Android's shapes, 180 for iPhone), made from `icon.svg` by `tools/make_icons.py`.
 - Note types with a dictation card, with and without the reverse card, had the same id: in a package, Anki took them for one.
 - "Generate again" no longer switches off the options set in the review (reverse card, typed answer, dictation).

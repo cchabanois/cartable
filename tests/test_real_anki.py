@@ -21,8 +21,8 @@ anki_collection = pytest.importorskip("anki.collection")
 from anki.import_export_pb2 import ImportAnkiPackageUpdateCondition  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app import tts  # noqa: E402
-from app.main import app  # noqa: E402
+from app import settings, tts  # noqa: E402
+from app.main import DEVICE_COOKIE, app  # noqa: E402
 
 PNG = bytes.fromhex(
     "89504e470d0a1a0a0000000d4948445200000001000000010806000000"
@@ -82,6 +82,7 @@ def cartable(tmp_path, monkeypatch):
     monkeypatch.setenv("CARTABLE_LLM", "fake")
     monkeypatch.setattr(tts, "_synthesize", fake_synthesize)
     with TestClient(app) as client:
+        client.cookies.set(DEVICE_COOKIE, settings.device_token())  # a paired phone
         yield client
 
 

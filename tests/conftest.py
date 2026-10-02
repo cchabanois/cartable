@@ -4,8 +4,8 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app import ankiconnect, prices, tts
-from app.main import app
+from app import ankiconnect, prices, settings, tts
+from app.main import DEVICE_COOKIE, app
 
 synthesized = []
 
@@ -44,6 +44,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(prices, "_transport", httpx.MockTransport(model_list))
     synthesized.clear()
     with TestClient(app) as c:
+        c.cookies.set(DEVICE_COOKIE, settings.device_token())  # a paired phone
         yield c
 
 

@@ -377,7 +377,11 @@
         "one": "{count} model suggested: the service doesn't say whether it accepts images, check with “Test”.",
         "other": "{count} models suggested: the service doesn't say which accept images, check with “Test”."
       },
-      "noVisionModels": "None of this service's models accepts images: one is needed to read the lesson photos."
+      "noVisionModels": "None of this service's models accepts images: one is needed to read the lesson photos.",
+      "aliases": "Suggested models",
+      "aliasesHint": "Always the latest version of each model (⭐: recommended, the most precise on diagrams). The field above can also be typed in.",
+      "allModels": "Suggest every model ({count}) in the field",
+      "fewerModels": "Suggest the suggested models only"
     },
     "costs": {
       "total": "💰 AI: {cost} in total",

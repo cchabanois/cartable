@@ -101,6 +101,7 @@ document.addEventListener("alpine:init", () => {
     picker: { open: false, query: "" },
     // Natural-language correction of the cards; `undo` holds the previous version.
     revision: { text: "", busy: false, summary: "", stats: "", undo: null },
+    successNext: false,          // the success toast offers to start a new lesson
     removal: { open: false, lesson: null, checking: false, available: false, count: 0, anki: false, busy: false },
     editor: { open: false, id: null, name: "", text: "", deck: "", voice: "", error: "" },
     error: "",
@@ -486,6 +487,7 @@ document.addEventListener("alpine:init", () => {
 
     async newLesson() {
       if (this.saveTimer) await this.saveNow();
+      const left = this.lessonId && this.cards.length ? this.deck : "";
       this.clearPhotos();
       this.lessonId = null;
       this.lessonOwner = "";
@@ -507,6 +509,14 @@ document.addEventListener("alpine:init", () => {
       }
       this.selectPrompt();  // restores the selected prompt's text and voice
       window.scrollTo({ top: 0, behavior: "smooth" });
+      if (left) this.notify(t("app.lessonKept", { deck: left }));
+    },
+
+    // A success message, gone after a while; `next`: it offers to start a new lesson
+    notify(message, next = false) {
+      this.success = message;
+      this.successNext = next;
+      setTimeout(() => { if (this.success === message) this.success = ""; }, next ? 12000 : 6000);
     },
 
     // Asks first; its cards in Anki only go when ticked (their review history goes with them)
@@ -526,7 +536,7 @@ document.addEventListener("alpine:init", () => {
         const r = await (await api(`/api/lessons/${l.id}?anki=${anki}`, { method: "DELETE" })).json();
         this.removal.open = false;
         if (r.anki_deleted) {
-          this.success = t("app.lessons.deletedInAnki", { count: r.anki_deleted }) + (r.synced ? " " + t("app.send.synced") : "");
+          this.notify(t("app.lessons.deletedInAnki", { count: r.anki_deleted }) + (r.synced ? " " + t("app.send.synced") : ""));
         }
         if (r.sync_error) this.error = t("app.lessons.deletedNoSync", { reason: errorMessage(r.sync_error) });
         if (l.id === this.lessonId) {
@@ -985,8 +995,7 @@ document.addEventListener("alpine:init", () => {
         if (this.saveTimer) await this.saveNow();
         await this.newLesson();
       }
-      this.success = t("app.profile.switched", { profile });
-      setTimeout(() => { if (this.success.includes(profile)) this.success = ""; }, 5000);
+      this.notify(t("app.profile.switched", { profile }));
     },
 
     async sendToAnki() {
@@ -1009,12 +1018,11 @@ document.addEventListener("alpine:init", () => {
         if (r.updated) parts.push(t("app.send.updated", { count: r.updated }));
         let message = t("app.send.done", { parts: parts.join(", ") || t("app.send.nothing") });
         if (r.synced) message += " " + t("app.send.synced");
-        this.success = message;
+        this.notify(message, true);
         const warnings = [];
         if (r.sync_error) warnings.push(t("app.send.noSync", { reason: errorMessage(r.sync_error) }));
         if (r.audio_failures) warnings.push(t("app.send.noSound", { count: r.audio_failures }));
         if (warnings.length) this.error = t("app.send.butWarning", { warnings: warnings.join(" ; ") });
-        setTimeout(() => { if (this.success === message) this.success = ""; }, 6000);
       } catch (e) {
         this.error = e.message;
         this.checkAnki();
@@ -1047,6 +1055,7 @@ document.addEventListener("alpine:init", () => {
         setTimeout(() => URL.revokeObjectURL(url), 10_000);
         const failures = Number(res.headers.get("X-Cartable-Audio-Failures") || 0);
         if (failures) this.error = t("app.export.noSound", { count: failures });
+        else this.notify(t("app.export.done"), true);
       } catch (e) {
         this.error = e.message;
       } finally {

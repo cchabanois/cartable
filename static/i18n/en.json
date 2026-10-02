@@ -27,8 +27,12 @@
       "noneShort": "none",
       "switched": "👤 Anki profile: {profile}. Their lessons are in 📚."
     },
-    "lessonsButton": "📚 Lessons",
+    "lessonsButton": "Lessons",
     "newLesson": "New lesson",
+    "newLessonShort": "＋ New",
+    "newLessonHint": "New lesson: the current one stays in 📚 Lessons",
+    "newLessonAction": "＋ New lesson",
+    "lessonKept": "“{deck}” stays in 📚 Lessons.",
     "settings": "Settings",
     "photos": {
       "title": "Lesson photos",
@@ -152,7 +156,8 @@
       }
     },
     "export": {
-      "noSound": "Deck exported, but {count} card(s) without sound (text-to-speech unavailable)."
+      "noSound": "Deck exported, but {count} card(s) without sound (text-to-speech unavailable).",
+      "done": "✓ Package downloaded: open it with Anki."
     },
     "audio": {
       "failed": "Can't play: unknown voice or text-to-speech unavailable.",

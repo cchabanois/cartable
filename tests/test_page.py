@@ -235,3 +235,17 @@ def test_multiple_choice_wrong_answers_edited(page):
     sync_api.expect(page.locator(".save-pill")).to_have_class(SAVED)
     (summary,) = lessons(page)
     assert lesson(page, summary["id"])["cards"][0]["choices"] == ["1799", "1804", "1830"]
+
+
+def test_lessons_grouped_by_subject(page):
+    page.goto("/")
+    for deck in ("Espagnol::a", "Anglais::Leçon 1", "anglais::Leçon 2::Phrases"):  # the most recent last
+        made = page.request.post("/api/extract", multipart={"prompt": FRONT_PROMPT}).json()
+        page.request.put(f"/api/lessons/{made['id']}", data={"deck": deck, "cards": made["cards"]})
+    page.reload()
+    page.get_by_role("button", name="Leçons").click()
+    groups = page.locator(".lesson-group")
+    sync_api.expect(groups).to_have_count(2)
+    titles = [" ".join(h.split()).casefold() for h in groups.locator("h3").all_text_contents()]
+    assert titles == ["anglais 2", "espagnol 1"]  # "anglais", "Anglais": the same deck for Anki
+    assert groups.first.locator(".lesson strong").all_inner_texts() == ["Leçon 2 › Phrases", "Leçon 1"]

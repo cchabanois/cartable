@@ -596,6 +596,20 @@ h2 {
 .error-text { color: var(--danger); font-weight: 700; }
 
 .lesson-list { list-style: none; margin: .5rem 0 0; padding: 0; overflow-y: auto; }
+.lesson-group ul { list-style: none; margin: 0; padding: 0; }
+.lesson-group h3 {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: .6rem 0 0;
+  padding: .35rem .5rem;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: .8rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.lesson-group h3 .count { font-weight: 600; }
 .lesson-list li {
   display: flex;
   align-items: center;

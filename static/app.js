@@ -454,6 +454,21 @@ document.addEventListener("alpine:init", () => {
       return this.lessons.filter((l) => l.shared || !l.owner || l.owner === profile);
     },
 
+    // The lessons by subject, the deck's first level ("Anglais" for "Anglais::Leçon 1"),
+    // each shown by the rest of its name. In the list's order (the most recent first):
+    // the subject worked on last comes first. Anki doesn't tell decks apart by case.
+    lessonGroups() {
+      const groups = new Map();
+      for (const l of this.visibleLessons()) {
+        const [head, ...rest] = l.deck.split("::").map((part) => part.trim()).filter(Boolean);
+        const name = head ?? t("app.lessons.noDeck");
+        const key = name.toLocaleLowerCase();
+        if (!groups.has(key)) groups.set(key, { key, name, lessons: [] });
+        groups.get(key).lessons.push({ ...l, title: rest.length ? rest.join(" › ") : name });
+      }
+      return [...groups.values()];
+    },
+
     // Only the lesson's creator decides to share it
     canShare() {
       return Boolean(this.lessonOwner) && this.anki.profile === this.lessonOwner;

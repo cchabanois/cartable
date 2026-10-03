@@ -80,6 +80,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Fixed
 
+- The add-on can be updated while Cartable runs, on Windows too: its Python, libraries, log and working folder move to `Anki2/cartable-runtime/`, outside the add-on's folder that Anki replaces (Windows refuses to move files in use). They are installed there once more (with the usual question), the old ones removed; deleting the add-on removes them.
 - The settings no longer offer OpenRouter's `:batch` models: half price, but answered up to hours later, while a lesson is waited for.
 - In the settings page, deleting a lesson showed an error (it was deleted anyway) and never offered to delete its cards in Anki.
 - The home screen icon: phones were given an SVG only, so Android made a plain letter icon. PNG icons now (192, 512, a maskable one for Android's shapes, 180 for iPhone), made from `icon.svg` by `tools/make_icons.py`.

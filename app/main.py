@@ -256,6 +256,9 @@ async def regenerate(
     return lesson
 
 
+APKG_TYPE = "application/apkg"  # the type AnkiDroid opens (not a generic download)
+
+
 def _filename(deck: str) -> str:
     name = re.sub(r'[\\/:*?"<>|]+', " - ", deck).strip(" -") or "notosaurus"
     return f"{name}.apkg"
@@ -356,7 +359,7 @@ async def export(req: ExportRequest, background: BackgroundTasks) -> FileRespons
         lessons.update(lesson.id, req, exported=True)
     return FileResponse(
         path,
-        media_type="application/octet-stream",
+        media_type=APKG_TYPE,
         filename=_filename(req.deck),
         headers={"X-Notosaurus-Audio-Failures": str(failures)},
     )

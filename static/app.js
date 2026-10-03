@@ -1101,7 +1101,8 @@ document.addEventListener("alpine:init", () => {
         this.saveTimer = null;
         this.saveState = "saved";
         this.loadLessons();
-        const url = URL.createObjectURL(await res.blob());
+        // AnkiDroid opens the downloaded file by its type
+        const url = URL.createObjectURL(new Blob([await res.blob()], { type: "application/apkg" }));
         const a = document.createElement("a");
         a.href = url;
         a.download = `${this.deck.replace(/[\\/:*?"<>|]+/g, " - ")}.apkg`;

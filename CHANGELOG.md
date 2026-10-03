@@ -88,6 +88,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Fixed
 
+- The exported .apkg has the type `application/apkg`, so AnkiDroid opens it straight from the download.
 - The add-on can be updated while Notosaurus runs, on Windows too: its Python, libraries, log and working folder move to `Anki2/notosaurus-runtime/`, outside the add-on's folder that Anki replaces (Windows refuses to move files in use). They are installed there once more (with the usual question), the old ones removed; deleting the add-on removes them.
 - The settings no longer offer OpenRouter's `:batch` models: half price, but answered up to hours later, while a lesson is waited for.
 - In the settings page, deleting a lesson showed an error (it was deleted anyway) and never offered to delete its cards in Anki.

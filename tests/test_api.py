@@ -153,6 +153,11 @@ def test_export_guid_stable(client, tmp_path):
     assert b[0][0] in {guid for guid, _ in a}
 
 
+def test_export_has_the_apkg_type(client):
+    res = client.post("/api/export", json=EXPORT)
+    assert res.headers["content-type"] == "application/apkg"  # AnkiDroid opens it from the download
+
+
 def test_export_empty(client):
     res = client.post("/api/export", json={"deck": "X", "cards": [{"front": "", "back": ""}]})
     assert res.status_code == 400

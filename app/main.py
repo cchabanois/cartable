@@ -171,7 +171,14 @@ class Generated:
 
 
 async def _generate(
-    images: list[UploadFile], prompt: str, deck: str, voice: str, prompt_id: str | None, typing: bool, dictation: bool
+    images: list[UploadFile],
+    prompt: str,
+    deck: str,
+    voice: str,
+    prompt_id: str | None,
+    typing: bool,
+    dictation: bool,
+    lesson_id: str | None = None,
 ) -> Generated:
     """Read the photos (or, without photos, work from the prompt alone): the lesson's
     new content, not saved yet."""
@@ -198,6 +205,8 @@ async def _generate(
     if voice.strip().lower() == "auto":  # the voice of the language the backs are in
         voice = await tts.voice_for(found.back_language)
     content = LessonIn(**found.deck.model_dump(), voice=voice, typing=typing, dictation=dictation)
+    # Its own deck: never one that exists already (another lesson's, or the user's in Anki)
+    content.deck = await decks.new_name(content.deck, profile or None, but=lesson_id)
     return Generated(content, photos, found, calls, profile)
 
 
@@ -232,7 +241,7 @@ async def regenerate(
     """Generate the lesson again (other prompt, other photos) in its place, instead of
     a second lesson. Only its owner's profile may."""
     old = await _editable(id)
-    g = await _generate(images, prompt, deck, voice, prompt_id, typing, dictation)
+    g = await _generate(images, prompt, deck, voice, prompt_id, typing, dictation, lesson_id=id)
     # The options set in the review stay (the prompt's are added): only the cards change
     g.content.reverse = old.reverse
     g.content.typing = g.content.typing or old.typing

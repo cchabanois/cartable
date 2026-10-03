@@ -1717,3 +1717,22 @@ def test_openrouter_short_list(admin, monkeypatch):
     assert res["recommended"] == "~google/gemini-flash-latest"
     assert res["names"]["~google/gemini-flash-latest"] == "Google: Gemini Flash Latest"
     assert "google/gemini-3.8-flash" in res["models"] and "~deepseek/deepseek-pro-latest" not in res["models"]
+
+
+def test_each_lesson_has_a_deck_of_its_own(anki, client):
+    first = _extract(client)
+    assert first["deck"] == "Espagnol::Leçon 5 - La famille"
+    # The same lesson made again: its own deck, next to the first one's
+    second = _extract(client)
+    assert second["deck"] == "Espagnol::Leçon 5 - La famille (2)"
+    assert _extract(client)["deck"] == "Espagnol::Leçon 5 - La famille (3)"
+
+    # A deck the user has in Anki counts too, whatever its case
+    client.delete(f"/api/lessons/{second['id']}")
+    anki.decks["espagnol::leçon 5 - la famille (2)"] = 99
+    assert _extract(client)["deck"] == "Espagnol::Leçon 5 - La famille (4)"
+
+    # Sent to Anki, then generated again: the lesson keeps its own deck
+    client.post("/api/anki/send", json={"deck": first["deck"], "cards": first["cards"], "lesson_id": first["id"]})
+    again = client.post(f"/api/lessons/{first['id']}/regenerate", data={"prompt": "FR → ES"}).json()
+    assert again["deck"] == "Espagnol::Leçon 5 - La famille"

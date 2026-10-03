@@ -66,11 +66,12 @@ for words in bold on the page; only the MathJax and cloze syntaxes above.
 the instructions don't forbid it, fill "subdeck"; otherwise leave it empty.
 - Deck name: start from the suggested template and replace the parts in braces with \
 what you read on the page (number, lesson title…). Without a template, suggest a short \
-name like "Subject::Lesson". When the existing decks are listed, reuse the names that \
-match, written exactly the same: the subject's deck under the name already used \
-("Maths" if it exists, not a new "Mathématiques"), and the lesson's own deck if it is \
-already there. When none matches, make a new name: never squeeze a lesson into an \
-unrelated deck.
+name like "Subject::Lesson". When the existing decks are listed, reuse them as parents, \
+written exactly the same: the subject's deck under the name already used ("Maths" if \
+it exists, not a new "Mathématiques"). The lesson's own deck is always a new one, \
+under them ("Maths::Fractions"), never one of the existing decks: each lesson has a \
+deck of its own. When no parent matches, make new names: never squeeze a lesson into \
+an unrelated deck.
 - Diagrams: when the instructions ask to learn the labels of a diagram (a diagram to \
 complete, its labels hidden, one card per label or arrow, "the diagram without the \
 names"…), make one card per label naming a \

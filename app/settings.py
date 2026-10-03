@@ -76,7 +76,9 @@ class Settings(BaseModel):
     # profile, e.g. "Bastien is in year 8", "short answers, with the article".
     instructions: str = ""
     profile_instructions: dict[str, str] = {}
-    # Image model for card pictures ("" = one the saved keys allow, see pictures.model)
+    # Card pictures: the service drawing them ("" = the cards' own when it draws, see
+    # pictures.service; "none" = no pictures) and its model ("" = that service's default)
+    picture_service: str = ""
     picture_model: str = ""
 
     def model_for_provider(self) -> str:
@@ -135,7 +137,17 @@ def _stored() -> dict:
         if "openai_api_key" in stored:  # older still: one key, for the address saved with it
             keys.setdefault(url, stored.pop("openai_api_key"))
         _split_openai(stored, url, keys)
+    if stored.get("picture_model") and "picture_service" not in stored:  # saved before the picture service
+        stored["picture_service"] = _picture_service_of(stored["picture_model"])
     return stored
+
+
+def _picture_service_of(model: str) -> str:
+    """The service a picture model was used through, before it was a setting: told by
+    its name ("google/…" OpenRouter, "gemini-…" Gemini, "gpt-image…" OpenAI)."""
+    if "/" in model:
+        return "openrouter"
+    return "gemini" if model.startswith("gemini") else "openai"
 
 
 def _environment() -> dict:

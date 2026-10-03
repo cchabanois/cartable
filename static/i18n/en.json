@@ -432,11 +432,20 @@
     },
     "notSaved": "Not saved",
     "pictures": {
-      "model": "Image model (pictures on cards)",
-      "hint": "For prompts like \"front: the picture of the word\". About 3 to 7 US¢ per picture. Claude can't draw: a Gemini or OpenRouter key is used.",
-      "auto": "automatic: {model}",
-      "none": "none (no Gemini or OpenRouter key)",
-      "title": "Pictures on cards"
+      "model": "Image model",
+      "hint": "For prompts like “front: the picture of the word”. From under a cent to a few US cents per picture, depending on the model.",
+      "title": "Pictures on cards",
+      "service": "Service drawing them",
+      "sameAsCards": "Same as the cards",
+      "noneChip": "No pictures",
+      "noKey": "Missing key (Access section)",
+      "drawnBySame": "Drawn by {service}, the cards' own service.",
+      "drawnBy": "Drawn by {service}.",
+      "cantDraw": "{cards} can't draw: the pictures go through {service}.",
+      "nobody": "{cards} can't draw, and no other service has a key: add a Gemini, OpenAI or OpenRouter key to get pictures.",
+      "missingKey": "{service} has no key: add it, or choose another service.",
+      "noneChosen": "No pictures on the cards.",
+      "auto": "Automatic"
     },
     "phones": {
       "title": "📱 Phones",

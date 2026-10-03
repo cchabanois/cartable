@@ -754,3 +754,5 @@ h2 {
 /* Pairing: a device without the token; the phones' QR code in the settings */
 .pairing p { line-height: 1.5; }
 .phones .qr { display: block; margin: .5rem auto 1rem; border-radius: var(--radius-sm); background: #fff; padding: .5rem; }
+
+.picture-summary { margin: 0 0 .75rem; font-weight: 700; }

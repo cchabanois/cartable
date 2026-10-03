@@ -21,7 +21,16 @@ const KEYS = {
   compatible: [{ field: "compatible_api_key", label: "admin.access.compatibleKey" }],
 };
 
-const EDITABLE = ["llm", "model", "fallback_models", "compatible_base_url", "tts_rate", "ankiconnect_url", "anki_sync",
+// Card pictures: the services that draw, the models suggested in each
+const PICTURE_SERVICES = ["gemini", "openai", "openrouter"];
+const PICTURE_MODELS = {
+  gemini: ["gemini-3.1-flash-lite-image", "gemini-3.1-flash-image"],
+  openai: ["gpt-image-1-mini", "gpt-image-1"],
+  openrouter: ["google/gemini-3.1-flash-lite-image", "google/gemini-3.1-flash-image", "openai/gpt-5-image-mini"],
+};
+const PICTURE_KEYS = { gemini: "gemini_api_key", openai: "openai_api_key", openrouter: "openrouter_api_key" };
+
+const EDITABLE = ["llm", "model", "fallback_models", "compatible_base_url", "picture_service", "tts_rate", "ankiconnect_url", "anki_sync",
                   "instructions", "profile_instructions", "picture_model"];
 
 function session(action, value) {
@@ -36,6 +45,8 @@ function session(action, value) {
 document.addEventListener("alpine:init", () => {
   Alpine.data("admin", () => ({
     providers: PROVIDERS,
+    pictureServices: PICTURE_SERVICES,
+    PICTURE_MODELS,
     loadedModels: [],    // models listed by the OpenAI-like service
     modelAliases: [],    // OpenRouter: "~…-latest", the latest model of each main family (the short list)
     modelNames: {},      // id → name given by the service ("Google: Gemini Flash Latest")
@@ -209,6 +220,35 @@ document.addEventListener("alpine:init", () => {
     modelLabel(id) {
       const name = this.modelNames[id] ?? id.replace(/^~[^/]+\//, "");
       return name.replace(/^[^:]+:\s*/, "").replace(/\s+latest$/i, "").replace(/-latest$/, "");
+    },
+
+    // --- Card pictures: who draws them (same rule as pictures.service on the server)
+    hasKey(service) {
+      return Boolean(this.saved[PICTURE_KEYS[service]]);
+    },
+
+    drawingService() {
+      const chosen = this.form.picture_service;
+      if (chosen === "none") return "";
+      if (chosen) return this.hasKey(chosen) ? chosen : "";
+      if (PICTURE_SERVICES.includes(this.form.llm)) return this.hasKey(this.form.llm) ? this.form.llm : "";
+      return ["openrouter", "gemini", "openai"].find((s) => this.hasKey(s)) ?? "";
+    },
+
+    setPictureService(service) {
+      if (service !== this.form.picture_service) this.form.picture_model = "";  // a model belongs to its service
+      this.form.picture_service = service;
+    },
+
+    pictureSummary() {
+      const name = (id) => t(`admin.provider.${id}.name`);
+      const drawing = this.drawingService();
+      const chosen = this.form.picture_service;
+      if (chosen === "none") return t("admin.pictures.noneChosen");
+      if (!drawing) return chosen ? t("admin.pictures.missingKey", { service: name(chosen) }) : t("admin.pictures.nobody", { cards: name(this.form.llm) });
+      if (chosen) return t("admin.pictures.drawnBy", { service: name(drawing) });
+      if (drawing === this.form.llm) return t("admin.pictures.drawnBySame", { service: name(drawing) });
+      return t("admin.pictures.cantDraw", { cards: name(this.form.llm), service: name(drawing) });
     },
 
     // Saved key (masked) for a key field

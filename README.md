@@ -13,7 +13,7 @@ Cartable was built for learning languages (French → Spanish vocabulary and sen
 - **Cloze**: ask for "fill in the blanks" and each card is a sentence with gaps, `La Révolution française commence en {{c1::1789}} avec la prise de {{c2::la Bastille}}.`: Anki makes one card per gap number. The review shows the gaps, numbered.
 - **Formulas**: written in MathJax (`\(…\)`), which Anki displays; the review shows them drawn.
 - **Spelling**: "Type the answer" makes Anki compare what the pupil types letter by letter; "Add a dictation" adds a card where the back is heard, then written.
-- **Pictures**: with a prompt like "front: the picture of the word", an image model draws a picture for each card (about 3 to 7 US¢ each; Gemini or OpenRouter).
+- **Pictures**: with a prompt like "front: the picture of the word", an image model draws a picture for each card, through the cards' own service when it can draw (Gemini, OpenAI, OpenRouter), else another one chosen in ⚙️ (Claude and local models can't draw). From under a cent to a few US cents per picture.
 - **Audio**: the back of each card is read aloud with [edge-tts](https://github.com/rany2/edge-tts) and embedded in the deck, so it plays everywhere, even offline.
 - **Straight into Anki**, or as a `.apkg`. Sending a corrected lesson again updates its cards instead of duplicating them.
 - **Lessons are saved** (photos + cards), so you can reopen, fix and re-send them later.

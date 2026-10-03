@@ -667,7 +667,13 @@ def _settings_view() -> dict:
         "default_models": settings.DEFAULT_MODELS,
         "embedded": settings.embedded(),
         # The image model used when none is set: from the saved keys
-        "picture_default": pictures.model(current.model_copy(update={"picture_model": ""})),
+        # Who draws the pictures now, and what "same as the cards" means here
+        "pictures": {
+            "service": pictures.service(current),
+            "model": pictures.model(current),
+            "cards_draw": current.llm in pictures.DEFAULT_MODELS,
+            "default_models": pictures.DEFAULT_MODELS,
+        },
     }
 
 

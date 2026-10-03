@@ -432,11 +432,20 @@
     },
     "notSaved": "Non enregistré",
     "pictures": {
-      "model": "Modèle d'images (images sur les cartes)",
-      "hint": "Pour les consignes du type « recto : image du mot ». Environ 3 à 7 ¢ US par image. Claude ne sait pas dessiner : une clé Gemini ou OpenRouter est utilisée.",
-      "auto": "automatique : {model}",
-      "none": "aucun (pas de clé Gemini ni OpenRouter)",
-      "title": "Images des cartes"
+      "model": "Modèle d'images",
+      "hint": "Pour les consignes du type « recto : image du mot ». De moins d'un centime à quelques centimes US par image selon le modèle.",
+      "title": "Images des cartes",
+      "service": "Service qui dessine",
+      "sameAsCards": "Comme les cartes",
+      "noneChip": "Pas d'images",
+      "noKey": "Clé manquante (section Accès)",
+      "drawnBySame": "Dessinées par {service}, le même service que les cartes.",
+      "drawnBy": "Dessinées par {service}.",
+      "cantDraw": "{cards} ne dessine pas : les images passent par {service}.",
+      "nobody": "{cards} ne dessine pas, et aucun autre service n'a de clé : ajoute une clé Gemini, OpenAI ou OpenRouter pour avoir des images.",
+      "missingKey": "{service} n'a pas de clé : ajoute-la, ou choisis un autre service.",
+      "noneChosen": "Pas d'images sur les cartes.",
+      "auto": "Automatique"
     },
     "phones": {
       "title": "📱 Téléphones",

@@ -141,15 +141,42 @@ def test_correction_keeps_ids_and_pictures():
     ]
 
 
-def test_image_model_from_the_keys():
-    assert pictures.model(Settings()) == ""
-    assert pictures.model(Settings(llm="gemini", gemini_api_key="k")) == "gemini-3.1-flash-lite-image"
-    assert pictures.model(Settings(openrouter_api_key="k")) == "google/gemini-3.1-flash-lite-image"
-    # Cards through OpenRouter, a (free) Gemini key in .env: OpenRouter draws
-    both = Settings(llm="openrouter", gemini_api_key="free", openrouter_api_key="k")
-    assert pictures.model(both) == "google/gemini-3.1-flash-lite-image"
-    assert pictures.model(Settings(llm="anthropic", gemini_api_key="k")) == "gemini-3.1-flash-lite-image"
-    assert pictures.model(Settings(picture_model="openai/gpt-5-image-mini")) == "openai/gpt-5-image-mini"
+def test_pictures_drawn_by_the_cards_service():
+    def drawing(**kw):
+        s = Settings(**kw)
+        return pictures.service(s), pictures.model(s)
+
+    assert drawing() == ("", "")  # no key
+    # The cards' own service, when it draws
+    assert drawing(llm="gemini", gemini_api_key="k") == ("gemini", "gemini-3.1-flash-lite-image")
+    assert drawing(llm="openai", openai_api_key="k", openrouter_api_key="r") == ("openai", "gpt-image-1-mini")
+    assert drawing(llm="openrouter", openrouter_api_key="k", gemini_api_key="free") == (
+        "openrouter",
+        "google/gemini-3.1-flash-lite-image",
+    )
+    # Claude or a local model can't draw: the first service with a key
+    assert drawing(llm="anthropic", gemini_api_key="k") == ("gemini", "gemini-3.1-flash-lite-image")
+    assert drawing(llm="compatible", gemini_api_key="g", openrouter_api_key="r")[0] == "openrouter"
+    # Chosen on purpose: that service, with its model or the one set
+    chosen = {"llm": "openai", "openai_api_key": "k", "openrouter_api_key": "r", "picture_service": "openrouter"}
+    assert drawing(**chosen) == ("openrouter", "google/gemini-3.1-flash-lite-image")
+    assert drawing(**chosen, picture_model="openai/gpt-5-image-mini") == ("openrouter", "openai/gpt-5-image-mini")
+    assert drawing(llm="gemini", gemini_api_key="k", picture_service="openai") == ("", "")  # its key is missing
+    assert drawing(llm="gemini", gemini_api_key="k", picture_service="none") == ("", "")  # no pictures
+
+
+def test_picture_model_saved_before_the_service(client, tmp_path):
+    """A model saved alone went through the service its name told: still the same."""
+    import json
+
+    from app import settings
+
+    path = tmp_path / "data" / "settings.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"llm": "openai", "picture_model": "google/gemini-3.1-flash-image"}))
+    assert settings.current().picture_service == "openrouter"
+    path.write_text(json.dumps({"llm": "anthropic", "picture_model": "gemini-3.1-flash-image"}))
+    assert settings.current().picture_service == "gemini"
 
 
 def test_cache_reused_by_the_next_lessons(client, drawn):

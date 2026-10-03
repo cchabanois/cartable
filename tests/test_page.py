@@ -379,3 +379,21 @@ def test_every_language_fits_a_narrow_phone(page, browser, server, lang):
         other.wait_for_function("Alpine.$data(document.querySelector('[x-data]')).saveState !== 'pending'")
     finally:
         context.close()
+
+
+def test_prompts_follow_the_language(page):
+    page.goto("/")
+    text = page.locator("textarea[x-ref=promptText]")
+    sync_api.expect(text).to_have_value(re.compile(r"^Regarde la leçon"))  # "Automatique", in French
+    page.locator(".lang-select select").select_option("de")
+    sync_api.expect(text).to_have_value(re.compile(r"^Sieh dir die Lektion an"))  # the same prompt, in German
+    sync_api.expect(page.get_by_role("radio", name="⭐ Vokabeln einer Sprache")).to_be_visible()
+    text.fill("Meine eigene Anweisung")  # changed for this time: kept
+    page.locator(".lang-select select").select_option("es")
+    sync_api.expect(page.get_by_role("radio", name="⭐ Vocabulario de un idioma")).to_be_visible()
+    sync_api.expect(text).to_have_value("Meine eigene Anweisung")
+    page.get_by_role("radio", name="✏️ Libre").click()  # the free prompt stays free
+    text.fill("Lo mío")
+    page.locator(".lang-select select").select_option("it")
+    sync_api.expect(page.get_by_role("radio", name="✏️ Libere")).to_be_checked()
+    sync_api.expect(text).to_have_value("Lo mío")

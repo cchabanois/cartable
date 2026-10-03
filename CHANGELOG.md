@@ -92,6 +92,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Fixed
 
+- Changing the language now changes Notosaurus's prompts too (their names and the text shown), unless the text was changed for this time.
 - On a narrow phone (360 px), the info field's placeholder and the AnkiConnect key's were cut: shortened.
 - Dates and numbers follow the browser's variety of the language: « 3 Oct, 15:15 » in British English, « Oct 3, 03:15 PM » in American English, « 15 h 15 » in Canadian French (one text per language still).
 - The exported .apkg has the type `application/apkg`, so AnkiDroid opens it straight from the download.

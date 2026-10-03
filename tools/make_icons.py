@@ -4,7 +4,8 @@ Run again after changing the logo (and the crop boxes below, in its pixels):
 - static/logo.webp: the whole logo, drawing and name, large on the home screen;
 - static/logo-mark.webp: the head alone, in the app bar: the whole drawing is a blur
   at that size, the head is still recognised;
-- the icons, from the head: phones don't use an SVG for the home screen (Chrome on
+- the icons, from the head, named after the logo (notosaurus-…): phones keep an
+  icon by its address, so a new logo needs new names to be seen at all; phones don't use an SVG for the home screen (Chrome on
   Android makes a plain letter icon without a PNG, an iPhone wants a 180 px PNG). The
   "maskable" one keeps the head in the middle 80%: Android crops it to its own shape.
 """
@@ -38,11 +39,11 @@ def main() -> None:
     whole.thumbnail((640, 640), Image.LANCZOS)
     whole.save(STATIC / "logo.webp", quality=85, method=6)
     square(head, 192, 0.92).save(STATIC / "logo-mark.webp", quality=88, method=6)
-    square(head, 192, 0.92).save(STATIC / "icon-192.png", optimize=True)
-    square(head, 512, 0.92).save(STATIC / "icon-512.png", optimize=True)
-    square(head, 512, 0.72).save(STATIC / "icon-maskable-512.png", optimize=True)
-    square(head, 180, 0.92).save(STATIC / "apple-touch-icon.png", optimize=True)  # iOS rounds the corners
-    square(head, 64, 0.95).save(STATIC / "favicon.png", optimize=True)
+    square(head, 192, 0.92).save(STATIC / "notosaurus-192.png", optimize=True)
+    square(head, 512, 0.92).save(STATIC / "notosaurus-512.png", optimize=True)
+    square(head, 512, 0.72).save(STATIC / "notosaurus-maskable-512.png", optimize=True)
+    square(head, 180, 0.92).save(STATIC / "notosaurus-touch-180.png", optimize=True)  # iOS rounds the corners
+    square(head, 64, 0.95).save(STATIC / "notosaurus-64.png", optimize=True)
 
 
 if __name__ == "__main__":

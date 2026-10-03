@@ -759,3 +759,4 @@ h2 {
 
 /* A figure (SVG drawn by the AI): white like a textbook figure, in light and dark mode */
 .card-picture.figure img { background: #fff; width: min(100%, 400px); height: auto; }
+.card-picture.on-back { margin-top: .5rem; }

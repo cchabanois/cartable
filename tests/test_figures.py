@@ -96,3 +96,22 @@ def test_redraw_a_figure_from_its_description(client):
     # No picture any more: a text card again
     gone = client.delete(f"/api/lessons/{lesson['id']}/cards/{card['id']}/picture").json()["card"]
     assert (gone["figure"], gone["picture"]) == ("", "")
+
+
+def test_a_figure_with_the_answer_goes_on_the_back(client, tmp_path):
+    """ "What is a tangent?": the figure belongs to the answer, it shows with it only."""
+    lesson = client.post("/api/extract", data={"prompt": "géométrie"}).json()
+    cards = client.post(f"/api/lessons/{lesson['id']}/pictures").json()["lesson"]["cards"]
+    tangent = next(c for c in cards if c["picture_on_back"])
+    assert tangent["front"].startswith("Qu'est-ce qu'une tangente")
+    body = {"deck": lesson["deck"], "cards": cards, "lesson_id": lesson["id"]}
+    path = tmp_path / "out.apkg"
+    path.write_bytes(client.post("/api/export", json=body).content)
+    with zipfile.ZipFile(path) as z:
+        z.extract("collection.anki2", tmp_path)
+    conn = sqlite3.connect(tmp_path / "collection.anki2")
+    models = json.loads(conn.execute("SELECT models FROM col").fetchone()[0]).values()
+    on_back = next(m for m in models if m["name"].startswith("Cartable image au verso"))
+    (template,) = on_back["tmpls"]
+    assert "{{Picture}}" not in template["qfmt"] and "{{Picture}}" in template["afmt"]
+    assert template["name"] == "Image"  # as on the front: a note moves between them keeping its card

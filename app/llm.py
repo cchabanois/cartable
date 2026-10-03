@@ -93,10 +93,13 @@ the picture's description. Leave "picture" and "id" empty.
 its radius, angles; a figure with measures; a simple labelled diagram), fill "figure" \
 with a precise description of it, in the language of the instructions: the shapes, \
 their proportions, which angles are right, and every label with its exact text. It \
-is drawn as a clean, exact figure (not by an image model), and shown with the front. \
-Never put the answer on the figure when the card asks for it (a side to name stays \
-unlabelled, or is labelled with a letter only). Use "picture_prompt" for objects, \
-animals and scenes, "figure" for these figures; leave the other empty.
+is drawn as a clean, exact figure (not by an image model). Use "picture_prompt" for \
+objects, animals and scenes, "figure" for these figures; leave the other empty.
+- Where a picture or figure goes: on the front when it is needed to answer ("What is \
+the side opposite the right angle called?"): then never put the answer on it (a side \
+to name stays unlabelled, or gets a letter only). On the back, "picture_on_back": true, \
+when it shows or belongs to the answer (a definition: "What is a tangent to a circle?", \
+a property): then it may show and label everything.
 - Text lines: for each photo, its longest line of printed text (a title, a sentence): \
 the box of its first word and the box of its last word, in reading order, in the same \
 format as the diagram boxes. On a photo taken sideways or upside down, the first word \
@@ -344,6 +347,7 @@ def _keep_ids(revised: list[Card], before: list[Card]) -> None:
             unchanged = (card.picture_prompt, card.figure) == (match.picture_prompt, match.figure)
             if unchanged or not (card.picture_prompt or card.figure):
                 card.picture, card.picture_prompt, card.figure = match.picture, match.picture_prompt, match.figure
+                card.picture_on_back = card.picture_on_back if unchanged else match.picture_on_back
             left.remove(match)
         else:
             card.id, card.picture = "", ""  # a new card: its id comes when saved
@@ -780,6 +784,13 @@ def _fake_figures() -> Deck:
                 front="Quel théorème relie les côtés de ce triangle ?",
                 back="le théorème de Pythagore",
                 figure="Un triangle rectangle, l'hypoténuse étiquetée « c », les autres côtés « a » et « b ».",
+            ),
+            Card(
+                front="Qu'est-ce qu'une tangente à un cercle ?",
+                back="Une droite qui touche le cercle en un seul point, perpendiculaire au rayon en ce point.",
+                figure="Un cercle de centre O, une droite étiquetée « tangente » qui le touche en T, "
+                "le rayon [OT] et l'angle droit en T.",
+                picture_on_back=True,
             ),
         ],
     )

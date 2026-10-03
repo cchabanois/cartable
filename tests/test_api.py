@@ -1607,6 +1607,9 @@ def test_note_type_ids_are_unique():
         names.setdefault(anki._model(nt).model_id, set()).add(nt.name)
     for nt in (anki.diagram_note_type("", t) for t in (False, True)):
         names.setdefault(anki._model(nt).model_id, set()).add(nt.name)
+    for voice, typing, on_back in product(["", "es_ES"], [False, True], [False, True]):
+        nt = anki.picture_note_type(voice, typing, on_back)
+        names.setdefault(anki._model(nt).model_id, set()).add(nt.name)
     assert all(len(n) == 1 for n in names.values())
 
 

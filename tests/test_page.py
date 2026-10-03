@@ -129,6 +129,10 @@ def test_figures_drawn_after_the_cards(page):
     assert page.evaluate("img => img.naturalWidth", figure.element_handle()) == 400  # the SVG, at its size
     (summary,) = lessons(page)
     assert all(c["picture"].endswith(".svg") for c in lesson(page, summary["id"])["cards"])
+    # The tangent's figure belongs to its answer: shown under it, as in Anki
+    tangent = page.locator(".flash", has_text="tangente")
+    sync_api.expect(tangent.locator(".card-picture.on-back img")).to_be_visible()
+    sync_api.expect(tangent.locator(".card-picture:not(.on-back)")).to_be_hidden()
 
 
 def test_delete_the_open_lesson(page):

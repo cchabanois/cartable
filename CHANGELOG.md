@@ -9,6 +9,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](CONTRIBUTING
 
 ### Added
 
+- A 75-second demo video on YouTube (https://www.youtube.com/shorts/Q7bUTMEj6Kk), linked from the README (with the animated demo) and the documentation's home page.
 - A user documentation website (Astro Starlight, published on GitHub Pages), in English and French to start with, with screenshots of each language taken by `tools/docs_screenshots.py` from demo lessons (no personal data, no AI call); the other languages show the English pages until they are translated.
 - A Contributor License Agreement ([CLA.md](CLA.md)), signed once with a comment on the first pull request (no third-party app; a pull request template reminds it): contributors keep their copyright, contributions may also be distributed under other licenses, and always stay available under the AGPL. [CONTRIBUTING.md](CONTRIBUTING.md#contributor-license-agreement) explains why.
 - Spanish, German, Italian and Portuguese (Brazil): the interface, the Anki add-on's menus and Notosaurus's prompts, with Anki's own words (its official translations) and each country's school words. A page test checks that every language fits a narrow phone.

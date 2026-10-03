@@ -1,3 +1,5 @@
+<p align="center"><img src="static/logo.webp" alt="Notosaurus logo: a dinosaur with a school bag, surrounded by flashcards" width="320"></p>
+
 # Notosaurus
 
 > From school bag to flashcards: snap a lesson, get an Anki deck.

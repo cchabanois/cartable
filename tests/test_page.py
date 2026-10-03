@@ -290,3 +290,32 @@ def test_many_lessons_recent_folded_and_searched(page, clock):
     sync_api.expect(sheet.locator(".lesson:visible strong")).to_have_text(["Espagnol › Leçon 4"])
     page.get_by_placeholder("🔍 Chercher une leçon…").fill("chimie")
     sync_api.expect(page.get_by_text("Aucune leçon ne correspond.")).to_be_visible()
+
+
+def test_admin_lessons_by_owner_then_subject(page, clock):
+    page.goto("/admin.html")
+    page.locator("input[autocomplete=new-password]").first.fill("secret")
+    page.locator("input[autocomplete=new-password]").nth(1).fill("secret")
+    page.get_by_role("button", name="Créer et continuer").click()
+    page.wait_for_function("Alpine.$data(document.querySelector('[x-data]')).saveState === 'saved'")
+    admin = {"X-Admin-Password": "secret"}
+    for deck, owner in (
+        ("Anglais::Leçon 1", "Léa"),
+        ("Maths::Fractions", "Paul"),
+        ("Anglais::Leçon 2", "Léa"),
+        ("SVT", ""),
+    ):
+        made = page.request.post("/api/extract", multipart={"prompt": FRONT_PROMPT}).json()
+        page.request.put(f"/api/lessons/{made['id']}", data={"deck": deck, "cards": made["cards"]})
+        page.request.put(f"/api/admin/lessons/{made['id']}", headers=admin, data={"owner": owner})
+    page.reload()
+    owners = page.locator(".owner-group > summary strong")
+    sync_api.expect(owners).to_have_text(["👤 Léa", "👤 Paul", "Personne (commune à tous)"])  # nobody's last
+    lea = page.locator(".owner-group").first
+    sync_api.expect(lea.locator("> summary small")).to_contain_text("2 leçons")
+    sync_api.expect(page.locator(".admin-lesson-head:visible")).to_have_count(0)  # folded: the owners alone
+    lea.locator("> summary").click()
+    sync_api.expect(page.locator(".admin-lesson-head:visible")).to_have_count(2)
+    sync_api.expect(lea.locator(".subject-group h3")).to_have_text(["Anglais"])
+    sync_api.expect(lea.locator(".admin-lesson-head strong")).to_have_text(["Leçon 2", "Leçon 1"])
+    sync_api.expect(page.locator(".owner-group").last.locator(".admin-lesson-head strong")).to_have_text(["SVT"])

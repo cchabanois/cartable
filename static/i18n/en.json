@@ -16,6 +16,10 @@
       "cards": {
         "one": "{count} card",
         "other": "{count} cards"
+      },
+      "lessons": {
+        "one": "{count} lesson",
+        "other": "{count} lessons"
       }
     }
   },

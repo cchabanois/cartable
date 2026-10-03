@@ -33,6 +33,8 @@ const PICTURE_KEYS = { gemini: "gemini_api_key", openai: "openai_api_key", openr
 const EDITABLE = ["llm", "model", "fallback_models", "compatible_base_url", "picture_service", "tts_rate", "ankiconnect_url", "anki_sync",
                   "instructions", "profile_instructions", "picture_model"];
 
+const deckParts = (deck) => deck.split("::").map((part) => part.trim()).filter(Boolean);
+
 function session(action, value) {
   try {
     if (action === "get") return sessionStorage.getItem(PASSWORD_KEY);
@@ -414,6 +416,38 @@ document.addEventListener("alpine:init", () => {
     // Owner not among Anki's profiles (renamed or deleted): nobody can change the lesson.
     ownerMissing(l) {
       return Boolean(l.owner && this.lessons.profiles && !this.lessons.profiles.includes(l.owner));
+    },
+
+    // The lessons by owner (the Anki profiles in Anki's order, then those gone from Anki,
+    // then the lessons without owner), then by subject: the deck's first level, as in
+    // the app ("anglais" and "Anglais" together). The lessons themselves, not copies:
+    // a change of access updates them in place.
+    lessonTree() {
+      const profiles = this.lessons?.profiles ?? [];
+      const owners = new Map();
+      for (const l of this.lessons?.lessons ?? []) {
+        const owner = l.owner ?? "";
+        if (!owners.has(owner)) owners.set(owner, { key: `owner:${owner}`, owner, count: 0, cost: null, subjects: new Map() });
+        const group = owners.get(owner);
+        group.count += 1;
+        const cost = this.lessonCost(l);
+        if (cost !== null) group.cost = (group.cost ?? 0) + cost;
+        const name = deckParts(l.deck)[0] ?? t("app.lessons.noDeck");
+        const subject = name.toLocaleLowerCase();
+        if (!group.subjects.has(subject)) group.subjects.set(subject, { key: `subject:${subject}`, name, lessons: [] });
+        group.subjects.get(subject).lessons.push(l);
+      }
+      const rank = (g) => (!g.owner ? 2 : profiles.includes(g.owner) || !this.lessons?.profiles ? 0 : 1);
+      const order = (g) => (profiles.includes(g.owner) ? profiles.indexOf(g.owner) : profiles.length);
+      return [...owners.values()]
+        .sort((a, b) => rank(a) - rank(b) || order(a) - order(b) || a.owner.localeCompare(b.owner))
+        .map((g) => ({ ...g, missing: this.ownerMissing(g), subjects: [...g.subjects.values()] }));
+    },
+
+    // A lesson under its subject: the rest of its deck name ("Leçon 2 › Phrases")
+    lessonTitle(l) {
+      const [head, ...rest] = deckParts(l.deck);
+      return rest.length ? rest.join(" › ") : head ?? t("app.lessons.noDeck");
     },
 
     ownerChoices(l) {

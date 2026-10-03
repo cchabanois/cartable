@@ -295,49 +295,67 @@
                    x-text="$t('admin.costs.unknownCount', { count: lessons?.costs.unknown })"></small>
             <small class="muted" x-show="lessons?.costs.estimated" x-text="$t('admin.costs.estimated')"></small>
           </div>
-          <ul class="admin-lesson-list">
-            <template x-for="l in lessons?.lessons ?? []" :key="l.id">
-              <li :class="{ orphan: ownerMissing(l) }">
-                <div class="admin-lesson-head">
-                  <strong x-text="l.deck"></strong>
-                  <button type="button" class="icon-btn muted" @click="deleteLesson(l)"
-                          :aria-label="$t('admin.lessons.delete')">🗑</button>
-                </div>
+          <!-- By owner, then by subject (the deck's first level) -->
+          <template x-for="o in lessonTree()" :key="o.key">
+            <details class="owner-group">
+              <summary>
+                <strong :class="{ warn: o.missing }"
+                        x-text="!o.owner ? $t('admin.lessons.noOwner') : o.missing ? $t('admin.lessons.missing', { owner: o.owner }) : '👤 ' + o.owner"></strong>
                 <small class="muted">
-                  <span x-text="$t('common.count.cards', { count: l.card_count })"></span> ·
-                  <span x-text="formatDate(l.updated_at)"></span>
+                  <span x-text="$t('common.count.lessons', { count: o.count })"></span>
+                  <span x-show="o.cost" x-text="' · 💰 ' + formatCost(o.cost)"></span>
                 </small>
-                <!-- AI calls: generation, then corrections -->
-                <details class="ai-calls" x-show="l.ai_calls.length">
-                  <summary x-text="costLine(l)"></summary>
-                  <ul>
-                    <template x-for="call in l.ai_calls" :key="call.at + call.kind">
-                      <li x-text="callLine(call)"></li>
+              </summary>
+              <template x-for="s in o.subjects" :key="s.key">
+                <div class="subject-group">
+                  <h3 x-text="s.name"></h3>
+                  <ul class="admin-lesson-list">
+                    <template x-for="l in s.lessons" :key="l.id">
+                      <li :class="{ orphan: ownerMissing(l) }">
+                        <div class="admin-lesson-head">
+                          <strong x-text="lessonTitle(l)" :title="l.deck"></strong>
+                          <button type="button" class="icon-btn muted" @click="deleteLesson(l)"
+                                  :aria-label="$t('admin.lessons.delete')">🗑</button>
+                        </div>
+                        <small class="muted">
+                          <span x-text="$t('common.count.cards', { count: l.card_count })"></span> ·
+                          <span x-text="formatDate(l.updated_at)"></span>
+                        </small>
+                        <!-- AI calls: generation, then corrections -->
+                        <details class="ai-calls" x-show="l.ai_calls.length">
+                          <summary x-text="costLine(l)"></summary>
+                          <ul>
+                            <template x-for="call in l.ai_calls" :key="call.at + call.kind">
+                              <li x-text="callLine(call)"></li>
+                            </template>
+                          </ul>
+                        </details>
+                        <small class="muted" x-show="!l.ai_calls.length" x-text="$t('admin.costs.none')"></small>
+                        <div class="admin-lesson-access">
+                          <label class="owner-pick">
+                            <span x-text="$t('admin.lessons.owner')"></span>
+                            <select @change="setAccess(l, { owner: $event.target.value })">
+                              <option value="" :selected="!l.owner" x-text="$t('admin.lessons.noOwner')"></option>
+                              <template x-for="p in ownerChoices(l)" :key="p">
+                                <option :value="p" :selected="l.owner === p"
+                                        x-text="ownerMissing({ owner: p }) ? $t('admin.lessons.missing', { owner: p }) : p"></option>
+                              </template>
+                            </select>
+                          </label>
+                          <label class="switch" :class="{ disabled: !l.owner }">
+                            <input type="checkbox" :checked="l.shared || !l.owner" :disabled="!l.owner"
+                                   @change="setAccess(l, { shared: $event.target.checked })">
+                            <span class="track"><span class="knob"></span></span>
+                            <span x-text="$t('admin.lessons.shared')"></span>
+                          </label>
+                        </div>
+                      </li>
                     </template>
                   </ul>
-                </details>
-                <small class="muted" x-show="!l.ai_calls.length" x-text="$t('admin.costs.none')"></small>
-                <div class="admin-lesson-access">
-                  <label class="owner-pick">
-                    <span x-text="$t('admin.lessons.owner')"></span>
-                    <select @change="setAccess(l, { owner: $event.target.value })">
-                      <option value="" :selected="!l.owner" x-text="$t('admin.lessons.noOwner')"></option>
-                      <template x-for="p in ownerChoices(l)" :key="p">
-                        <option :value="p" :selected="l.owner === p"
-                                x-text="ownerMissing({ owner: p }) ? $t('admin.lessons.missing', { owner: p }) : p"></option>
-                      </template>
-                    </select>
-                  </label>
-                  <label class="switch" :class="{ disabled: !l.owner }">
-                    <input type="checkbox" :checked="l.shared || !l.owner" :disabled="!l.owner"
-                           @change="setAccess(l, { shared: $event.target.checked })">
-                    <span class="track"><span class="knob"></span></span>
-                    <span x-text="$t('admin.lessons.shared')"></span>
-                  </label>
                 </div>
-              </li>
-            </template>
-          </ul>
+              </template>
+            </details>
+          </template>
         </section>
 
         <!-- Password -->

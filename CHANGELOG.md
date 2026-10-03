@@ -9,6 +9,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](CONTRIBUTING
 
 ### Added
 
+- A Contributor License Agreement ([CLA.md](CLA.md)), signed once with one click on the first pull request: contributors keep their copyright, contributions may also be distributed under other licenses, and always stay available under the AGPL. [CONTRIBUTING.md](CONTRIBUTING.md#contributor-license-agreement) explains why.
 - Spanish, German, Italian and Portuguese (Brazil): the interface, the Anki add-on's menus and Notosaurus's prompts, with Anki's own words (its official translations) and each country's school words. A page test checks that every language fits a narrow phone.
 - Settings: the lessons are grouped by owner (the Anki profiles in Anki's order, then those gone from Anki, then nobody's), each with its lesson count and AI cost, folded at first, then by subject.
 - The lessons are grouped by subject, the deck's first level (« Anglais » → « Leçon 1 », « Leçon 2 »), the subject worked on last first. With many lessons: a search (no case, no accents), the 3 most recent first, and the subjects folded but the open lesson's (opened or closed by hand, kept on the device).

@@ -120,6 +120,19 @@ The server never builds sentences: its errors are codes (`llm.overloaded`,
 `main` is protected: every change goes through a pull request. Each pull request adds a
 line under **Unreleased** in [CHANGELOG.md](CHANGELOG.md).
 
+## Contributor License Agreement
+
+Before your first pull request can be merged, you sign the
+[Contributor License Agreement](CLA.md) once: the CLA Assistant bot asks for it in a
+comment on the pull request, and signing takes one click with your GitHub account.
+
+Why: Notosaurus is open source under the [AGPL-3.0](LICENSE), and it will stay so. The
+agreement also lets the maintainer offer Notosaurus under other terms where the AGPL
+doesn't fit, for instance in an app store or as a hosted service, which helps fund its
+development. In exchange, the agreement promises that every contribution stays
+available as open source in this repository. You keep the copyright of your work and
+remain free to use it however you like.
+
 ## Releasing
 
 The version lives in one place, `pyproject.toml` ([semantic versioning](https://semver.org/)).

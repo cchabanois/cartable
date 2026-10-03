@@ -73,6 +73,33 @@ def with_ids(cards: list[Card]) -> list[Card]:
 def _write(path: Path, lesson: Lesson) -> None:
     with_ids(lesson.cards)
     storage.write_json(path / "lesson.json", {"format": FORMAT, **lesson.model_dump(exclude={"id", "photo_count"})})
+    _summaries.pop(path, None)  # read again at the next listing, even within the same clock tick
+
+
+# The lessons' summaries, kept between listings: a lesson is read again only when its
+# file changed (written here, or by hand). Listing is then a look at the files' dates,
+# not a reading of every card of every lesson; the first listing after a start reads
+# them all once. Keyed by path: each data folder (tests) has its own.
+_summaries: dict[Path, tuple[tuple[int, int, int], LessonSummary]] = {}
+
+
+def _summary(path: Path) -> LessonSummary | None:
+    try:
+        stat = (path / "lesson.json").stat()
+    except FileNotFoundError:
+        return None
+    version = (stat.st_mtime_ns, stat.st_size, stat.st_ino)  # the file replaced: a new inode
+    cached = _summaries.get(path)
+    if cached and cached[0] == version:
+        return cached[1]
+    try:
+        lesson = _read(path)
+    except storage.DataTooNew as e:  # saved by a newer Notosaurus: left alone
+        log.warning("Lesson %s not listed: %s", path.name, e.detail_text)
+        return None
+    summary = LessonSummary(card_count=len(lesson.cards), **lesson.model_dump(exclude={"cards"}))
+    _summaries[path] = (version, summary)
+    return summary
 
 
 def _new_folder(deck: str) -> Path:
@@ -134,14 +161,11 @@ def list_all() -> list[LessonSummary]:
     root = _root()
     if not root.is_dir():
         return []
-    summaries = []
-    for path in (p for p in root.iterdir() if (p / "lesson.json").is_file()):
-        try:
-            lesson = _read(path)
-        except storage.DataTooNew as e:  # saved by a newer Notosaurus: left alone
-            log.warning("Lesson %s not listed: %s", path.name, e.detail_text)
-            continue
-        summaries.append(LessonSummary(card_count=len(lesson.cards), **lesson.model_dump(exclude={"cards"})))
+    paths = [p for p in root.iterdir() if not p.name.startswith(".")]  # .…tmp: being created
+    summaries = [s for p in paths if (s := _summary(p))]
+    present = set(paths)
+    for gone in [p for p in _summaries if p.parent == root and p not in present]:
+        del _summaries[gone]  # deleted lessons
     return sorted(summaries, key=lambda s: (s.updated_at, s.id), reverse=True)
 
 

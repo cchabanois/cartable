@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -1813,3 +1814,46 @@ def test_multiple_choice_and_true_false(client, tmp_path):
     # Not a multiple choice: no wrong answer left, or a text with gaps
     assert not anki.is_choice(Card(front="q", back="r", choices=["  "]))
     assert not anki.is_choice(Card(front="en {{c1::1789}}", back="", choices=["x"]))
+
+
+def test_lessons_listed_with_one_question_to_anki(client, monkeypatch):
+    for owner in ("Léa", "Paul", "Léa"):
+        lessons.create(LessonIn(deck=f"{owner}::x", cards=[]), "p", [], owner=owner)
+    asked = []
+
+    async def active_profile():
+        asked.append(1)
+        return "Léa"
+
+    monkeypatch.setattr(ankiconnect, "active_profile", active_profile)
+    assert sorted(s["deck"] for s in client.get("/api/lessons").json()) == ["Léa::x", "Léa::x"]
+    assert len(asked) == 1  # once for the list, not once per lesson
+
+
+def test_lesson_list_follows_every_change(client, tmp_path):
+    """The summaries are kept between listings: every change still shows."""
+    a = lessons.create(LessonIn(deck="A", cards=[]), "p", [])
+    assert [s.deck for s in lessons.list_all()] == ["A"]
+    lessons.update(a.id, LessonIn(deck="A2", cards=[{"front": "x", "back": "y"}]))
+    assert [(s.deck, s.card_count) for s in lessons.list_all()] == [("A2", 1)]
+    # Changed by hand, the same size, in place, a moment later: its date tells
+    path = tmp_path / "data" / "lessons" / a.id / "lesson.json"
+    before = path.stat().st_mtime_ns
+    path.write_text(path.read_text(encoding="utf-8").replace('"A2"', '"B2"'), encoding="utf-8")
+    os.utime(path, ns=(before + 10**9, before + 10**9))
+    assert [s.deck for s in lessons.list_all()] == ["B2"]
+    b = lessons.create(LessonIn(deck="C", cards=[]), "p", [])
+    assert {s.deck for s in lessons.list_all()} == {"B2", "C"}
+    lessons.delete(b.id)
+    assert [s.deck for s in lessons.list_all()] == ["B2"]
+    # Saved by a newer Notosaurus: not listed, even after being listed
+    path.write_text(json.dumps({**json.loads(path.read_text(encoding="utf-8")), "format": 99}), encoding="utf-8")
+    assert lessons.list_all() == []
+
+
+def test_decks_that_meet():
+    from app.main import _decks_meet
+
+    assert _decks_meet("Maths", "maths") and _decks_meet("Maths", "Maths::Fractions")
+    assert _decks_meet("Maths::Fractions", "Maths")
+    assert not _decks_meet("Maths", "Mathsx::A") and not _decks_meet("Maths::A", "Maths::B")

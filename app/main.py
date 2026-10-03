@@ -318,13 +318,15 @@ def _diagram_images(req: ExportRequest, lesson: Lesson | None) -> dict[int, tupl
     return images
 
 
-async def _visible(owner: str, shared: bool) -> bool:
+def _sees(profile: str | None, owner: str, shared: bool) -> bool:
     """A profile sees its own lessons, shared ones and lessons without owner; another
     profile's private lessons don't exist for it. Anki closed (no profile known): all."""
-    if shared or not owner:
-        return True
-    profile = await ankiconnect.active_profile()
-    return profile is None or profile == owner
+    return shared or not owner or profile is None or profile == owner
+
+
+async def _visible(owner: str, shared: bool) -> bool:
+    """Whether the open profile sees a lesson: Anki is asked only for a private one."""
+    return shared or not owner or _sees(await ankiconnect.active_profile(), owner, shared)
 
 
 async def _lesson(id: str | None) -> Lesson | None:
@@ -416,7 +418,11 @@ def config() -> dict:
 
 @app.get("/api/lessons")
 async def list_lessons() -> list[LessonSummary]:
-    return [s for s in lessons.list_all() if await _visible(s.owner, s.shared)]
+    found = lessons.list_all()
+    # Anki asked once for all (not once per lesson), and only if some lesson is private
+    private = any(s.owner and not s.shared for s in found)
+    profile = await ankiconnect.active_profile() if private else None
+    return [s for s in found if _sees(profile, s.owner, s.shared)]
 
 
 @app.get("/api/lessons/{id}")
@@ -441,6 +447,13 @@ def _lesson_decks(lesson: Lesson) -> list[str]:
     return sorted({lesson.deck.strip()} | {n.deck for n in anki.lesson_notes(_export_request(lesson))})
 
 
+def _decks_meet(a: str, b: str) -> bool:
+    """The same deck, or one inside the other ("Maths" and "Maths::Fractions"): their
+    lessons' notes may share decks. Anki doesn't tell decks apart by case."""
+    a, b = a.strip().casefold(), b.strip().casefold()
+    return a == b or a.startswith(b + "::") or b.startswith(a + "::")
+
+
 async def _anki_notes(lesson: Lesson) -> dict:
     """The lesson's notes in the open Anki profile: {"available", "count", "ids"}.
     Only in its owner's profile (or any, for a lesson without owner): the others
@@ -448,10 +461,13 @@ async def _anki_notes(lesson: Lesson) -> dict:
     profile = await ankiconnect.active_profile()
     if profile is None or (lesson.owner and profile != lesson.owner):
         return {"available": False, "count": 0, "ids": []}
-    # The other lessons: a note sent for one of them too isn't this lesson's alone
-    other_lessons = [o for s in lessons.list_all() if s.id != lesson.id and (o := lessons.get(s.id))]
-    others = {(n.deck, n.key) for o in other_lessons for n in anki.lesson_notes(_export_request(o))}
-    other_tags = {anki.lesson_tag(o.id) for o in other_lessons}
+    # The other lessons: a note sent for one of them too isn't this lesson's alone. Their
+    # tags need only their ids; their cards, only for those whose decks meet this one's
+    # (the same deck, or one inside the other): the others' notes are elsewhere.
+    summaries = [s for s in lessons.list_all() if s.id != lesson.id]
+    other_tags = {anki.lesson_tag(s.id) for s in summaries}
+    nearby = [o for s in summaries if _decks_meet(s.deck, lesson.deck) and (o := lessons.get(s.id))]
+    others = {(n.deck, n.key) for o in nearby for n in anki.lesson_notes(_export_request(o))}
     try:
         ids = await ankiconnect.find_lesson_notes(
             lesson.id, anki.lesson_notes(_export_request(lesson)), others, other_tags

@@ -399,7 +399,7 @@ def test_figure_lesson_on_a_real_collection(bridged, col):
     body = {"deck": lesson["deck"], "cards": cards, "lesson_id": lesson["id"]}
     assert client.post("/api/anki/send", json=body).json()["added"] == 3
     svg = Path(col.media.dir()) / cards[0]["picture"]
-    assert svg.suffix == ".svg" and svg.read_text().startswith("<svg")  # in Anki's media, as sent
+    assert svg.suffix == ".svg" and svg.read_text(encoding="utf-8").startswith("<svg")  # in Anki's media, as sent
     (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Cartable image (")]
     question = col.get_note(sorted(col.find_notes(f'"note:{note_type.name}"'))[0]).cards()[0].question()
     assert f'<img src="{cards[0]["picture"]}">' in question

@@ -47,6 +47,7 @@ def test_clean_keeps_only_shapes_and_text():
         "<svg",
         "<svg>" + "<g/>" * 60000 + "</svg>",  # too big
     ],
+    ids=["dtd", "not-svg", "truncated", "too-big"],  # short names: the SVG itself is too long for one
 )
 def test_clean_refuses(bad):
     with pytest.raises(figures.FigureError):
@@ -91,7 +92,7 @@ def test_redraw_a_figure_from_its_description(client):
     url = f"/api/lessons/{lesson['id']}/cards/{card['id']}/picture/draw"
     res = client.post(url, json={"subject": "Un triangle, l'hypoténuse étiquetée « hypoténuse »"}).json()
     assert res["card"]["figure"].startswith("Un triangle") and res["card"]["picture"].endswith(".svg")
-    svg = (lessons.folder(lesson["id"]) / "images" / res["card"]["picture"]).read_text()
+    svg = (lessons.folder(lesson["id"]) / "images" / res["card"]["picture"]).read_text(encoding="utf-8")
     assert "hypoténuse" in svg
     # No picture any more: a text card again
     gone = client.delete(f"/api/lessons/{lesson['id']}/cards/{card['id']}/picture").json()["card"]

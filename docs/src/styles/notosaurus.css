@@ -1,0 +1,33 @@
+/* Notosaurus colours: the teal of the logo, as in the app (static/style.css). */
+:root {
+	--sl-color-accent-low: #0b3b46;
+	--sl-color-accent: #3aa9bd;
+	--sl-color-accent-high: #c9eef4;
+}
+
+:root[data-theme='light'] {
+	--sl-color-accent-low: #dcf0f2;
+	--sl-color-accent: #0e6377;
+	--sl-color-accent-high: #0a4352;
+}
+
+/* The demo on the home page: a phone-shaped animation, centred. */
+.demo {
+	display: block;
+	margin: 1.5rem auto;
+	max-width: 320px;
+	width: 100%;
+	border-radius: 1.5rem;
+	box-shadow: 0 12px 40px rgb(0 0 0 / 0.25);
+}
+
+/* Screenshots of the phone page (docs/src/assets/screenshots/<lang>/): phone-sized, centred. */
+.sl-markdown-content p > img:only-child {
+	display: block;
+	margin: 1rem auto;
+	max-width: min(300px, 100%);
+	height: auto;
+	border-radius: 1.25rem;
+	border: 1px solid var(--sl-color-gray-5);
+	box-shadow: 0 8px 28px rgb(0 0 0 / 0.18);
+}

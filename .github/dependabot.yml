@@ -11,3 +11,10 @@ updates:
     groups:
       python:  # one PR per week for all Python packages
         patterns: ["*"]
+  - package-ecosystem: npm
+    directory: /docs
+    schedule:
+      interval: weekly
+    groups:
+      docs:  # one PR per week for the documentation site's packages
+        patterns: ["*"]

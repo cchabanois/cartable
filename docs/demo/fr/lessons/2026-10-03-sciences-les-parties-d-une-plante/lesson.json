@@ -1,0 +1,160 @@
+{
+ "format": 1,
+ "deck": "Sciences::Les parties d'une plante",
+ "cards": [
+  {
+   "front": "Qu'est-ce que (1) ?",
+   "back": "pétale",
+   "choices": [],
+   "info": "",
+   "subdeck": "",
+   "tags": [],
+   "mask": {
+    "page": 1,
+    "n": 1,
+    "box": [
+     0.725,
+     0.2332,
+     0.8226,
+     0.2656
+    ]
+   },
+   "picture_prompt": "",
+   "figure": "",
+   "fun_fact": "",
+   "picture_on_back": false,
+   "picture": "",
+   "id": "6b4a16928c12"
+  },
+  {
+   "front": "Qu'est-ce que (2) ?",
+   "back": "fleur",
+   "choices": [],
+   "info": "",
+   "subdeck": "",
+   "tags": [],
+   "mask": {
+    "page": 1,
+    "n": 2,
+    "box": [
+     0.7386,
+     0.3384,
+     0.7988,
+     0.3708
+    ]
+   },
+   "picture_prompt": "",
+   "figure": "",
+   "fun_fact": "",
+   "picture_on_back": false,
+   "picture": "",
+   "id": "f14d877d90b8"
+  },
+  {
+   "front": "Qu'est-ce que (3) ?",
+   "back": "feuille",
+   "choices": [],
+   "info": "",
+   "subdeck": "",
+   "tags": [],
+   "mask": {
+    "page": 1,
+    "n": 3,
+    "box": [
+     0.1476,
+     0.4436,
+     0.2554,
+     0.476
+    ]
+   },
+   "picture_prompt": "",
+   "figure": "",
+   "fun_fact": "",
+   "picture_on_back": false,
+   "picture": "",
+   "id": "4815c250b954"
+  },
+  {
+   "front": "Qu'est-ce que (4) ?",
+   "back": "tige",
+   "choices": [],
+   "info": "",
+   "subdeck": "",
+   "tags": [],
+   "mask": {
+    "page": 1,
+    "n": 4,
+    "box": [
+     0.691,
+     0.5922,
+     0.7503,
+     0.6246
+    ]
+   },
+   "picture_prompt": "",
+   "figure": "",
+   "fun_fact": "",
+   "picture_on_back": false,
+   "picture": "",
+   "id": "40b9dc31b4a4"
+  },
+  {
+   "front": "Qu'est-ce que (5) ?",
+   "back": "racines",
+   "choices": [],
+   "info": "",
+   "subdeck": "",
+   "tags": [],
+   "mask": {
+    "page": 1,
+    "n": 5,
+    "box": [
+     0.7088,
+     0.818,
+     0.8167,
+     0.8504
+    ]
+   },
+   "picture_prompt": "",
+   "figure": "",
+   "fun_fact": "",
+   "picture_on_back": false,
+   "picture": "",
+   "id": "e9b848cdc72f"
+  }
+ ],
+ "voice": "",
+ "reverse": false,
+ "typing": false,
+ "dictation": false,
+ "shared": false,
+ "frames": [
+  {
+   "page": 1,
+   "box": [
+    0.1231,
+    0.1868,
+    0.8463,
+    0.8336
+   ]
+  }
+ ],
+ "prompt": "La photo montre un schéma avec des légendes (des noms reliés au dessin par une flèche ou un trait). Cache le texte de chaque légende derrière un numéro et crée une carte par légende. Recto : le schéma, avec la question « Qu'est-ce que (n) ? ». Verso : le texte de la légende.",
+ "choice": "",
+ "owner": "Léa",
+ "ai_calls": [
+  {
+   "at": "2026-10-03T19:22:05",
+   "kind": "extract",
+   "provider": "anthropic",
+   "model": "claude-sonnet-5",
+   "input_tokens": 7480,
+   "output_tokens": 864,
+   "cost": 0.0236,
+   "exact": false
+  }
+ ],
+ "created_at": "2026-10-03T19:22:05",
+ "updated_at": "2026-10-03T19:22:05",
+ "exported_at": null
+}

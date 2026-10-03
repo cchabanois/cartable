@@ -1,0 +1,49 @@
+---
+title: Notosaurus
+description: Prends une leçon en photo avec ton téléphone, obtiens des cartes Anki. Un greffon Anki libre et gratuit.
+template: splash
+hero:
+  tagline: Prends une leçon en photo avec ton téléphone. Obtiens des cartes Anki en quelques secondes, prêtes à réviser.
+  image:
+    file: ../../../assets/logo.webp
+  actions:
+    - text: Pour commencer
+      link: getting-started/
+      icon: right-arrow
+    - text: Voir sur GitHub
+      link: https://github.com/cchabanois/notosaurus
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+import demo from '../../../assets/demo.gif';
+
+<img class="demo" src={demo.src} alt="Notosaurus sur un téléphone : une page de vocabulaire devient des cartes, un schéma voit ses légendes masquées, des cartes de géométrie reçoivent des figures exactes" />
+
+<CardGrid stagger>
+	<Card title="À partir d'une photo" icon="seti:image">
+		Prends en photo une page de cahier ou de manuel. Une IA la lit, écriture manuscrite
+		comprise, et prépare les cartes.
+	</Card>
+	<Card title="Tu gardes la main" icon="pencil">
+		Relis chaque carte, ou demande simplement : « ajoute le pluriel au verso », « tu as
+		oublié les couleurs ».
+	</Card>
+	<Card title="Schémas, formules, figures" icon="puzzle">
+		Les légendes d'un schéma cachées derrière des numéros, les formules en MathJax, des
+		figures de géométrie exactes, des textes à trous et des QCM.
+	</Card>
+	<Card title="Directement dans Anki" icon="rocket">
+		Un geste envoie le paquet dans Anki, avec l'audio. Révision sur AnkiDroid ou AnkiMobile,
+		synchronisée par AnkiWeb.
+	</Card>
+	<Card title="Pensé pour les familles" icon="star">
+		Un profil Anki par enfant, chacun avec ses leçons. Les photos des enfants ne vont qu'au
+		service d'IA que tu choisis.
+	</Card>
+	<Card title="Libre et gratuit" icon="github">
+		Avec ta propre clé d'IA (Gemini, Claude, OpenAI, OpenRouter, ou un modèle chez toi).
+		Pas d'abonnement.
+	</Card>
+</CardGrid>

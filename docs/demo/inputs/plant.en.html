@@ -1,0 +1,69 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; width: 1200px; height: 1600px; overflow: hidden; }
+  body { background: radial-gradient(circle at 70% 30%, #7d8a96, #46505a 75%); }
+  .page {
+    position: absolute; left: 90px; top: 80px; width: 1020px; height: 1420px;
+    transform: rotate(1.6deg); background: #fbfaf5;
+    box-shadow: 0 30px 60px rgba(0,0,0,.45), 0 4px 10px rgba(0,0,0,.3);
+  }
+  .page::after { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(250deg, rgba(255,255,255,.2), rgba(0,0,0,.05) 55%, rgba(0,0,0,.12)); }
+  h1 { font-family: 'Patrick Hand', sans-serif; font-size: 64px; margin: 50px 0 0 70px; color: #222; }
+  .task { font-family: 'Patrick Hand', sans-serif; font-size: 34px; margin: 6px 0 0 70px; color: #555; }
+  svg { position: absolute; left: 0; top: 190px; }
+  .label { font-family: 'Caveat', cursive; font-size: 52px; font-weight: 700; fill: #1d3f9e; }
+</style></head>
+<body><div class="page">
+<h1>Parts of a plant</h1>
+<div class="task">Science — label the diagram</div>
+<svg width="1020" height="1200" viewBox="0 0 1020 1200">
+  <g stroke="#2a2a2a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- ground -->
+    <path d="M140 820 Q 510 800 880 822" fill="none" stroke="#7a5a3a" stroke-width="6"/>
+    <!-- roots -->
+    <g fill="none" stroke="#7a5a3a">
+      <path d="M510 820 Q 505 900 470 980 Q 450 1030 430 1080"/>
+      <path d="M510 830 Q 540 920 590 990 Q 615 1030 640 1070"/>
+      <path d="M505 860 Q 450 900 400 930"/>
+      <path d="M515 870 Q 580 900 640 915"/>
+      <path d="M480 960 Q 440 990 410 1000"/>
+      <path d="M570 970 Q 610 1000 650 1005"/>
+    </g>
+    <!-- stem -->
+    <path d="M510 820 Q 500 600 512 330" fill="none" stroke="#3d7a2e" stroke-width="12"/>
+    <!-- leaves -->
+    <path d="M506 620 Q 400 520 300 560 Q 400 650 506 620 Z" fill="#7cc06a"/>
+    <path d="M506 620 L 330 565" fill="none" stroke="#3d7a2e" stroke-width="3"/>
+    <path d="M509 500 Q 620 410 720 450 Q 620 540 509 500 Z" fill="#7cc06a"/>
+    <path d="M509 500 L 700 452" fill="none" stroke="#3d7a2e" stroke-width="3"/>
+    <!-- flower -->
+    <g transform="translate(512 260)">
+      <ellipse cx="0" cy="-85" rx="42" ry="72" fill="#f4a3c4"/>
+      <ellipse cx="0" cy="85" rx="42" ry="72" fill="#f4a3c4"/>
+      <ellipse cx="-85" cy="0" rx="72" ry="42" fill="#f4a3c4"/>
+      <ellipse cx="85" cy="0" rx="72" ry="42" fill="#f4a3c4"/>
+      <ellipse cx="-60" cy="-60" rx="40" ry="66" transform="rotate(-45 -60 -60)" fill="#f7b8d2"/>
+      <ellipse cx="60" cy="-60" rx="40" ry="66" transform="rotate(45 60 -60)" fill="#f7b8d2"/>
+      <ellipse cx="-60" cy="60" rx="40" ry="66" transform="rotate(45 -60 60)" fill="#f7b8d2"/>
+      <ellipse cx="60" cy="60" rx="40" ry="66" transform="rotate(-45 60 60)" fill="#f7b8d2"/>
+      <circle r="38" fill="#f5c84b"/>
+    </g>
+  </g>
+  <!-- label lines -->
+  <g stroke="#1d3f9e" stroke-width="3">
+    <line x1="590" y1="190" x2="770" y2="120"/>
+    <line x1="545" y1="255" x2="770" y2="290"/>
+    <line x1="360" y1="575" x2="230" y2="500"/>
+    <line x1="510" y1="720" x2="740" y2="700"/>
+    <line x1="600" y1="1000" x2="760" y2="1060"/>
+  </g>
+  <text class="label" x="780" y="135">petal</text>
+  <text class="label" x="780" y="305">flower</text>
+  <text class="label" x="90" y="490">leaf</text>
+  <text class="label" x="750" y="715">stem</text>
+  <text class="label" x="770" y="1080">roots</text>
+</svg>
+</div></body></html>

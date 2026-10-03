@@ -254,6 +254,11 @@
     },
     "pairing": {
       "title": "Device not allowed"
+    },
+    "viewer": {
+      "label": "Photo in full",
+      "previous": "Previous photo",
+      "next": "Next photo"
     }
   },
   "admin": {

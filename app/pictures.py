@@ -17,7 +17,7 @@ from pathlib import Path
 from PIL import Image as PILImage
 from PIL import ImageOps
 
-from . import llm, settings, storage
+from . import figures, llm, settings, storage
 from .errors import AppError
 from .models import Card
 from .settings import Settings
@@ -25,7 +25,7 @@ from .settings import Settings
 log = logging.getLogger("cartable")
 
 OPENROUTER = settings.OPENROUTER_URL
-NAME = re.compile(r"^picture-[a-z0-9]+-[a-f0-9]{8}\.jpg$")  # files we write; blocks "../"
+NAME = re.compile(r"^picture-[a-z0-9]+-[a-f0-9]{8}\.(jpg|svg)$")  # files we write; blocks "../"
 SIDE = 512  # on a card: clear enough, light to sync
 QUALITY = 80
 CONCURRENCY = 4
@@ -192,25 +192,33 @@ async def picture(s: Settings, subject: str, fresh: bool = False) -> bytes:
     return jpeg
 
 
+async def figure_or_picture(s: Settings, folder: Path, card: Card, fresh: bool = False) -> str:
+    """The card's figure (SVG, drawn by the cards' AI) or picture (image model, from the
+    cache unless `fresh`), saved in the lesson; returns its file name."""
+    if card.figure.strip():
+        return figures.save(folder, card, await llm.draw_figure(s, card.figure))
+    return save(folder, card, await picture(s, card.picture_prompt, fresh=fresh))
+
+
 async def draw_all(folder: Path, cards: list[Card]) -> tuple[int, dict | None]:
-    """Draw the missing pictures (cards with a picture_prompt and no picture), a few at
-    a time. Returns how many failed and why the first did (an error's detail, for the
-    page): a card without its picture is still a card."""
+    """Draw the missing pictures (cards with a picture_prompt or a figure, and no picture),
+    a few at a time. Returns how many failed and why the first did (an error's detail, for
+    the page): a card without its picture is still a card."""
     s = settings.current()
-    todo = [c for c in cards if c.picture_prompt.strip() and not c.picture]
+    todo = [c for c in cards if (c.picture_prompt.strip() or c.figure.strip()) and not c.picture]
     sem = asyncio.Semaphore(CONCURRENCY)
     failures: list[dict] = []
 
     async def one(card: Card) -> None:
         async with sem:
             try:
-                card.picture = save(folder, card, await picture(s, card.picture_prompt))
+                card.picture = await figure_or_picture(s, folder, card)
             except AppError as e:
                 failures.append(e.detail())
-                log.warning("Picture for %r: %s", card.picture_prompt, e)
+                log.warning("Picture for %r: %s", card.figure or card.picture_prompt, e)
             except (OSError, ValueError) as e:  # not an image
                 failures.append(PictureError("picture.empty").detail())
-                log.warning("Picture for %r: %s", card.picture_prompt, e)
+                log.warning("Picture for %r: %s", card.figure or card.picture_prompt, e)
 
     await asyncio.gather(*(one(c) for c in todo))
     return len(failures), (failures[0] if failures else None)

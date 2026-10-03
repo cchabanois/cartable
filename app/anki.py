@@ -176,25 +176,28 @@ def diagram_note_type(voice: str, typing: bool = False) -> NoteType:
     return NoteType(name, kind, tuple(fields), templates, css=CSS + DIAGRAM_CSS, key="Id", variant=variant)
 
 
-def picture_note_type(voice: str, typing: bool = False) -> NoteType:
+def picture_note_type(voice: str, typing: bool = False, on_back: bool = False) -> NoteType:
     """A picture card: the picture and the front text (e.g. "How do you say it in
     English?"), then the answer. "Id" (the card's own id) tells which note an update
-    is for: the fronts are often all the same."""
+    is for: the fronts are often all the same. `on_back`: the picture belongs to the
+    answer ("What is a tangent?"): shown with it only. Same fields and card name: a note
+    moves from one to the other keeping its history."""
     anki_tts = tts.is_anki_locale(voice)
     sound = f"{{{{tts {voice}:Back}}}}" if anki_tts else "{{Audio}}"
     info = '{{#Info}}<div class="info">{{Info}}</div>{{/Info}}'
-    templates = (
-        {
-            "name": "Image",
-            "qfmt": '<div class="cartable-picture">{{Picture}}</div>{{#Front}}<div>{{Front}}</div>{{/Front}}',
-            "afmt": f'{{{{FrontSide}}}}<hr id="answer">{{{{Back}}}}{sound}{info}',
-        },
-    )
+    picture = '<div class="cartable-picture">{{Picture}}</div>'
+    if on_back:
+        question, answer = "{{Front}}", f'{{{{FrontSide}}}}<hr id="answer">{{{{Back}}}}{sound}{picture}{info}'
+    else:
+        question = picture + "{{#Front}}<div>{{Front}}</div>{{/Front}}"
+        answer = f'{{{{FrontSide}}}}<hr id="answer">{{{{Back}}}}{sound}{info}'
+    templates = ({"name": "Image", "qfmt": question, "afmt": answer},)
     if typing:
         templates = (_typed(templates[0], "Back"),)
     fields = ["Front", "Back", "Info"] + ([] if anki_tts else ["Audio"]) + ["Picture", "Id"]
     kind = f"picture TTS Anki {voice}" if anki_tts else "picture audio"
-    name, variant = _variant("Cartable image", typing, False)
+    name, variant = _variant("Cartable image au verso" if on_back else "Cartable image", typing, False)
+    variant = "+".join(filter(None, ["back" if on_back else "", variant]))
     name = f"{name} ({kind.removeprefix('picture ')})"
     return NoteType(name, kind, tuple(fields), templates, css=CSS + PICTURE_CSS, key="Id", variant=variant)
 
@@ -243,6 +246,7 @@ def notes(
     typing = req.typing or req.dictation
     text_nt = note_type(req.voice, req.reverse, req.typing, req.dictation)
     diagram_nt, picture_nt = diagram_note_type(req.voice, req.typing), picture_note_type(req.voice, req.typing)
+    answer_picture_nt = picture_note_type(req.voice, req.typing, on_back=True)
     # A formula isn't typed (its code would be) nor heard
     math_nt, cloze_nt = note_type(req.voice, req.reverse), cloze_note_type()
     result = []
@@ -264,9 +268,10 @@ def notes(
                 )
             )
             continue
-        if not back or not (front or i in pictures):  # a picture card may have no front text
+        on_back = i in pictures and card.picture_on_back
+        if not back or not (front or (i in pictures and not on_back)):  # a picture card may have no front text
             continue
-        nt = diagram_nt if i in images else picture_nt if i in pictures else text_nt
+        nt = diagram_nt if i in images else (answer_picture_nt if on_back else picture_nt) if i in pictures else text_nt
         if typing and tts.has_math(back) and nt is text_nt:
             nt = math_nt
         values = {"Front": _html(front), "Back": _html(back), "Info": _html(card.info.strip())}

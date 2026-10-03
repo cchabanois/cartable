@@ -390,3 +390,28 @@ def test_options_changed_after_a_send_keep_the_review_history(bridged, col):
     assert set(by_template) == {"Recto → Verso", "Dictée"}  # matched by name, not by position
     assert (by_template["Recto → Verso"].id, by_template["Recto → Verso"].ivl) == (card.id, 12)
     assert by_template["Dictée"].id == dictation_id
+
+
+def test_figure_lesson_on_a_real_collection(bridged, col):
+    client, _ = bridged
+    lesson = client.post("/api/extract", data={"prompt": "Le triangle rectangle (géométrie)"}).json()
+    cards = client.post(f"/api/lessons/{lesson['id']}/pictures").json()["lesson"]["cards"]
+    body = {"deck": lesson["deck"], "cards": cards, "lesson_id": lesson["id"]}
+    assert client.post("/api/anki/send", json=body).json()["added"] == 3
+    svg = Path(col.media.dir()) / cards[0]["picture"]
+    assert svg.suffix == ".svg" and svg.read_text(encoding="utf-8").startswith("<svg")  # in Anki's media, as sent
+    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Cartable image (")]
+    question = col.get_note(sorted(col.find_notes(f'"note:{note_type.name}"'))[0]).cards()[0].question()
+    assert f'<img src="{cards[0]["picture"]}">' in question
+
+    # The tangent: its figure with the answer only
+    tangent = next(c for c in cards if c["picture_on_back"])
+    (note_id,) = col.find_notes(f'"Id:{tangent["id"]}"')
+    card = col.get_note(note_id).cards()[0]
+    image = f'<img src="{tangent["picture"]}">'
+    assert image not in card.question() and image in card.answer()
+    # Moved to the front in the review, sent again: the same note, its type changed
+    moved = [{**c, "picture_on_back": False} if c["id"] == tangent["id"] else c for c in cards]
+    res = client.post("/api/anki/send", json={**body, "cards": moved}).json()
+    assert (res["added"], res["converted"]) == (0, 1)
+    assert image in col.get_note(note_id).cards()[0].question()

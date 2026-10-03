@@ -122,6 +122,19 @@ def test_generate_again_in_place_then_undo(page):
     assert undone["cards"][0]["front"] == "la mère" and undone["prompt"] == FRONT_PROMPT
 
 
+def test_figures_drawn_after_the_cards(page):
+    generate_free(page, "Le triangle rectangle (géométrie)")  # demo mode: two figures to draw
+    figure = page.locator(".card-picture.figure img").first
+    sync_api.expect(figure).to_be_visible()
+    assert page.evaluate("img => img.naturalWidth", figure.element_handle()) == 400  # the SVG, at its size
+    (summary,) = lessons(page)
+    assert all(c["picture"].endswith(".svg") for c in lesson(page, summary["id"])["cards"])
+    # The tangent's figure belongs to its answer: shown under it, as in Anki
+    tangent = page.locator(".flash", has_text="tangente")
+    sync_api.expect(tangent.locator(".card-picture.on-back img")).to_be_visible()
+    sync_api.expect(tangent.locator(".card-picture:not(.on-back)")).to_be_hidden()
+
+
 def test_delete_the_open_lesson(page):
     generate_free(page, FRONT_PROMPT)
     page.locator(".review-head").get_by_role("button", name="Supprimer la leçon").click()

@@ -246,7 +246,11 @@
       "redraw": "🎨 Draw again",
       "photo": "📷 My photo",
       "remove": "✕ No picture",
-      "cost": "A drawing costs about 3 to 7 US¢; your own photo is free."
+      "cost": "A drawing costs about 3 to 7 US¢; your own photo is free.",
+      "figure": "The figure to draw (labels included)",
+      "figurePlaceholder": "e.g. a triangle with a right angle at C, the hypotenuse labelled “c”",
+      "figureCost": "A figure is drawn by the cards' AI, for under a US cent; your own photo is free.",
+      "onBack": "On the back (with the answer)"
     },
     "pairing": {
       "title": "Device not allowed"
@@ -536,6 +540,9 @@
     },
     "device": {
       "not_paired": "This device isn't allowed yet: scan Cartable's QR code (in Anki: Tools → Cartable → Open on the phone; otherwise in the settings, on the computer)."
+    },
+    "figure": {
+      "invalid": "The figure drawn by the AI can't be read: draw it again."
     }
   },
   "demo": {
@@ -571,7 +578,7 @@
   "builtinPrompts": {
     "auto": {
       "name": "Automatic (from the lesson)",
-      "text": "Look at the lesson and choose the most useful cards to review it:\n- vocabulary of a language: one card per word or phrase, front in English, back in the language being learned;\n- a lesson (history, science, geography…): short questions / answers, or fill in the blanks for the sentences to remember;\n- formulas: one card per formula (front: what it calculates, back: the formula);\n- a diagram with labels: a diagram to complete, one card per label.\nMix them if the page holds several of these.\nSay in one sentence what you chose.",
+      "text": "Look at the lesson and choose the most useful cards to review it:\n- vocabulary of a language: one card per word or phrase, front in English, back in the language being learned;\n- a lesson (history, science, geography…): short questions / answers, or fill in the blanks for the sentences to remember;\n- formulas: one card per formula (front: what it calculates, back: the formula);\n- geometry: cards with an exact figure when it helps;\n- a diagram with labels: a diagram to complete, one card per label.\nMix them if the page holds several of these.\nSay in one sentence what you chose.",
       "deck": "{subject}::{lesson title}",
       "voice": "auto"
     },
@@ -600,14 +607,20 @@
     },
     "formulas": {
       "name": "Formulas (maths, physics…)",
-      "text": "Create one card per formula of the lesson. Front: what the formula calculates (or its name). Back: the formula. Info: what each letter stands for.",
+      "text": "Create one card per formula of the lesson. Front: what the formula calculates (or its name). Back: the formula. Info: what each letter stands for. When the formula is about a figure (area of a circle, Pythagoras…), add that figure, with its letters.",
       "deck": "{subject}::Formulas",
       "voice": ""
     },
     "school_formulas": {
       "name": "Middle school maths formulas",
-      "text": "Create cards for the main maths formulas of middle school (ages 11 to 15): areas and perimeters (square, rectangle, triangle, circle), volumes (cube, cuboid, cylinder, cone, sphere), Pythagoras, Thales (intercept theorem), trigonometry (cos, sin, tan), special products, powers, proportionality and percentages, average speed. Front: what the formula calculates. Back: the formula. Info: what each letter stands for, with its unit when useful.",
+      "text": "Create cards for the main maths formulas of middle school (ages 11 to 15): areas and perimeters (square, rectangle, triangle, circle), volumes (cube, cuboid, cylinder, cone, sphere), Pythagoras, Thales (intercept theorem), trigonometry (cos, sin, tan), special products, powers, proportionality and percentages, average speed. Front: what the formula calculates. Back: the formula. Info: what each letter stands for, with its unit when useful. When the formula is about a figure (area of a circle, Pythagoras…), add that figure, with its letters.",
       "deck": "Maths::Middle school formulas",
+      "voice": ""
+    },
+    "geometry": {
+      "name": "Geometry (with figures)",
+      "text": "Create cards to review the geometry of the lesson (or of the topic below): figures, properties, vocabulary (hypotenuse, radius, perpendicular bisector…). Add an exact figure when it helps to answer, never with the answer written on it.",
+      "deck": "Maths::{lesson title}",
       "voice": ""
     },
     "diagram": {

@@ -208,7 +208,7 @@
 
       <div class="cards">
         <template x-for="card in cards" :key="card.key">
-          <article class="flash" :class="{ changed: card._state, 'has-diagram': card.mask, 'has-picture': card.picture || card.picture_prompt || card._panel }">
+          <article class="flash" :class="{ changed: card._state, 'has-diagram': card.mask, 'has-picture': card.picture || card.picture_prompt || card.figure || card._panel }">
             <!-- Diagram label: the photo with every label hidden, this card's mask highlighted and movable -->
             <template x-if="card.mask && photoFor(card)">
               <div class="diagram">
@@ -229,9 +229,9 @@
                 </template>
               </div>
             </template>
-            <!-- Picture card: the picture shows with the front text -->
-            <div class="card-picture" x-show="card.picture || card._drawing || (card.picture_prompt && drawing)">
-              <img x-show="card.picture && !card._drawing" :src="card.picture && pictureUrl(card)" :alt="card.picture_prompt">
+            <!-- Picture card: the picture shows with the front text (or with the answer, below) -->
+            <div class="card-picture" :class="{ figure: card.figure }" x-show="!card.picture_on_back && (card.picture || card._drawing || ((card.picture_prompt || card.figure) && drawing))">
+              <img x-show="card.picture && !card._drawing" :src="card.picture && pictureUrl(card)" :alt="card.figure || card.picture_prompt">
               <span class="drawing" x-show="!card.picture || card._drawing" x-text="$t('app.pictures.drawing')"></span>
             </div>
             <div class="flash-body">
@@ -243,6 +243,11 @@
               <input class="back" x-model="card.back" :readonly="readOnly()"
                      :placeholder="isCloze(card.front) ? $t('app.review.extra') : $t('app.review.back')" :aria-label="$t('app.review.back')">
               <div class="math-preview back" x-show="hasMath(card.back)" x-html="previewHtml(card.back)"></div>
+              <!-- The picture belongs to the answer ("What is a tangent?"): shown under it, as in Anki -->
+              <div class="card-picture on-back" :class="{ figure: card.figure }" x-show="card.picture_on_back && (card.picture || card._drawing || ((card.picture_prompt || card.figure) && drawing))">
+                <img x-show="card.picture && !card._drawing" :src="card.picture && pictureUrl(card)" :alt="card.figure || card.picture_prompt">
+                <span class="drawing" x-show="!card.picture || card._drawing" x-text="$t('app.pictures.drawing')"></span>
+              </div>
               <div class="meta">
                 <input class="info" x-model="card.info" :readonly="readOnly()" :placeholder="$t('app.review.info')" :aria-label="$t('app.review.infoLabel')">
                 <input class="subdeck" x-model="card.subdeck" :readonly="readOnly()" :placeholder="$t('app.review.subdeck')"
@@ -259,9 +264,14 @@
             <!-- The card's picture: what to draw, redraw, own photo, none -->
             <div class="picture-panel" x-show="card._panel">
               <label class="field">
-                <span x-text="$t('app.pictures.subject')"></span>
-                <input x-model="card._subject" :placeholder="$t('app.pictures.subjectPlaceholder')"
+                <span x-text="card.figure ? $t('app.pictures.figure') : $t('app.pictures.subject')"></span>
+                <input x-model="card._subject" :placeholder="card.figure ? $t('app.pictures.figurePlaceholder') : $t('app.pictures.subjectPlaceholder')"
                        @keydown.enter.prevent="redrawPicture(card)">
+              </label>
+              <label class="switch">
+                <input type="checkbox" x-model="card.picture_on_back">
+                <span class="track"><span class="knob"></span></span>
+                <span x-text="$t('app.pictures.onBack')"></span>
               </label>
               <div class="picture-actions">
                 <button type="button" class="btn soft" @click="redrawPicture(card)" :disabled="card._drawing || !card._subject?.trim()"
@@ -273,7 +283,7 @@
                 <button type="button" class="btn danger-soft" x-show="card.picture" @click="removePicture(card)"
                         :disabled="card._drawing" x-text="$t('app.pictures.remove')"></button>
               </div>
-              <small class="muted" x-text="$t('app.pictures.cost')"></small>
+              <small class="muted" x-text="card.figure ? $t('app.pictures.figureCost') : $t('app.pictures.cost')"></small>
             </div>
           </article>
         </template>

@@ -52,6 +52,12 @@ function storage(action, value, key = LAST_PROMPT) {
   } catch {}
 }
 const FUN_FACTS = "notosaurus.funFacts";  // the "did you know" switch, kept on this device
+const OPEN_SUBJECTS = "notosaurus.openSubjects";  // subjects opened or closed in the lessons, on this device
+const MANY_LESSONS = 8;  // beyond: a search, the recent lessons first, the subjects folded
+const RECENT_LESSONS = 3;
+// For a search: no case, no accents ("lecon" finds "Leçon")
+const fold = (text) => text.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase();
+const deckParts = (deck) => deck.split("::").map((part) => part.trim()).filter(Boolean);
 
 const RECENT_PROMPTS = 4;  // chips shown before "All"
 const SAVE_DELAY = 800;  // ms: save shortly after the last edit
@@ -102,6 +108,8 @@ document.addEventListener("alpine:init", () => {
     loading: false,
     exporting: false,
     lessonsOpen: false,
+    lessonQuery: "",
+    openSubjects: (() => { try { return JSON.parse(storage("get", undefined, OPEN_SUBJECTS)) ?? {}; } catch { return {}; } })(),
     picker: { open: false, query: "" },
     // Natural-language correction of the cards; `undo` holds the previous version.
     revision: { text: "", busy: false, summary: "", stats: "", undo: null },
@@ -452,6 +460,51 @@ document.addEventListener("alpine:init", () => {
       const profile = this.anki.profile;
       if (!profile) return this.lessons;
       return this.lessons.filter((l) => l.shared || !l.owner || l.owner === profile);
+    },
+
+    manyLessons() {
+      return this.visibleLessons().length > MANY_LESSONS;
+    },
+
+    // The lessons sheet, in sections. By subject, the deck's first level ("Anglais" for
+    // "Anglais::Leçon 1"), each lesson shown by the rest of its name; in the list's order
+    // (the most recent first): the subject worked on last comes first. Anki doesn't tell
+    // decks apart by case: neither does this. With many lessons: the recent ones first,
+    // the subjects folded but the open lesson's (opened or closed by hand, kept on this
+    // device); a search shows the lessons found instead.
+    lessonSections() {
+      const all = this.visibleLessons();
+      const many = all.length > MANY_LESSONS;
+      const named = (l) => ({ ...l, title: deckParts(l.deck).join(" › ") || t("app.lessons.noDeck") });
+      const query = fold(this.lessonQuery.trim());
+      if (many && query) {
+        const found = all.filter((l) => fold(deckParts(l.deck).join(" ")).includes(query)).map(named);
+        return [{ key: "found", name: t("app.lessons.found"), count: found.length, open: true, lessons: found }];
+      }
+      const subjects = new Map();
+      for (const l of all) {
+        const [head, ...rest] = deckParts(l.deck);
+        const name = head ?? t("app.lessons.noDeck");
+        const subject = name.toLocaleLowerCase();
+        if (!subjects.has(subject)) subjects.set(subject, { key: `subject:${subject}`, subject, name, lessons: [] });
+        subjects.get(subject).lessons.push({ ...l, title: rest.length ? rest.join(" › ") : name });
+      }
+      const sections = [...subjects.values()].map((g) => ({
+        ...g,
+        count: g.lessons.length,
+        foldable: many,
+        open: !many || (this.openSubjects[g.subject] ?? g.lessons.some((l) => l.id === this.lessonId)),
+      }));
+      if (many) {
+        const recent = all.slice(0, RECENT_LESSONS).map(named);
+        sections.unshift({ key: "recent", name: t("app.lessons.recent"), open: true, lessons: recent });
+      }
+      return sections;
+    },
+
+    toggleSubject(section) {
+      this.openSubjects = { ...this.openSubjects, [section.subject]: !section.open };
+      storage("set", JSON.stringify(this.openSubjects), OPEN_SUBJECTS);
     },
 
     // Only the lesson's creator decides to share it

@@ -39,7 +39,7 @@
       </span>
     </div>
     <div class="appbar-actions">
-      <button class="chip-btn" @click="lessonsOpen = true" x-show="lessons.length" :aria-label="$t('app.lessonsButton')">
+      <button class="chip-btn" @click="lessonQuery = ''; lessonsOpen = true" x-show="lessons.length" :aria-label="$t('app.lessonsButton')">
         <span aria-hidden="true">📚</span><span class="wide-only" x-text="$t('app.lessonsButton')"></span>
         <span class="count" x-text="visibleLessons().length"></span>
       </button>
@@ -403,24 +403,42 @@
     <div class="profile-filter" x-show="anki.profile">
       <span x-html="$th('app.lessons.ankiProfile', { profile: anki.profile })"></span>
     </div>
-    <ul class="lesson-list">
-      <li class="empty" x-show="!visibleLessons().length" x-text="$t('app.lessons.none')"></li>
-      <template x-for="l in visibleLessons()" :key="l.id">
-        <li :class="{ current: l.id === lessonId }">
-          <button class="lesson" @click="openLesson(l.id); lessonsOpen = false">
-            <strong x-text="l.deck"></strong>
-            <small>
-              <span x-text="formatDate(l.updated_at)"></span> ·
-              <span x-text="$t('common.count.cards', { count: l.card_count })"></span>
-              <span x-show="l.owner && (!anki.profile || l.owner !== anki.profile)" x-text="' · 👤 ' + l.owner"></span>
-            </small>
-          </button>
-          <span class="badge shared" x-show="l.shared" x-text="$t('app.lessons.sharedBadge')"></span>
-          <span class="badge" x-show="l.exported_at" x-text="$t('app.lessons.exported')"></span>
-          <button class="icon-btn muted" x-show="canDelete(l)" @click="deleteLesson(l)" :aria-label="$t('app.lessons.delete')">🗑</button>
-        </li>
+    <input type="search" class="lesson-search" x-show="manyLessons()" x-model="lessonQuery"
+           :placeholder="$t('app.lessons.search')" :aria-label="$t('app.lessons.search')">
+    <!-- By subject (the deck's first level), the most recent first; see lessonSections() -->
+    <div class="lesson-list">
+      <p class="empty" x-show="!visibleLessons().length" x-text="$t('app.lessons.none')"></p>
+      <template x-for="g in lessonSections()" :key="g.key">
+        <section class="lesson-group">
+          <h3>
+            <button type="button" class="group-head" :disabled="!g.foldable" @click="toggleSubject(g)"
+                    :aria-expanded="g.foldable ? String(g.open) : null">
+              <span class="fold" x-show="g.foldable" x-text="g.open ? '▾' : '▸'" aria-hidden="true"></span>
+              <span x-text="g.name"></span>
+              <span class="count" x-show="g.count !== undefined" x-text="g.count"></span>
+            </button>
+          </h3>
+          <p class="empty" x-show="g.key === 'found' && !g.count" x-text="$t('app.lessons.notFound')"></p>
+          <ul x-show="g.open">
+            <template x-for="l in g.lessons" :key="l.id">
+              <li :class="{ current: l.id === lessonId }">
+                <button class="lesson" @click="openLesson(l.id); lessonsOpen = false" :title="l.deck">
+                  <strong x-text="l.title"></strong>
+                  <small>
+                    <span x-text="formatDate(l.updated_at)"></span> ·
+                    <span x-text="$t('common.count.cards', { count: l.card_count })"></span>
+                    <span x-show="l.owner && (!anki.profile || l.owner !== anki.profile)" x-text="' · 👤 ' + l.owner"></span>
+                  </small>
+                </button>
+                <span class="badge shared" x-show="l.shared" x-text="$t('app.lessons.sharedBadge')"></span>
+                <span class="badge" x-show="l.exported_at" x-text="$t('app.lessons.exported')"></span>
+                <button class="icon-btn muted" x-show="canDelete(l)" @click="deleteLesson(l)" :aria-label="$t('app.lessons.delete')">🗑</button>
+              </li>
+            </template>
+          </ul>
+        </section>
       </template>
-    </ul>
+    </div>
   </aside>
 
   <!-- Prompt picker sheet -->

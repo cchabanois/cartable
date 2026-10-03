@@ -18,7 +18,7 @@ import pytest
 sync_api = pytest.importorskip("playwright.sync_api")
 import uvicorn  # noqa: E402
 
-from app import tts  # noqa: E402
+from app import storage, tts  # noqa: E402
 from app.main import app  # noqa: E402
 
 FRONT_PROMPT = "Une carte par mot de la famille"  # demo mode: Spanish family words
@@ -235,3 +235,58 @@ def test_multiple_choice_wrong_answers_edited(page):
     sync_api.expect(page.locator(".save-pill")).to_have_class(SAVED)
     (summary,) = lessons(page)
     assert lesson(page, summary["id"])["cards"][0]["choices"] == ["1799", "1804", "1830"]
+
+
+@pytest.fixture
+def clock(monkeypatch):
+    """A second more at each save: the lessons made in a test are in order (saved to
+    the second, they would all be at the same time)."""
+    ticks = iter(range(3600))
+    monkeypatch.setattr(storage, "now", lambda: "2026-10-03T10:{:02d}:{:02d}".format(*divmod(next(ticks), 60)))
+
+
+def test_lessons_grouped_by_subject(page, clock):
+    page.goto("/")
+    for deck in ("Espagnol::a", "Anglais::Leçon 1", "anglais::Leçon 2::Phrases"):  # the most recent last
+        made = page.request.post("/api/extract", multipart={"prompt": FRONT_PROMPT}).json()
+        page.request.put(f"/api/lessons/{made['id']}", data={"deck": deck, "cards": made["cards"]})
+    page.reload()
+    page.get_by_role("button", name="Leçons").click()
+    groups = page.locator(".lesson-group")
+    sync_api.expect(groups).to_have_count(2)
+    titles = [" ".join(h.split()).casefold() for h in groups.locator("h3").all_inner_texts()]
+    assert titles == ["anglais 2", "espagnol 1"]  # "anglais", "Anglais": the same deck for Anki
+    assert groups.first.locator(".lesson strong").all_inner_texts() == ["Leçon 2 › Phrases", "Leçon 1"]
+
+
+def test_many_lessons_recent_folded_and_searched(page, clock):
+    page.goto("/")
+    decks = [f"Espagnol::Leçon {n}" for n in range(1, 7)] + ["Maths::Fractions", "Maths::Pythagore", "Anglais::Unit 1"]
+    for deck in [*decks, "Anglais::Unit 2"]:  # 10 lessons, the most recent last
+        made = page.request.post("/api/extract", multipart={"prompt": FRONT_PROMPT}).json()
+        page.request.put(f"/api/lessons/{made['id']}", data={"deck": deck, "cards": made["cards"]})
+    page.reload()
+    page.get_by_role("button", name="Leçons").click()
+    sheet = page.locator(".lesson-list")
+    heads = sheet.locator(".group-head")
+    sync_api.expect(heads).to_have_count(4)  # the recent ones, then the subjects
+    assert [" ".join(h.split()).casefold() for h in heads.all_inner_texts()] == [
+        "récentes",
+        "▸ anglais 2",
+        "▸ maths 2",
+        "▸ espagnol 6",
+    ]
+    recent = sheet.locator(".lesson-group").first.locator(".lesson strong")
+    assert recent.all_inner_texts() == ["Anglais › Unit 2", "Anglais › Unit 1", "Maths › Pythagore"]
+    sync_api.expect(sheet.locator(".lesson:visible")).to_have_count(3)  # the subjects folded
+
+    heads.nth(3).click()  # Espagnol, opened: still open next time
+    sync_api.expect(sheet.locator(".lesson:visible")).to_have_count(9)
+    page.reload()
+    page.get_by_role("button", name="Leçons").click()
+    sync_api.expect(sheet.locator(".lesson:visible")).to_have_count(9)
+
+    page.get_by_placeholder("🔍 Chercher une leçon…").fill("lecon 4")  # no accent, no case
+    sync_api.expect(sheet.locator(".lesson:visible strong")).to_have_text(["Espagnol › Leçon 4"])
+    page.get_by_placeholder("🔍 Chercher une leçon…").fill("chimie")
+    sync_api.expect(page.get_by_text("Aucune leçon ne correspond.")).to_be_visible()

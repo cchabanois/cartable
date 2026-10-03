@@ -66,6 +66,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Changed
 
+- A light pastel blue background (it was beige), with borders and fields to match: the water of the Notosaurus logo. Dark mode unchanged.
 - Cartable is now Notosaurus: the app, the add-on (`notosaurus-<version>.ankiaddon`, Tools → Notosaurus), the Anki note types ("Notosaurus recto/verso"…), the notes' tag (`notosaurus::<lesson>`), the environment variables (`NOTOSAURUS_*`), the add-on's runtime folder (`Anki2/notosaurus-runtime`).
 - The Notosaurus logo: large on the home screen, its head in the app bar (on phones, instead of the name, which the home screen shows in full). On a white card, readable in dark mode too. The home screen and browser icons are its head too, under new file names (phones keep an icon by its address); `tools/make_icons.py` makes every image from `assets/notosaurus-logo.png`.
 - Each lesson has a deck of its own: existing decks are reused as parents only ("Maths::Fractions" in "Maths"), and a lesson whose deck already exists (another lesson's, or one of the user's in Anki) gets "(2)", "(3)"… Two lessons no longer write into the same deck and share notes without saying so. Generating a lesson again keeps its deck.

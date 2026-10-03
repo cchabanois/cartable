@@ -610,6 +610,14 @@ h2 {
   text-transform: uppercase;
 }
 .lesson-group h3 .count { font-weight: 600; }
+.group-head {
+  display: flex; align-items: center; gap: .35rem; width: 100%; padding: 0; border: none;
+  background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: left;
+}
+.group-head:disabled { cursor: default; opacity: 1; }
+.group-head:not(:disabled) { min-height: 2.25rem; }  /* a finger's size */
+.group-head .fold { width: 1em; }
+.lesson-search { margin-top: .5rem; }
 .lesson-list li {
   display: flex;
   align-items: center;

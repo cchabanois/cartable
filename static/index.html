@@ -39,7 +39,7 @@
       </span>
     </div>
     <div class="appbar-actions">
-      <button class="chip-btn" @click="lessonsOpen = true" x-show="lessons.length" :aria-label="$t('app.lessonsButton')">
+      <button class="chip-btn" @click="lessonQuery = ''; lessonsOpen = true" x-show="lessons.length" :aria-label="$t('app.lessonsButton')">
         <span aria-hidden="true">📚</span><span class="wide-only" x-text="$t('app.lessonsButton')"></span>
         <span class="count" x-text="visibleLessons().length"></span>
       </button>
@@ -403,13 +403,23 @@
     <div class="profile-filter" x-show="anki.profile">
       <span x-html="$th('app.lessons.ankiProfile', { profile: anki.profile })"></span>
     </div>
-    <!-- By subject (the deck's first level), the most recent first -->
+    <input type="search" class="lesson-search" x-show="manyLessons()" x-model="lessonQuery"
+           :placeholder="$t('app.lessons.search')" :aria-label="$t('app.lessons.search')">
+    <!-- By subject (the deck's first level), the most recent first; see lessonSections() -->
     <div class="lesson-list">
       <p class="empty" x-show="!visibleLessons().length" x-text="$t('app.lessons.none')"></p>
-      <template x-for="g in lessonGroups()" :key="g.key">
+      <template x-for="g in lessonSections()" :key="g.key">
         <section class="lesson-group">
-          <h3><span x-text="g.name"></span> <span class="count" x-text="g.lessons.length"></span></h3>
-          <ul>
+          <h3>
+            <button type="button" class="group-head" :disabled="!g.foldable" @click="toggleSubject(g)"
+                    :aria-expanded="g.foldable ? String(g.open) : null">
+              <span class="fold" x-show="g.foldable" x-text="g.open ? '▾' : '▸'" aria-hidden="true"></span>
+              <span x-text="g.name"></span>
+              <span class="count" x-show="g.count !== undefined" x-text="g.count"></span>
+            </button>
+          </h3>
+          <p class="empty" x-show="g.key === 'found' && !g.count" x-text="$t('app.lessons.notFound')"></p>
+          <ul x-show="g.open">
             <template x-for="l in g.lessons" :key="l.id">
               <li :class="{ current: l.id === lessonId }">
                 <button class="lesson" @click="openLesson(l.id); lessonsOpen = false" :title="l.deck">

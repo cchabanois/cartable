@@ -251,8 +251,22 @@
                         x-init="watchHeight($el)" x-effect="card.front; fitHeight($el)"></textarea>
               <div class="math-preview" x-show="hasMath(card.front) || isCloze(card.front)" x-html="previewHtml(card.front)"></div>
               <input class="back" x-model="card.back" :readonly="readOnly()"
-                     :placeholder="isCloze(card.front) ? $t('app.review.extra') : $t('app.review.back')" :aria-label="$t('app.review.back')">
+                     :placeholder="isCloze(card.front) ? $t('app.review.extra') : card.choices.length ? $t('app.review.rightChoice') : $t('app.review.back')"
+                     :aria-label="card.choices.length ? $t('app.review.rightChoice') : $t('app.review.back')">
               <div class="math-preview back" x-show="hasMath(card.back)" x-html="previewHtml(card.back)"></div>
+              <!-- Multiple choice, true/false: the back is the right answer, these the wrong ones -->
+              <div class="choices" x-show="card.choices.length">
+                <template x-for="(choice, n) in card.choices" :key="n">
+                  <div class="choice">
+                    <span class="wrong" aria-hidden="true">✗</span>
+                    <input x-model="card.choices[n]" :readonly="readOnly()" :placeholder="$t('app.review.wrongChoice')"
+                           :aria-label="$t('app.review.wrongChoice')">
+                    <button class="icon-btn muted" x-show="!readOnly() && card.choices.length > 1" @click="card.choices.splice(n, 1)"
+                            :aria-label="$t('app.review.removeChoice')">✕</button>
+                  </div>
+                </template>
+                <button class="link-btn" x-show="!readOnly()" @click="card.choices.push('')" x-text="$t('app.review.addChoice')"></button>
+              </div>
               <!-- The picture belongs to the answer ("What is a tangent?"): shown under it, as in Anki -->
               <div class="card-picture on-back" :class="{ figure: card.figure }" x-show="card.picture_on_back && (card.picture || card._drawing || ((card.picture_prompt || card.figure) && drawing))">
                 <img x-show="card.picture && !card._drawing" :src="card.picture && pictureUrl(card)" :alt="card.figure || card.picture_prompt"
@@ -272,7 +286,7 @@
               </div>
             </div>
             <div class="flash-actions">
-              <button class="icon-btn" x-show="hasAudio() && !hasMath(card.back) && !isCloze(card.front)" @click="play(card.back)" :aria-label="$t('app.review.listen')">🔊</button>
+              <button class="icon-btn" x-show="hasAudio() && !hasMath(card.back) && !isCloze(card.front) && !card.choices.length" @click="play(card.back)" :aria-label="$t('app.review.listen')">🔊</button>
               <button class="icon-btn" x-show="!readOnly() && !card.mask && !isCloze(card.front) && lessonId" @click="togglePicturePanel(card)"
                       :class="{ active: card._panel }" :aria-label="$t('app.pictures.panel')">🖼️</button>
               <button class="icon-btn muted" x-show="!readOnly()" @click="removeCard(card)" :aria-label="$t('app.review.removeCard')">✕</button>

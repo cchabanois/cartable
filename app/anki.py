@@ -3,6 +3,7 @@
 import hashlib
 import html
 import os
+import random
 import re
 import tempfile
 from dataclasses import dataclass
@@ -48,6 +49,50 @@ def is_cloze(text: str) -> bool:
     return bool(CLOZE.search(text))
 
 
+# Multiple choice: the options in a list (A, B, C…), the right one marked on the answer
+CHOICE_CSS = """\
+.notosaurus-choices {
+  display: inline-block; margin: 12px auto 0; padding-left: 1.8em; text-align: left; list-style: upper-alpha;
+}
+.notosaurus-choices li { margin: 6px 0; }
+.notosaurus-choices li.right { color: #1b873f; font-weight: 700; }
+.notosaurus-choices li.right::after { content: " ✔"; }
+.notosaurus-choices li.wrong { opacity: .5; }
+"""
+
+
+def is_choice(card) -> bool:
+    """A multiple-choice or true/false card: a right answer (its back) and wrong ones.
+    A text with gaps or a diagram label stays what it is."""
+    return bool(
+        card.front.strip()
+        and card.back.strip()
+        and any(c.strip() for c in card.choices)
+        and not card.mask
+        and not is_cloze(card.front)
+    )
+
+
+def choice_order(card) -> list[str]:
+    """The options as Anki shows them: always the same order for a card (on its question
+    and its answer, from one review to the next), the right one anywhere. Two options
+    (true/false): alphabetical, the same for every card."""
+    options = list(dict.fromkeys(o.strip() for o in [card.back, *card.choices] if o.strip()))
+    if len(options) == 2:
+        return sorted(options, key=str.casefold)
+    random.Random(_stable_id("choices", card.front.strip())).shuffle(options)
+    return options
+
+
+def _choices_html(card, reveal: bool) -> str:
+    right = card.back.strip()
+    items = []
+    for option in choice_order(card):
+        mark = (' class="right"' if option == right else ' class="wrong"') if reveal else ""
+        items.append(f"<li{mark}>{_html(option)}</li>")
+    return f'<ol class="notosaurus-choices">{"".join(items)}</ol>'
+
+
 PICTURE_CSS = """\
 .notosaurus-picture img { max-width: min(100%, 320px); max-height: 50vh; border-radius: 12px; }
 """
@@ -86,11 +131,12 @@ FAMILIES = {
     "Notosaurus légendes": "diagram",
     "Notosaurus image": "picture",
     "Notosaurus texte à trous": "cloze",
+    "Notosaurus QCM": "choice",
 }
 
 
 def family(note_type_name: str) -> str:
-    """ "text", "diagram", "picture", "cloze", or "" for a note type not Notosaurus's."""
+    """ "text", "diagram", "picture", "cloze", "choice", or "" for a note type not Notosaurus's."""
     return next((f for prefix, f in FAMILIES.items() if note_type_name.startswith(prefix)), "")
 
 
@@ -219,6 +265,28 @@ def cloze_note_type() -> NoteType:
     return NoteType("Notosaurus texte à trous", "cloze", fields, templates, css=CSS + CLOZE_CSS, key="Id", cloze=True)
 
 
+def choice_note_type() -> NoteType:
+    """A multiple-choice or true/false card: the question and its options, then the
+    options again with the right one marked. In plain HTML, no script: the same on every
+    Anki. The options' order is fixed per card ("Choices", "AnswerChoices"). Its picture
+    or figure, if any, goes on the question ("Picture") or with the answer
+    ("BackPicture"). "Id" (the card's own id) tells which note an update is for."""
+    info = '{{#Info}}<div class="info">{{Info}}</div>{{/Info}}'
+    picture = '{{#Picture}}<div class="notosaurus-picture">{{Picture}}</div>{{/Picture}}'
+    back_picture = '{{#BackPicture}}<div class="notosaurus-picture">{{BackPicture}}</div>{{/BackPicture}}'
+    question = f"{picture}<div>{{{{Question}}}}</div>"
+    templates = (
+        {
+            "name": "QCM",
+            "qfmt": f"{question}{{{{Choices}}}}",
+            "afmt": f'{question}<hr id="answer">{{{{AnswerChoices}}}}{back_picture}{info}',
+        },
+    )
+    fields = ("Question", "Answer", "Choices", "AnswerChoices", "Picture", "BackPicture", "Info", "Id")
+    css = CSS + PICTURE_CSS + CHOICE_CSS
+    return NoteType("Notosaurus QCM", "choice", fields, templates, css=css, key="Id")
+
+
 @dataclass
 class Note:
     nt: NoteType
@@ -248,7 +316,7 @@ def notes(
     diagram_nt, picture_nt = diagram_note_type(req.voice, req.typing), picture_note_type(req.voice, req.typing)
     answer_picture_nt = picture_note_type(req.voice, req.typing, on_back=True)
     # A formula isn't typed (its code would be) nor heard
-    math_nt, cloze_nt = note_type(req.voice, req.reverse), cloze_note_type()
+    math_nt, cloze_nt, choice_nt = note_type(req.voice, req.reverse), cloze_note_type(), choice_note_type()
     result = []
     for i, card in enumerate(req.cards):
         front, back = card.front.strip(), card.back.strip()
@@ -265,6 +333,27 @@ def notes(
                     },
                     tags=[_tag(t) for t in card.tags if t.strip()] + own_tags,
                     media=[],
+                )
+            )
+            continue
+        if is_choice(card):  # not typed nor heard: the options are read
+            picture = f'<img src="{pictures[i].name}">' if i in pictures else ""
+            result.append(
+                Note(
+                    nt=choice_nt,
+                    deck=_deck_name(req.deck, card.subdeck),
+                    fields={
+                        "Question": _html(front),
+                        "Answer": _html(back),
+                        "Choices": _choices_html(card, reveal=False),
+                        "AnswerChoices": _choices_html(card, reveal=True),
+                        "Picture": "" if card.picture_on_back else picture,
+                        "BackPicture": picture if card.picture_on_back else "",
+                        "Info": _info(card),
+                        "Id": card.id or f"{req.lesson_id or ''}:{i}",
+                    },
+                    tags=[_tag(t) for t in card.tags if t.strip()] + own_tags,
+                    media=[pictures[i]] if i in pictures else [],
                 )
             )
             continue

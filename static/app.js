@@ -71,7 +71,7 @@ const escapeHtml = (text) => text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<"
 
 let nextKey = 0;
 const withKey = (card) =>
-  ({ info: "", fun_fact: "", subdeck: "", tags: [], picture: "", picture_prompt: "", figure: "", picture_on_back: false, ...card, key: nextKey++ });
+  ({ info: "", fun_fact: "", choices: [], subdeck: "", tags: [], picture: "", picture_prompt: "", figure: "", picture_on_back: false, ...card, key: nextKey++ });
 
 // A card's stable id (crypto.randomUUID needs HTTPS; getRandomValues doesn't)
 const newId = () => [...crypto.getRandomValues(new Uint8Array(6))].map((b) => b.toString(16).padStart(2, "0")).join("");

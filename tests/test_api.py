@@ -1763,3 +1763,43 @@ def test_fun_facts_only_when_asked(client, tmp_path):
     notes, *_ = _notes(client.post("/api/export", json={"deck": "D", "cards": cards}).content, tmp_path)
     info = notes[0][1].split("\x1f")[2]
     assert info == 'f.<div style="margin-top:8px;font-style:italic">💡 Vient du latin &lt;mater&gt;.</div>'
+
+
+def test_multiple_choice_and_true_false(client, tmp_path):
+    from app import anki
+    from app.models import Card
+
+    lesson = client.post("/api/extract", data={"prompt": "QCM sur la Révolution"}).json()
+    assert [len(c["choices"]) for c in lesson["cards"]] == [3, 3, 1, 1]
+    synthesized.clear()
+    body = {
+        "deck": "D",
+        "cards": lesson["cards"],
+        "voice": "es-ES-ElviraNeural",
+        "typing": True,
+        "lesson_id": lesson["id"],
+    }
+    notes, models, *_ = _notes(client.post("/api/export", json=body).content, tmp_path)
+    assert synthesized == []  # the options are read, not heard
+    (model,) = models.values()  # neither typed nor with a sound: the same note type
+    assert model["name"] == "Notosaurus QCM"
+    fields = [f["name"] for f in model["flds"]]
+    first = dict(zip(fields, notes[0][1].split("\x1f"), strict=True))
+    assert first["Answer"] == "1789"
+    assert first["Choices"].count("<li>") == 4 and "right" not in first["Choices"]
+    assert (
+        first["AnswerChoices"].count('class="wrong"') == 3 and '<li class="right">1789</li>' in first["AnswerChoices"]
+    )
+
+    # The order: fixed per card, the right one anywhere; true/false always alphabetical
+    card = Card(front="En quelle année ?", back="1789", choices=["1715", "1799", "1804"])
+    assert anki.choice_order(card) == anki.choice_order(card.model_copy())
+    fronts = [f"Question {n}" for n in range(20)]
+    firsts = {anki.choice_order(Card(front=f, back="right", choices=["a", "b", "c"]))[0] for f in fronts}
+    assert "right" in firsts and len(firsts) > 1
+    assert anki.choice_order(Card(front="x", back="Vrai", choices=["Faux"])) == ["Faux", "Vrai"]
+    assert anki.choice_order(Card(front="y", back="Faux", choices=["Vrai"])) == ["Faux", "Vrai"]
+
+    # Not a multiple choice: no wrong answer left, or a text with gaps
+    assert not anki.is_choice(Card(front="q", back="r", choices=["  "]))
+    assert not anki.is_choice(Card(front="en {{c1::1789}}", back="", choices=["x"]))

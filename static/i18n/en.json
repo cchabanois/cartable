@@ -81,6 +81,10 @@
       "info": "+ info (gender, plural…)",
       "infoLabel": "Info",
       "funFact": "Did you know?",
+      "rightChoice": "Right answer",
+      "wrongChoice": "Wrong answer",
+      "addChoice": "+ wrong answer",
+      "removeChoice": "Remove this answer",
       "subdeck": "sub-deck",
       "subdeckLabel": "Sub-deck",
       "listen": "Listen to the back",
@@ -612,6 +616,18 @@
     "cloze": {
       "name": "Fill in the blanks",
       "text": "Create cloze cards with the important sentences of the lesson: in each sentence, hide what is worth remembering (dates, names, key words), one gap per idea, three at most per sentence. Back: empty.",
+      "deck": "{subject}::{lesson title}",
+      "voice": ""
+    },
+    "quiz": {
+      "name": "Multiple choice",
+      "text": "Create a multiple-choice quiz to review the lesson: one question per important point (dates, definitions, key ideas), with the right answer and three plausible wrong ones. Short questions, in English. Info: a short explanation of the right answer, when it helps.",
+      "deck": "{subject}::{lesson title}",
+      "voice": ""
+    },
+    "true_false": {
+      "name": "True / false",
+      "text": "Create true / false statements to review the lesson: as many false ones as true ones, each false one with a single precise mistake (a date, a name, a number). Info: for a false statement, the correction.",
       "deck": "{subject}::{lesson title}",
       "voice": ""
     },

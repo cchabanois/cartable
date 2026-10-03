@@ -9,8 +9,12 @@ contributions under other licenses (section 2), and promises in exchange that th
 will always remain available as open source (section 5). See
 [CONTRIBUTING.md](CONTRIBUTING.md#contributor-license-agreement) for why.
 
-You sign it once, by commenting on your first pull request as the CLA Assistant bot
-asks. It then covers all your contributions to Notosaurus.
+You sign it once, by posting this comment on your first pull request, from your own
+GitHub account:
+
+> I have read the Notosaurus CLA (version 1.0) and I agree to it.
+
+It then covers all your contributions to Notosaurus.
 
 ## 1. Definitions
 

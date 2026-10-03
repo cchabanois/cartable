@@ -123,8 +123,13 @@ line under **Unreleased** in [CHANGELOG.md](CHANGELOG.md).
 ## Contributor License Agreement
 
 Before your first pull request can be merged, you sign the
-[Contributor License Agreement](CLA.md) once: the CLA Assistant bot asks for it in a
-comment on the pull request, and signing takes one click with your GitHub account.
+[Contributor License Agreement](CLA.md) once, by posting this comment on the pull
+request:
+
+> I have read the Notosaurus CLA (version 1.0) and I agree to it.
+
+The pull request template reminds you. The maintainer checks the comment before
+merging; it covers all your later contributions too.
 
 Why: Notosaurus is open source under the [AGPL-3.0](LICENSE), and it will stay so. The
 agreement also lets the maintainer offer Notosaurus under other terms where the AGPL

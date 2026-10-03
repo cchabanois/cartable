@@ -12,6 +12,7 @@ const LANG_KEY = "notosaurus.lang";  // language picked on the page ("" = automa
 
 const I18N = {
   lang: "en",        // language in use
+  locale: "en",      // dates and numbers: the browser's variety of it ("en-GB", "fr-CA"), else the language
   messages: {},
   fallback: {},      // English, for keys missing from the language in use
   auto: "en",        // what "automatic" means here (Anki's or the browser's language)
@@ -51,6 +52,17 @@ function errorMessage(detail) {
   return t("errors.invalid");  // e.g. request validation errors
 }
 
+// One text per language, but dates and numbers as the browser's variety of it: a
+// British browser gets "3 Oct, 15:15", an American one "Oct 3, 03:15 PM".
+function formatLocale(lang) {
+  const variety = (navigator.languages ?? [navigator.language]).find((code) => code.toLowerCase().split("-")[0] === lang);
+  try {
+    return variety ? Intl.getCanonicalLocales(variety)[0] : lang;
+  } catch {
+    return lang;  // not a valid locale
+  }
+}
+
 function browserLanguage(available) {
   for (const candidate of navigator.languages ?? [navigator.language]) {
     const code = candidate.toLowerCase();
@@ -83,6 +95,7 @@ function storedChoice() {
 async function useLanguage(lang) {
   [I18N.messages, I18N.fallback] = await Promise.all([loadMessages(lang), lang === "en" ? {} : loadMessages("en")]);
   I18N.lang = lang;
+  I18N.locale = formatLocale(lang);
   document.documentElement.lang = lang;
 }
 

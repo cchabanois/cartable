@@ -64,7 +64,7 @@ const SAVE_DELAY = 800;  // ms: save shortly after the last edit
 const PROFILE_POLL = 3000;  // ms: follow Anki profile switches (local request, only while visible)
 
 const formatDate = (iso) =>
-  new Date(iso).toLocaleString(I18N.lang, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  new Date(iso).toLocaleString(I18N.locale, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 // Formulas: MathJax syntax, \( … \) within text, \[ … \] on their own (as in Anki)
 const MATH = /\\\((.+?)\\\)|\\\[(.+?)\\\]/gs;
@@ -269,7 +269,7 @@ document.addEventListener("alpine:init", () => {
       const words = normalize(this.picker.query).split(/\s+/).filter(Boolean);
       return this.prompts
         .filter((c) => words.every((w) => normalize(`${c.name} ${c.text}`).includes(w)))
-        .sort((a, b) => a.name.localeCompare(b.name, I18N.lang, { sensitivity: "base" }));
+        .sort((a, b) => a.name.localeCompare(b.name, I18N.locale, { sensitivity: "base" }));
     },
 
     openPicker() {

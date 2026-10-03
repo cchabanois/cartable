@@ -491,10 +491,10 @@ document.addEventListener("alpine:init", () => {
       Alpine.store("i18n").version;
       if (usd === null || usd === undefined) return "—";
       if (usd < 1) {  // AI calls cost cents: "2.7 ¢" says more than "$0.03"
-        const cents = (usd * 100).toLocaleString(I18N.lang, { maximumSignificantDigits: 2 });
+        const cents = (usd * 100).toLocaleString(I18N.locale, { maximumSignificantDigits: 2 });
         return t("admin.costs.cents", { cents });  // US cents: "¢" alone reads as euro cents
       }
-      return usd.toLocaleString(I18N.lang, { style: "currency", currency: "USD" });
+      return usd.toLocaleString(I18N.locale, { style: "currency", currency: "USD" });
     },
 
     lessonCost(l) {
@@ -516,7 +516,7 @@ document.addEventListener("alpine:init", () => {
 
     callLine(call) {
       const tokens = call.input_tokens === null ? "" : ` · ${t("admin.costs.tokens", {
-        input: call.input_tokens.toLocaleString(I18N.lang), output: (call.output_tokens ?? 0).toLocaleString(I18N.lang),
+        input: call.input_tokens.toLocaleString(I18N.locale), output: (call.output_tokens ?? 0).toLocaleString(I18N.locale),
       })}`;
       const cost = call.cost === null ? t("admin.costs.unknown") : (call.exact ? "" : "≈ ") + this.formatCost(call.cost);
       return `${this.formatDate(call.at)} · ${t(`admin.costs.kind.${call.kind}`)} · ${call.provider} · ${call.model}${tokens} · ${cost}`;
@@ -524,7 +524,7 @@ document.addEventListener("alpine:init", () => {
 
     formatDate(iso) {
       Alpine.store("i18n").version;  // re-render when the language changes
-      return new Date(iso).toLocaleDateString(I18N.lang, { day: "numeric", month: "short", year: "numeric" });
+      return new Date(iso).toLocaleDateString(I18N.locale, { day: "numeric", month: "short", year: "numeric" });
     },
 
     async setPassword(current) {

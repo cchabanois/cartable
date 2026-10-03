@@ -1,6 +1,6 @@
 {
-  "name": "Cartable",
-  "short_name": "Cartable",
+  "name": "Notosaurus",
+  "short_name": "Notosaurus",
   "description": "Snap a lesson, get an Anki deck.",
   "start_url": "/",
   "display": "standalone",

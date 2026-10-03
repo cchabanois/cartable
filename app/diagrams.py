@@ -215,7 +215,7 @@ def masks_html(masks: list[Mask], target: int, reveal: bool, box: list[float] | 
             kind, text = ("revealed", "") if reveal else ("target", f"({mask.n})")
         else:
             kind, text = "", f"({mask.n})"
-        classes = " ".join(filter(None, ("cartable-mask", kind)))
+        classes = " ".join(filter(None, ("notosaurus-mask", kind)))
         parts.append(f'<div class="{classes}" style="{style}">{text}</div>')
     return "".join(parts)
 

@@ -3,7 +3,7 @@ can't see — the page saving as it goes, generating again and undoing, deleting
 lesson, the cloze preview, the settings' order.
 
 Skipped unless Playwright is installed: `pip install -r requirements-page.txt`, then
-`python -m playwright install chromium` (or CARTABLE_TEST_CHROMIUM=/usr/bin/chromium
+`python -m playwright install chromium` (or NOTOSAURUS_TEST_CHROMIUM=/usr/bin/chromium
 to use the system's). The pages load Alpine.js and KaTeX from a CDN: network needed.
 """
 
@@ -32,7 +32,7 @@ async def fake_synthesize(text, voice, path):
 
 @pytest.fixture(scope="session")
 def server():
-    """Cartable on a free port, in this process: the tests' settings apply to it."""
+    """Notosaurus on a free port, in this process: the tests' settings apply to it."""
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
@@ -51,7 +51,7 @@ def server():
 @pytest.fixture(scope="session")
 def browser():
     with sync_api.sync_playwright() as p:
-        executable = os.environ.get("CARTABLE_TEST_CHROMIUM")
+        executable = os.environ.get("NOTOSAURUS_TEST_CHROMIUM")
         browser = p.chromium.launch(executable_path=executable) if executable else p.chromium.launch()
         yield browser
         browser.close()
@@ -60,9 +60,9 @@ def browser():
 @pytest.fixture
 def page(browser, server, tmp_path, monkeypatch):
     """A phone-sized page in French, on fresh data and the demo AI (no key, no cost)."""
-    monkeypatch.setenv("CARTABLE_DATA", str(tmp_path / "data"))
-    monkeypatch.setenv("CARTABLE_LLM", "fake")
-    monkeypatch.setenv("CARTABLE_ANKICONNECT_URL", "http://127.0.0.1:1")  # Anki closed
+    monkeypatch.setenv("NOTOSAURUS_DATA", str(tmp_path / "data"))
+    monkeypatch.setenv("NOTOSAURUS_LLM", "fake")
+    monkeypatch.setenv("NOTOSAURUS_ANKICONNECT_URL", "http://127.0.0.1:1")  # Anki closed
     for key in ("GEMINI_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "OPENROUTER_API_KEY"):
         monkeypatch.delenv(key, raising=False)  # the same on every computer: no key (.env)
     monkeypatch.setattr(tts, "_synthesize", fake_synthesize)

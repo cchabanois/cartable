@@ -1,4 +1,4 @@
-const PASSWORD_KEY = "cartable.admin";  // kept for the browser session only
+const PASSWORD_KEY = "notosaurus.admin";  // kept for the browser session only
 
 // Names and descriptions: admin.provider.<id>.* in static/i18n/<lang>.json
 const PROVIDERS = [
@@ -75,7 +75,7 @@ document.addEventListener("alpine:init", () => {
 
     async init() {
       await i18nReady;
-      const setTitle = () => { document.title = `Cartable · ${t("admin.title")}`; };
+      const setTitle = () => { document.title = `Notosaurus · ${t("admin.title")}`; };
       setTitle();
       document.addEventListener("i18n:changed", setTitle);
       try {
@@ -167,7 +167,7 @@ document.addEventListener("alpine:init", () => {
     },
 
     // The demo provider (canned cards, whatever the photo) is for tests and development
-    // (CARTABLE_LLM=fake): only listed when it is the saved choice.
+    // (NOTOSAURUS_LLM=fake): only listed when it is the saved choice.
     shownProviders() {
       return PROVIDERS.filter((p) => p.id !== "fake" || this.saved?.llm === "fake");
     },
@@ -351,7 +351,7 @@ document.addEventListener("alpine:init", () => {
       this.testing = true;
       try {
         const r = await this.request("/api/admin/test", { method: "POST" });
-        // Cartable needs both: reading the lesson photo and answering in JSON.
+        // Notosaurus needs both: reading the lesson photo and answering in JSON.
         const key = r.refused ? "admin.access.testRefused"
           : !r.json ? "admin.access.testNoJson"
           : !r.vision ? "admin.access.testNoVision" : "admin.access.testOk";
@@ -371,7 +371,7 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
-    // In the add-on, Cartable talks to its own bridge (which mimics AnkiConnect):
+    // In the add-on, Notosaurus talks to its own bridge (which mimics AnkiConnect):
     // don't mention AnkiConnect there. The open profile tells it's the right one.
     ankiOk(r) {
       if (!r.profile) return t("admin.anki.testNoProfile");

@@ -15,40 +15,40 @@ from app.main import DEVICE_COOKIE, app
 from app.models import LessonIn
 
 
-def test_cartable_prompts(client):
-    """Cartable's prompts: in the page's language, read-only, before the user's."""
-    fr = client.get("/api/prompts", headers={"X-Cartable-Lang": "fr-FR"}).json()
-    assert [p["id"] for p in fr] == [f"cartable:{k}" for k in prompts.BUILTIN]
+def test_notosaurus_prompts(client):
+    """Notosaurus's prompts: in the page's language, read-only, before the user's."""
+    fr = client.get("/api/prompts", headers={"X-Notosaurus-Lang": "fr-FR"}).json()
+    assert [p["id"] for p in fr] == [f"notosaurus:{k}" for k in prompts.BUILTIN]
     names = {p["id"]: p["name"] for p in fr}
-    assert all(p["builtin"] for p in fr) and names["cartable:diagram"] == "Schéma à compléter"
+    assert all(p["builtin"] for p in fr) and names["notosaurus:diagram"] == "Schéma à compléter"
     # First, so picked when nothing was picked before: the AI chooses from the lesson
     assert fr[0]["name"] == "Automatique (d'après la leçon)" and fr[0]["voice"] == "auto"
-    en = client.get("/api/prompts", headers={"X-Cartable-Lang": "en"}).json()
+    en = client.get("/api/prompts", headers={"X-Notosaurus-Lang": "en"}).json()
     assert en[1]["name"] == "Vocabulary of a language"  # the same prompts, in English
-    de = client.get("/api/prompts", headers={"X-Cartable-Lang": "de"}).json()
+    de = client.get("/api/prompts", headers={"X-Notosaurus-Lang": "de"}).json()
     assert de[1]["name"] == "Vocabulary of a language"  # no German file: English
 
     for method in ("PUT", "DELETE"):
-        r = client.request(method, "/api/prompts/cartable:questions", json={"name": "x", "text": "y"})
+        r = client.request(method, "/api/prompts/notosaurus:questions", json={"name": "x", "text": "y"})
         assert (r.status_code, r.json()["detail"]["code"]) == (403, "prompt.builtin")
 
 
 def test_duplicate_a_prompt_to_adapt_it(client):
-    copy = client.post("/api/prompts/cartable:vocabulary/duplicate", headers={"X-Cartable-Lang": "fr"}).json()
+    copy = client.post("/api/prompts/notosaurus:vocabulary/duplicate", headers={"X-Notosaurus-Lang": "fr"}).json()
     assert (copy["name"], copy["builtin"]) == ("Vocabulaire d'une langue (copie)", False)
     changed = client.put(f"/api/prompts/{copy['id']}", json={**copy, "text": "FR → ES", "voice": "es-ES-ElviraNeural"})
     assert changed.json()["voice"] == "es-ES-ElviraNeural"
-    again = client.post(f"/api/prompts/{copy['id']}/duplicate", headers={"X-Cartable-Lang": "fr"}).json()
+    again = client.post(f"/api/prompts/{copy['id']}/duplicate", headers={"X-Notosaurus-Lang": "fr"}).json()
     assert (again["name"], again["text"]) == ("Vocabulaire d'une langue (copie) (copie)", "FR → ES")
-    assert client.post("/api/prompts/cartable:nope/duplicate").status_code == 404
-    names = [p["name"] for p in client.get("/api/prompts", headers={"X-Cartable-Lang": "fr"}).json()]
+    assert client.post("/api/prompts/notosaurus:nope/duplicate").status_code == 404
+    names = [p["name"] for p in client.get("/api/prompts", headers={"X-Notosaurus-Lang": "fr"}).json()]
     assert names[-2:] == ["Vocabulaire d'une langue (copie)", "Vocabulaire d'une langue (copie) (copie)"]
 
 
-def test_cartable_prompt_used(client):
-    data = {"prompt": "words: le chat", "prompt_id": "cartable:wordlist"}
+def test_notosaurus_prompt_used(client):
+    data = {"prompt": "words: le chat", "prompt_id": "notosaurus:wordlist"}
     client.post("/api/extract", data=data)
-    wordlist = next(p for p in client.get("/api/prompts").json() if p["id"] == "cartable:wordlist")
+    wordlist = next(p for p in client.get("/api/prompts").json() if p["id"] == "notosaurus:wordlist")
     assert wordlist["used_at"] is not None
 
 
@@ -172,7 +172,7 @@ AUDIO_EXPORT = {
 def test_export_audio_edge_tts(client, tmp_path):
     res = client.post("/api/export", json=AUDIO_EXPORT)
     assert res.status_code == 200
-    assert res.headers["X-Cartable-Audio-Failures"] == "1"
+    assert res.headers["X-Notosaurus-Audio-Failures"] == "1"
     assert synthesized == ["la madre"]
 
     notes, models, _, media = _notes(res.content, tmp_path)
@@ -277,7 +277,7 @@ def test_lesson_deleted(client):
 
 
 def test_failed_extraction_creates_no_lesson(client, monkeypatch):
-    monkeypatch.setenv("CARTABLE_LLM", "inconnu")
+    monkeypatch.setenv("NOTOSAURUS_LLM", "inconnu")
     files = [("images", ("p.jpg", b"x", "image/jpeg"))]
     assert client.post("/api/extract", files=files, data={"prompt": "x"}).status_code == 502
     assert client.get("/api/lessons").json() == []
@@ -320,7 +320,7 @@ def test_invalid_lesson_id(client):
 def test_prompts_in_a_file(client, tmp_path):
     client.post("/api/prompts", json={"name": "Anglais", "text": "FR → EN"})
     saved = json.loads((tmp_path / "data" / "prompts.json").read_text(encoding="utf-8"))
-    assert [(p["id"], p["name"]) for p in saved["user"]] == [(1, "Anglais")]  # Cartable's aren't copied
+    assert [(p["id"], p["name"]) for p in saved["user"]] == [(1, "Anglais")]  # Notosaurus's aren't copied
 
 
 def test_slugify():
@@ -422,7 +422,7 @@ def test_revision_errors(client, monkeypatch):
     assert client.post("/api/lessons/unknown/revise", json=body).status_code == 404
     lesson = _extract(client)
     assert client.post(f"/api/lessons/{lesson['id']}/revise", json={**body, "instruction": ""}).status_code == 422
-    monkeypatch.setenv("CARTABLE_LLM", "inconnu")
+    monkeypatch.setenv("NOTOSAURUS_LLM", "inconnu")
     assert client.post(f"/api/lessons/{lesson['id']}/revise", json=body).status_code == 502
 
 
@@ -430,7 +430,7 @@ def test_revision_errors(client, monkeypatch):
 
 
 class FakeAnki:
-    """In-memory AnkiConnect, enough for Cartable's calls."""
+    """In-memory AnkiConnect, enough for Notosaurus's calls."""
 
     def __init__(self, fail_sync=False, profile="Léa", note_model=True):
         self.models, self.decks, self.media, self.notes = {}, {}, {}, {}
@@ -464,18 +464,18 @@ class FakeAnki:
             q = p["query"]
             if tag := re.fullmatch(r'"tag:(.+)"', q):
                 result = [i for i, n in self.notes.items() if tag[1] in n["tags"]]
-            elif cartable := re.fullmatch(r'"deck:(.+)" -"deck:.+::\*" "note:Cartable\*"', q):
+            elif notosaurus := re.fullmatch(r'"deck:(.+)" -"deck:.+::\*" "note:Notosaurus\*"', q):
                 result = [
                     i
                     for i, n in self.notes.items()
-                    if n["deckName"] == cartable[1] and n["modelName"].startswith("Cartable")
+                    if n["deckName"] == notosaurus[1] and n["modelName"].startswith("Notosaurus")
                 ]
-            elif deck := re.fullmatch(r'"note:([^"]+)" "deck:([^"]+)" -"deck:[^"]+::\*" -"tag:cartable::\*"', q):
+            elif deck := re.fullmatch(r'"note:([^"]+)" "deck:([^"]+)" -"deck:[^"]+::\*" -"tag:notosaurus::\*"', q):
                 result = [
                     i
                     for i, n in self.notes.items()
                     if (n["modelName"], n["deckName"]) == deck.groups()
-                    and not any(t.startswith("cartable::") for t in n["tags"])
+                    and not any(t.startswith("notosaurus::") for t in n["tags"])
                 ]
             elif re.fullmatch(r'"note:[^"]+" did:\d+', q):
                 result = [
@@ -572,7 +572,7 @@ def test_direct_send_to_anki(anki, client):
     assert set(anki.decks) == {"Espagnol::Leçon 5::Vocabulaire", "Espagnol::Leçon 5"}
     mother = anki.notes[1]
     assert mother["fields"]["Audio"] == f"[sound:{tts.filename('la madre', 'es-ES-ElviraNeural')}]"
-    assert mother["tags"] == ["famille_proche", f"cartable::{lesson['id']}"]  # its lesson, to find it again
+    assert mother["tags"] == ["famille_proche", f"notosaurus::{lesson['id']}"]  # its lesson, to find it again
     assert anki.notes[2]["fields"]["Front"] == "&lt;b&gt;"
     assert set(anki.media) == {
         tts.filename("la madre", "es-ES-ElviraNeural"),
@@ -636,9 +636,9 @@ def test_addon_mode(client, monkeypatch):
     )
     assert settings.current().ankiconnect_url == "http://autre-pc:8765"
 
-    monkeypatch.setenv("CARTABLE_EMBEDDED", "1")
-    monkeypatch.setenv("CARTABLE_ANKICONNECT_URL", "http://127.0.0.1:40123")
-    monkeypatch.setenv("CARTABLE_ANKICONNECT_KEY", "bridge-key")
+    monkeypatch.setenv("NOTOSAURUS_EMBEDDED", "1")
+    monkeypatch.setenv("NOTOSAURUS_ANKICONNECT_URL", "http://127.0.0.1:40123")
+    monkeypatch.setenv("NOTOSAURUS_ANKICONNECT_KEY", "bridge-key")
     s = settings.current()
     assert (s.ankiconnect_url, s.ankiconnect_key) == ("http://127.0.0.1:40123", "bridge-key")
     with TestClient(app, client=("127.0.0.1", 50000)) as local:
@@ -647,7 +647,7 @@ def test_addon_mode(client, monkeypatch):
 
 def test_addon_settings_only_on_the_computer(client, monkeypatch):
     """Add-on: settings only from the computer itself, without a password; never from a phone."""
-    monkeypatch.setenv("CARTABLE_EMBEDDED", "1")
+    monkeypatch.setenv("NOTOSAURUS_EMBEDDED", "1")
     # From a phone on the Wi-Fi (TestClient's default address is not local)
     assert client.get("/api/admin").json() == {"password_set": False, "password_needed": False, "allowed": False}
     assert client.get("/api/admin/settings").status_code == 403
@@ -732,11 +732,11 @@ def test_language_choice(monkeypatch):
     assert i18n.resolve("fr-FR") == "fr"
     assert i18n.resolve("de-DE", "en-US") == "en"
     assert i18n.resolve("de") is None
-    monkeypatch.setenv("CARTABLE_LANG", "fr_FR")  # Anki's language, set by the add-on
+    monkeypatch.setenv("NOTOSAURUS_LANG", "fr_FR")  # Anki's language, set by the add-on
     assert i18n.anki_language() == "fr"
-    monkeypatch.setenv("CARTABLE_LANG", "ja_JP")
+    monkeypatch.setenv("NOTOSAURUS_LANG", "ja_JP")
     assert i18n.anki_language() == "en"  # no Japanese file
-    monkeypatch.delenv("CARTABLE_LANG")
+    monkeypatch.delenv("NOTOSAURUS_LANG")
     assert i18n.anki_language() is None  # standalone: the browser decides
 
 
@@ -746,14 +746,14 @@ def test_lang_route(client, monkeypatch):
         "available": ["en", "fr"],
         "names": {"en": "English", "fr": "Français"},
     }
-    monkeypatch.setenv("CARTABLE_LANG", "fr_FR")
+    monkeypatch.setenv("NOTOSAURUS_LANG", "fr_FR")
     assert client.get("/api/lang").json()["lang"] == "fr"
 
 
 def test_revision_summary_in_page_language(client):
     lesson = _extract(client)
     body = {"deck": "D", "cards": [{"front": "a", "back": "b"}], "instruction": "remove the last card"}
-    res = client.post(f"/api/lessons/{lesson['id']}/revise", json=body, headers={"X-Cartable-Lang": "fr"})
+    res = client.post(f"/api/lessons/{lesson['id']}/revise", json=body, headers={"X-Notosaurus-Lang": "fr"})
     assert res.json()["summary"] == "Dernière carte supprimée (démo)."
 
 
@@ -940,9 +940,9 @@ def test_settings_saved_before_the_split(client, tmp_path, saved, expected):
 
 
 def test_env_before_the_split(client, monkeypatch):
-    monkeypatch.setenv("CARTABLE_LLM", "openai")
-    monkeypatch.setenv("CARTABLE_OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
-    monkeypatch.setenv("CARTABLE_OPENAI_API_KEY", "sk-env")
+    monkeypatch.setenv("NOTOSAURUS_LLM", "openai")
+    monkeypatch.setenv("NOTOSAURUS_OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
+    monkeypatch.setenv("NOTOSAURUS_OPENAI_API_KEY", "sk-env")
     s = settings.current()
     assert (s.llm, s.openrouter_api_key, s.base_url()) == ("openrouter", "sk-env", "https://openrouter.ai/api/v1")
 
@@ -1293,8 +1293,8 @@ def test_auto_voice_follows_the_language_of_the_backs(client):
     lesson = client.post("/api/extract", data={"prompt": "FR → ES", "voice": "auto"}).json()
     assert lesson["voice"] == "es-ES-ElviraNeural"  # the fake AI says the backs are es-ES
     voices = {p["id"]: p["voice"] for p in client.get("/api/prompts").json()}
-    assert voices["cartable:sentences"] == voices["cartable:vocabulary"] == "auto"
-    assert voices["cartable:questions"] == ""
+    assert voices["notosaurus:sentences"] == voices["notosaurus:vocabulary"] == "auto"
+    assert voices["notosaurus:questions"] == ""
 
 
 def test_formulas_shown_by_anki_not_read_aloud(client, tmp_path):
@@ -1344,7 +1344,7 @@ def test_cloze_cards_one_anki_card_per_gap(client, tmp_path):
 
     notes, models, _, _ = _notes(res.content, tmp_path)
     (cloze,) = [m for m in models.values() if m["type"] == 1]  # Anki's cloze note type
-    assert cloze["name"] == "Cartable texte à trous"
+    assert cloze["name"] == "Notosaurus texte à trous"
     assert [f["name"] for f in cloze["flds"]] == ["Text", "Extra", "Info", "Id"]
     assert "{{cloze:Text}}" in cloze["tmpls"][0]["qfmt"]
     texts = {fields.split("\x1f")[0]: fields.split("\x1f") for _, fields in notes}
@@ -1357,9 +1357,9 @@ def test_cloze_cards_one_anki_card_per_gap(client, tmp_path):
 def test_cloze_sent_to_anki(anki, client):
     res = client.post("/api/anki/send", json=CLOZE).json()
     assert (res["added"], res["updated"]) == (3, 0)
-    cloze = anki.models["Cartable texte à trous"]
+    cloze = anki.models["Notosaurus texte à trous"]
     assert cloze["isCloze"] is True and cloze["inOrderFields"] == ["Text", "Extra", "Info", "Id"]
-    assert anki.models[next(m for m in anki.models if m.startswith("Cartable recto"))]["isCloze"] is False
+    assert anki.models[next(m for m in anki.models if m.startswith("Notosaurus recto"))]["isCloze"] is False
     assert anki.notes[2]["fields"]["Extra"] == "place de la Révolution"
 
     # The text corrected (a gap moved): the same note, found by the card's id
@@ -1404,19 +1404,19 @@ def test_typed_answer_and_dictation(client, tmp_path):
     res = client.post("/api/export", json=export)
     _, models, _, _ = _notes(res.content, tmp_path)
     by_name = {m["name"]: m for m in models.values()}
-    typed = by_name["Cartable recto/verso à taper + dictée (audio)"]
+    typed = by_name["Notosaurus recto/verso à taper + dictée (audio)"]
     recto, dictation = typed["tmpls"]
     assert recto["qfmt"].endswith("{{type:Back}}") and "{{type:Back}}" in recto["afmt"]
     assert "{{FrontSide}}" not in recto["afmt"]  # the box shown once
     assert dictation["qfmt"] == '<div class="dictation">🎧</div>{{Audio}}{{type:Back}}'
-    assert "Cartable recto/verso (audio)" in by_name  # the formula's note type, as before
+    assert "Notosaurus recto/verso (audio)" in by_name  # the formula's note type, as before
     conn = sqlite3.connect(tmp_path / "collection.anki2")
     assert conn.execute("SELECT count(*) FROM cards").fetchone()[0] == 2 + 1
 
     # Without a voice, nothing to hear: no dictation card
     res = client.post("/api/export", json={**export, "voice": "", "cards": export["cards"][:1]})
     _, models, _, _ = _notes(res.content, tmp_path)
-    assert [m["name"] for m in models.values()] == ["Cartable recto/verso à taper (audio)"]
+    assert [m["name"] for m in models.values()] == ["Notosaurus recto/verso à taper (audio)"]
 
 
 def test_plain_note_types_keep_their_ids(client):
@@ -1430,7 +1430,7 @@ def test_plain_note_types_keep_their_ids(client):
 
 
 def test_dictation_prompt_starts_lessons_with_its_options(client):
-    (dictation,) = [p for p in client.get("/api/prompts").json() if p["id"] == "cartable:dictation"]
+    (dictation,) = [p for p in client.get("/api/prompts").json() if p["id"] == "notosaurus:dictation"]
     assert (dictation["name"], dictation["voice"]) == ("Spelling dictation", "auto")
     assert dictation["typing"] is True and dictation["dictation"] is True
 
@@ -1447,7 +1447,7 @@ def test_dictation_prompt_starts_lessons_with_its_options(client):
     assert client.post("/api/extract", data={"prompt": "FR → ES"}).json()["typing"] is False
 
     # A copy keeps them, to be changed
-    copy = client.post("/api/prompts/cartable:dictation/duplicate").json()
+    copy = client.post("/api/prompts/notosaurus:dictation/duplicate").json()
     assert copy["typing"] is True and copy["dictation"] is True and copy["builtin"] is False
     changed = client.put(f"/api/prompts/{copy['id']}", json={**copy, "dictation": False}).json()
     assert changed["typing"] is True and changed["dictation"] is False
@@ -1482,7 +1482,7 @@ def test_existing_decks_without_anki(client):
 
 
 def test_automatic_prompt_says_what_the_ai_chose(client):
-    (auto,) = [p for p in client.get("/api/prompts").json() if p["id"] == "cartable:auto"]
+    (auto,) = [p for p in client.get("/api/prompts").json() if p["id"] == "notosaurus:auto"]
     lesson = client.post("/api/extract", data={"prompt": auto["text"], "voice": "auto"}).json()
     assert lesson["choice"] == "Vocabulaire d'espagnol : français → espagnol"  # demo mode's choice
     assert client.get(f"/api/lessons/{lesson['id']}").json()["choice"] == lesson["choice"]  # kept
@@ -1577,8 +1577,9 @@ def test_options_changed_after_a_send_keep_the_notes(anki, client):
     res = client.post("/api/anki/send", json={**body, "typing": True, "reverse": True}).json()
     assert (res["added"], res["updated"], res["converted"]) == (0, 6, 6)
     assert sorted(anki.notes) == ids
-    assert {n["modelName"] for n in anki.notes.values()} == {"Cartable recto/verso + inverse à taper (TTS Anki es_ES)"}
-    assert all(f"cartable::{lesson['id']}" in n["tags"] for n in anki.notes.values())
+    converted = {n["modelName"] for n in anki.notes.values()}
+    assert converted == {"Notosaurus recto/verso + inverse à taper (TTS Anki es_ES)"}
+    assert all(f"notosaurus::{lesson['id']}" in n["tags"] for n in anki.notes.values())
 
     # Sent again unchanged: plain updates
     res = client.post("/api/anki/send", json={**body, "typing": True, "reverse": True}).json()
@@ -1648,7 +1649,7 @@ def test_deleting_a_lesson_keeps_another_lessons_notes(anki, client):
     assert client.get(f"/api/lessons/{second['id']}/anki-notes").json()["count"] == 6  # alone now
 
 
-def test_only_paired_devices_use_cartable(client):
+def test_only_paired_devices_use_notosaurus(client):
     token = settings.device_token()
     client.cookies.clear()  # a phone that never scanned the QR code
     r = client.get("/api/lessons")
@@ -1691,11 +1692,11 @@ def test_phone_link_address(client, monkeypatch):
     from app import main
 
     monkeypatch.setattr(main, "lan_address", lambda: "192.168.1.10")
-    monkeypatch.setenv("CARTABLE_EMBEDDED", "1")  # the add-on asks for it on the computer itself
+    monkeypatch.setenv("NOTOSAURUS_EMBEDDED", "1")  # the add-on asks for it on the computer itself
     with TestClient(app, client=("127.0.0.1", 50000), base_url="http://127.0.0.1:8000") as local:
         token = settings.device_token()
         assert local.get("/api/admin/phone").json()["url"] == f"http://192.168.1.10:8000/?k={token}"
-        monkeypatch.setenv("CARTABLE_PUBLIC_URL", "https://pc.example.ts.net/")  # Docker, tailscale serve
+        monkeypatch.setenv("NOTOSAURUS_PUBLIC_URL", "https://pc.example.ts.net/")  # Docker, tailscale serve
         assert local.get("/api/admin/phone").json()["url"] == f"https://pc.example.ts.net/?k={token}"
 
 

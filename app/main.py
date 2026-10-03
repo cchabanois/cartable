@@ -40,7 +40,7 @@ from .models import (
 )
 from .version import VERSION
 
-log = logging.getLogger("cartable")
+log = logging.getLogger("notosaurus")
 
 STATIC_DIR = Path(__file__).parent.parent / "static"
 IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
@@ -49,20 +49,20 @@ MAX_IMAGES = 10
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    log.warning("Cartable %s, LLM provider: %s", VERSION, settings.current().llm)
+    log.warning("Notosaurus %s, LLM provider: %s", VERSION, settings.current().llm)
     yield
 
 
-app = FastAPI(title="Cartable", version=VERSION, lifespan=lifespan)
+app = FastAPI(title="Notosaurus", version=VERSION, lifespan=lifespan)
 
 
 # --- Paired devices only -----------------------------------------------------
-# On the Wi-Fi, anyone could otherwise use Cartable: spend the AI keys, delete lessons
+# On the Wi-Fi, anyone could otherwise use Notosaurus: spend the AI keys, delete lessons
 # and their cards in Anki. The computer itself always may; other devices need the
 # token, given once by the QR code (…/?k=<token>) and kept in a cookie. Without HTTPS
 # this stops whoever finds the address and other websites' requests (the cookie is
 # SameSite=Strict), not someone listening to the Wi-Fi.
-DEVICE_COOKIE = "cartable_key"
+DEVICE_COOKIE = "notosaurus_key"
 UNPAIRED_ALLOWED = {"/api/lang", "/api/qr"}  # the page telling how to pair, the QR code
 # The settings have their own protection (the computer only in the add-on, else the
 # admin password, sent in a header other sites can't add): they give the QR code.
@@ -83,7 +83,7 @@ async def paired_devices_only(request: Request, call_next):
     allowed = path in UNPAIRED_ALLOWED or path.startswith(UNPAIRED_PREFIXES)
     try:
         paired = _paired(request)
-    except AppError as e:  # e.g. settings from a newer Cartable: said, as any error
+    except AppError as e:  # e.g. settings from a newer Notosaurus: said, as any error
         return JSONResponse(status_code=e.status, content={"detail": e.detail()})
     if path.startswith("/api/") and not allowed and not paired:
         return JSONResponse(status_code=401, content={"detail": AppError("device.not_paired").detail()})
@@ -107,9 +107,9 @@ async def app_error(request, e: AppError) -> JSONResponse:
     return JSONResponse(status_code=e.status, content={"detail": e.detail()})
 
 
-def page_lang(x_cartable_lang: str | None = Header(None)) -> str:
+def page_lang(x_notosaurus_lang: str | None = Header(None)) -> str:
     """Language of the page making the request (sent by the page on every call)."""
-    return i18n.resolve(x_cartable_lang) or i18n.DEFAULT
+    return i18n.resolve(x_notosaurus_lang) or i18n.DEFAULT
 
 
 @app.get("/api/lang")
@@ -129,7 +129,7 @@ def lang() -> dict:
 
 @app.get("/api/prompts")
 def list_prompts(lang: str = Depends(page_lang)) -> list[Prompt]:
-    return prompts.list_all(lang)  # Cartable's prompts in this language, then the user's
+    return prompts.list_all(lang)  # Notosaurus's prompts in this language, then the user's
 
 
 @app.post("/api/prompts", status_code=201)
@@ -152,7 +152,7 @@ def delete_prompt(id: str) -> None:
 
 @app.post("/api/prompts/{id}/duplicate", status_code=201)
 def duplicate_prompt(id: str, lang: str = Depends(page_lang)) -> Prompt:
-    """A copy of any prompt (Cartable's included), to adapt."""
+    """A copy of any prompt (Notosaurus's included), to adapt."""
     if copy := prompts.duplicate(id, lang):
         return copy
     raise AppError("prompt.not_found", 404)
@@ -254,7 +254,7 @@ async def regenerate(
 
 
 def _filename(deck: str) -> str:
-    name = re.sub(r'[\\/:*?"<>|]+', " - ", deck).strip(" -") or "cartable"
+    name = re.sub(r'[\\/:*?"<>|]+', " - ", deck).strip(" -") or "notosaurus"
     return f"{name}.apkg"
 
 
@@ -265,7 +265,7 @@ async def _card_audio(req: ExportRequest, background: BackgroundTasks) -> tuple[
     # Saved lesson: mp3s go to its audio/ folder; otherwise a throwaway folder.
     directory = lessons.audio_dir(req.lesson_id) if req.lesson_id else None
     if directory is None:
-        directory = Path(tempfile.mkdtemp(prefix="cartable-audio-"))
+        directory = Path(tempfile.mkdtemp(prefix="notosaurus-audio-"))
         background.add_task(shutil.rmtree, directory, ignore_errors=True)
     # Not read aloud: a back with a formula (the voice would read the MathJax code),
     # a text with gaps (its back is only an extra)
@@ -355,7 +355,7 @@ async def export(req: ExportRequest, background: BackgroundTasks) -> FileRespons
         path,
         media_type="application/octet-stream",
         filename=_filename(req.deck),
-        headers={"X-Cartable-Audio-Failures": str(failures)},
+        headers={"X-Notosaurus-Audio-Failures": str(failures)},
     )
 
 
@@ -669,7 +669,7 @@ def is_local(request: Request) -> bool:
 
 
 def require_admin(request: Request, x_admin_password: str | None = Header(None)) -> None:
-    # In the Anki add-on, settings are opened on the computer (Tools → Cartable →
+    # In the Anki add-on, settings are opened on the computer (Tools → Notosaurus →
     # Settings): API keys never cross the Wi-Fi and phones can't change anything.
     if settings.embedded():
         if not is_local(request):
@@ -796,8 +796,8 @@ def lan_address() -> str:
 @app.get("/api/admin/phone", dependencies=[Depends(require_admin)])
 def admin_phone(request: Request) -> dict:
     """The link that pairs a phone (in the QR code): this computer's address and the token.
-    CARTABLE_PUBLIC_URL gives the address when Cartable can't see it (Docker, a proxy)."""
-    base = os.environ.get("CARTABLE_PUBLIC_URL", "").strip().rstrip("/")
+    NOTOSAURUS_PUBLIC_URL gives the address when Notosaurus can't see it (Docker, a proxy)."""
+    base = os.environ.get("NOTOSAURUS_PUBLIC_URL", "").strip().rstrip("/")
     if not base:
         port = request.url.port or (443 if request.url.scheme == "https" else 80)
         host = lan_address() if is_local(request) else request.url.hostname

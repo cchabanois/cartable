@@ -16,7 +16,7 @@ import edge_tts
 
 from . import settings, storage
 
-log = logging.getLogger("cartable")
+log = logging.getLogger("notosaurus")
 
 MAX_PARALLEL = 4
 

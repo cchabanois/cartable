@@ -96,15 +96,15 @@ def test_install_needed(monkeypatch, tmp_path):
     (source / "app" / "main.py").write_text("")
     (source / "requirements.txt").write_text("fastapi\n")
     monkeypatch.setattr(launcher, "USER_FILES", tmp_path / "user_files")
-    monkeypatch.setattr(launcher, "RUNTIME", tmp_path / "cartable-runtime")
+    monkeypatch.setattr(launcher, "RUNTIME", tmp_path / "notosaurus-runtime")
     config = {"source": str(source), "python": ""}
     assert launcher.install_needed(config)  # first start
 
-    venv = tmp_path / "cartable-runtime" / "venv"
+    venv = tmp_path / "notosaurus-runtime" / "venv"
     python = launcher._venv_python(venv)
     python.parent.mkdir(parents=True)
     python.write_text("")
-    (venv / ".cartable-requirements").write_text(launcher._requirements_hash(source))
+    (venv / ".notosaurus-requirements").write_text(launcher._requirements_hash(source))
     assert not launcher.install_needed(config)  # installed
 
     (source / "requirements.txt").write_text("fastapi\nnew-package\n")

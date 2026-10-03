@@ -62,7 +62,7 @@
       "fromPromptHint": "Pas de photo ? L'IA crée les cartes à partir de ta consigne : mets-y les mots, ou demande un thème. Vérifie bien les cartes.",
       "regenerateHint": "(remplace les cartes)",
       "unavailable": "Consignes indisponibles : {message}",
-      "builtin": "Consigne Cartable : en lecture seule, améliorée avec l'appli",
+      "builtin": "Consigne Notosaurus : en lecture seule, améliorée avec l'appli",
       "regenerateNewHint": "(nouvelle leçon)",
       "regenerateExported": "Déjà envoyée à Anki : les cartes envoyées y restent, les nouvelles s'y ajouteront au prochain envoi.",
       "regenerated": "✨ Cartes régénérées."
@@ -163,7 +163,7 @@
         "one": "dont {count} passée aux nouvelles options (historique gardé)",
         "other": "dont {count} passées aux nouvelles options (historique gardé)"
       },
-      "oldAnkiConnect": "AnkiConnect est trop ancien pour changer les options des cartes déjà envoyées : elles restent à côté des nouvelles (mets à jour AnkiConnect, ou utilise le greffon Cartable)"
+      "oldAnkiConnect": "AnkiConnect est trop ancien pour changer les options des cartes déjà envoyées : elles restent à côté des nouvelles (mets à jour AnkiConnect, ou utilise le greffon Notosaurus)"
     },
     "export": {
       "noSound": "Paquet exporté, mais {count} carte(s) sans son (synthèse vocale indisponible).",
@@ -218,8 +218,8 @@
       "required": "Il faut au moins un nom et un texte.",
       "confirmDelete": "Supprimer la consigne « {name} » ?",
       "copyName": "{name} (copie)",
-      "builtin": "⭐ Consigne Cartable",
-      "builtinHint": "Cette consigne fait partie de Cartable et s'améliore avec lui : duplique-la pour l'adapter (langue, voix, paquet…).",
+      "builtin": "⭐ Consigne Notosaurus",
+      "builtinHint": "Cette consigne fait partie de Notosaurus et s'améliore avec lui : duplique-la pour l'adapter (langue, voix, paquet…).",
       "duplicate": "⧉ Dupliquer",
       "duplicateToChange": "⧉ Dupliquer pour modifier",
       "voiceMode": {
@@ -229,7 +229,7 @@
       },
       "voiceModeHint": {
         "none": "Le verso n'est pas lu à voix haute.",
-        "auto": "L'IA reconnaît la langue du verso et Cartable prend une voix de cette langue (espagnol → Elvira, anglais britannique → Sonia…).",
+        "auto": "L'IA reconnaît la langue du verso et Notosaurus prend une voix de cette langue (espagnol → Elvira, anglais britannique → Sonia…).",
         "pick": "Tape le début de la langue (« en-GB », « es-ES »…) pour voir les voix ; ▶ pour écouter."
       }
     },
@@ -300,7 +300,7 @@
       "fake": {
         "name": "Démo",
         "description": "Cartes factices, pour les tests et le développement.",
-        "warning": "Mode démo : les cartes ne viennent pas de tes photos, ce sont toujours les mêmes. Choisis un autre fournisseur pour utiliser Cartable."
+        "warning": "Mode démo : les cartes ne viennent pas de tes photos, ce sont toujours les mêmes. Choisis un autre fournisseur pour utiliser Notosaurus."
       },
       "model": "Modèle",
       "default": "{model} (par défaut)",
@@ -340,10 +340,10 @@
     },
     "anki": {
       "title": "📥 Envoi direct dans Anki",
-      "embedded": "✓ Cartable tourne dans le <strong>greffon Anki</strong> : « Ajouter à Anki » écrit directement dans le profil ouvert, sans AnkiConnect.",
-      "howTo": "Pour ajouter les cartes sans passer par un fichier <code>.apkg</code> : dans Anki sur l'ordinateur, <em>Outils → Modules → Obtenir des modules</em>, code <code>2055492159</code> (AnkiConnect), puis redémarre Anki. Anki doit être ouvert pendant l'envoi. Autre possibilité : installer le greffon Cartable, qui fait tourner Cartable dans Anki.",
+      "embedded": "✓ Notosaurus tourne dans le <strong>greffon Anki</strong> : « Ajouter à Anki » écrit directement dans le profil ouvert, sans AnkiConnect.",
+      "howTo": "Pour ajouter les cartes sans passer par un fichier <code>.apkg</code> : dans Anki sur l'ordinateur, <em>Outils → Modules → Obtenir des modules</em>, code <code>2055492159</code> (AnkiConnect), puis redémarre Anki. Anki doit être ouvert pendant l'envoi. Autre possibilité : installer le greffon Notosaurus, qui fait tourner Notosaurus dans Anki.",
       "address": "Adresse d'AnkiConnect",
-      "addressHint": "Anki sur le même ordinateur que Cartable : <code>http://localhost:8765</code>.",
+      "addressHint": "Anki sur le même ordinateur que Notosaurus : <code>http://localhost:8765</code>.",
       "key": "Clé AnkiConnect",
       "keyPlaceholder": "Seulement si « apiKey » est réglée dans AnkiConnect",
       "clearKey": "Effacer la clé AnkiConnect",
@@ -351,7 +351,7 @@
       "syncHint": "(pour retrouver les cartes sur le téléphone)",
       "test": "🔌 Tester la connexion avec Anki",
       "testOk": "✓ Anki répond (AnkiConnect version {version}, profil « {profile} »).",
-      "testOkAddon": "✓ Anki répond (greffon Cartable, profil « {profile} »).",
+      "testOkAddon": "✓ Anki répond (greffon Notosaurus, profil « {profile} »).",
       "testNoProfile": "Anki répond, mais aucun profil n'est ouvert : ouvre-en un dans Anki.",
       "syncOn": "✓ « {profile} » est connecté à AnkiWeb.",
       "syncOff": "« {profile} » n'est pas connecté à AnkiWeb : pas de synchro après l'envoi. Pour synchroniser, connecte-toi dans Anki (bouton Synchroniser)."
@@ -453,9 +453,9 @@
     },
     "phones": {
       "title": "📱 Téléphones",
-      "hint": "Scanne ce QR code avec le téléphone : il ouvre Cartable et autorise ce téléphone. Ensuite, ajoute la page à l'écran d'accueil.",
-      "qr": "QR code pour ouvrir Cartable sur le téléphone",
-      "security": "Seuls les appareils qui ont scanné ce QR code peuvent utiliser Cartable sur le Wi-Fi (l'ordinateur lui-même, toujours). Sans HTTPS, ça arrête les curieux et les autres sites web, pas quelqu'un qui espionne le Wi-Fi.",
+      "hint": "Scanne ce QR code avec le téléphone : il ouvre Notosaurus et autorise ce téléphone. Ensuite, ajoute la page à l'écran d'accueil.",
+      "qr": "QR code pour ouvrir Notosaurus sur le téléphone",
+      "security": "Seuls les appareils qui ont scanné ce QR code peuvent utiliser Notosaurus sur le Wi-Fi (l'ordinateur lui-même, toujours). Sans HTTPS, ça arrête les curieux et les autres sites web, pas quelqu'un qui espionne le Wi-Fi.",
       "unpair": "Déconnecter tous les téléphones",
       "confirmUnpair": "Déconnecter tous les téléphones ? Chacun devra scanner à nouveau le QR code (utile si un téléphone a été perdu ou prêté).",
       "unpaired": "Téléphones déconnectés : scanne le nouveau QR code sur chacun.",
@@ -471,7 +471,7 @@
     "unreachable": "Serveur injoignable.",
     "prompt": {
       "not_found": "Consigne introuvable.",
-      "builtin": "Cette consigne fait partie de Cartable : duplique-la pour la modifier."
+      "builtin": "Cette consigne fait partie de Notosaurus : duplique-la pour la modifier."
     },
     "lesson": {
       "not_found": "Leçon introuvable.",
@@ -518,13 +518,13 @@
     "admin": {
       "password_required": "Mot de passe administrateur requis.",
       "wrong_password": "Mot de passe incorrect.",
-      "local_only": "Les réglages s'ouvrent depuis Anki, sur l'ordinateur : Outils → Cartable → Réglages."
+      "local_only": "Les réglages s'ouvrent depuis Anki, sur l'ordinateur : Outils → Notosaurus → Réglages."
     },
     "addon": {
-      "source_not_found": "Code du serveur Cartable introuvable.",
+      "source_not_found": "Code du serveur Notosaurus introuvable.",
       "uv_unsupported": "Cet ordinateur n'est pas pris en charge (pas de uv pour lui) : installe uv toi-même (https://docs.astral.sh/uv/), puis redémarre Anki.",
-      "uv_download_failed": "Téléchargement de uv depuis GitHub impossible (voir le journal). Vérifie la connexion Internet, puis Outils → Cartable → Redémarrer le serveur.",
-      "install_failed": "Installation des dépendances de Cartable impossible (voir le journal)."
+      "uv_download_failed": "Téléchargement de uv depuis GitHub impossible (voir le journal). Vérifie la connexion Internet, puis Outils → Notosaurus → Redémarrer le serveur.",
+      "install_failed": "Installation des dépendances de Notosaurus impossible (voir le journal)."
     },
     "picture": {
       "no_model": "Pas de modèle d'images : choisis-en un dans les réglages (ou ajoute une clé Gemini ou OpenRouter).",
@@ -539,13 +539,13 @@
       "not_found": "Cette carte n'existe plus : recharge la leçon."
     },
     "device": {
-      "not_paired": "Cet appareil n'est pas encore autorisé : scanne le QR code de Cartable (dans Anki : Outils → Cartable → Ouvrir sur le téléphone ; sinon dans les réglages, sur l'ordinateur)."
+      "not_paired": "Cet appareil n'est pas encore autorisé : scanne le QR code de Notosaurus (dans Anki : Outils → Notosaurus → Ouvrir sur le téléphone ; sinon dans les réglages, sur l'ordinateur)."
     },
     "figure": {
       "invalid": "La figure dessinée par l'IA n'est pas lisible : redessine-la."
     },
     "data": {
-      "too_new": "Ces données ({what}) viennent d'une version plus récente de Cartable : mets Cartable à jour pour les utiliser."
+      "too_new": "Ces données ({what}) viennent d'une version plus récente de Notosaurus : mets Notosaurus à jour pour les utiliser."
     }
   },
   "demo": {
@@ -554,29 +554,29 @@
     "addedFront": "(ajout démo)"
   },
   "addon": {
-    "menuOpen": "Ouvrir Cartable",
+    "menuOpen": "Ouvrir Notosaurus",
     "menuAddress": "État du serveur…",
     "menuRestart": "Redémarrer le serveur",
     "menuLog": "Journal du serveur",
-    "startFailed": "Cartable n'a pas pu démarrer :",
-    "stoppedAtStart": "Le serveur Cartable s'est arrêté au démarrage.",
-    "ready": "Cartable est prêt : {url}",
+    "startFailed": "Notosaurus n'a pas pu démarrer :",
+    "stoppedAtStart": "Le serveur Notosaurus s'est arrêté au démarrage.",
+    "ready": "Notosaurus est prêt : {url}",
     "running": "en marche",
     "stopped": "arrêté",
-    "address": "Serveur Cartable : {state}.\n\nSur le téléphone (même Wi-Fi) : {lan}\nSur cet ordinateur : {local}",
+    "address": "Serveur Notosaurus : {state}.\n\nSur le téléphone (même Wi-Fi) : {lan}\nSur cet ordinateur : {local}",
     "where": "Code : {source}\nDonnées : {data}",
     "dev": " (développement)",
-    "restarting": "Cartable redémarre…",
+    "restarting": "Notosaurus redémarre…",
     "emptyLog": "(journal vide)",
-    "logTitle": "Cartable — journal",
+    "logTitle": "Notosaurus — journal",
     "menuPhone": "Ouvrir sur le téléphone…",
     "menuSettings": "Réglages",
-    "phoneTitle": "Ouvrir Cartable sur le téléphone",
-    "phoneSteps": "1. Connecte le téléphone au même Wi-Fi que cet ordinateur.\n2. Scanne ce QR code avec l'appareil photo du téléphone.\n3. Dans le navigateur : menu → « Ajouter à l'écran d'accueil », pour l'avoir comme une appli.\n\nLes réglages (clés d'IA…) s'ouvrent ici, sur l'ordinateur : Outils → Cartable → Réglages.",
+    "phoneTitle": "Ouvrir Notosaurus sur le téléphone",
+    "phoneSteps": "1. Connecte le téléphone au même Wi-Fi que cet ordinateur.\n2. Scanne ce QR code avec l'appareil photo du téléphone.\n3. Dans le navigateur : menu → « Ajouter à l'écran d'accueil », pour l'avoir comme une appli.\n\nLes réglages (clés d'IA…) s'ouvrent ici, sur l'ordinateur : Outils → Notosaurus → Réglages.",
     "localOnly": "⚠ Le serveur n'écoute que sur cet ordinateur (réglage « host » à 127.0.0.1) : mets « 0.0.0.0 » dans la config du greffon pour y accéder depuis le téléphone.",
-    "notRunningYet": "Cartable démarre : réessaie dans quelques secondes.",
-    "installConfirm": "Avant de démarrer, Cartable doit installer ses composants :\n\n• uv (depuis GitHub), Python 3.13 et ses bibliothèques Python (depuis PyPI) : environ 300 Mo sur le disque ;\n• uniquement dans le dossier d'Anki (Anki2/cartable-runtime) : rien ne change sur le reste de l'ordinateur, et désinstaller le greffon les supprime.\n\nCela prend une ou deux minutes, la première fois et après certaines mises à jour. Installer maintenant ?",
-    "installDeclined": "Cartable n'est pas démarré. Pour l'installer plus tard : Outils → Cartable → Ouvrir Cartable."
+    "notRunningYet": "Notosaurus démarre : réessaie dans quelques secondes.",
+    "installConfirm": "Avant de démarrer, Notosaurus doit installer ses composants :\n\n• uv (depuis GitHub), Python 3.13 et ses bibliothèques Python (depuis PyPI) : environ 300 Mo sur le disque ;\n• uniquement dans le dossier d'Anki (Anki2/notosaurus-runtime) : rien ne change sur le reste de l'ordinateur, et désinstaller le greffon les supprime.\n\nCela prend une ou deux minutes, la première fois et après certaines mises à jour. Installer maintenant ?",
+    "installDeclined": "Notosaurus n'est pas démarré. Pour l'installer plus tard : Outils → Notosaurus → Ouvrir Notosaurus."
   },
   "builtinPrompts": {
     "auto": {

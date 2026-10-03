@@ -112,7 +112,7 @@ def test_a_figure_with_the_answer_goes_on_the_back(client, tmp_path):
         z.extract("collection.anki2", tmp_path)
     conn = sqlite3.connect(tmp_path / "collection.anki2")
     models = json.loads(conn.execute("SELECT models FROM col").fetchone()[0]).values()
-    on_back = next(m for m in models if m["name"].startswith("Cartable image au verso"))
+    on_back = next(m for m in models if m["name"].startswith("Notosaurus image au verso"))
     (template,) = on_back["tmpls"]
     assert "{{Picture}}" not in template["qfmt"] and "{{Picture}}" in template["afmt"]
     assert template["name"] == "Image"  # as on the front: a note moves between them keeping its card

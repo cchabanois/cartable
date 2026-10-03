@@ -2,7 +2,7 @@
 
 https://foosoft.net/projects/anki-connect/ — Anki must be running with the add-on
 installed. Notes already sent are updated (same note type, deck and front) instead
-of duplicated; notes deleted in Cartable are left untouched in Anki.
+of duplicated; notes deleted in Notosaurus are left untouched in Anki.
 """
 
 import base64
@@ -22,7 +22,7 @@ class AnkiConnectError(AppError):
     status = 502
 
 
-# Messages from AnkiConnect / the Cartable bridge that have their own error code.
+# Messages from AnkiConnect / the Notosaurus bridge that have their own error code.
 KNOWN_ERRORS = {
     "auth not configured": "anki.sync_not_logged_in",
     "no profile open": "anki.no_profile",
@@ -129,7 +129,7 @@ async def send(notes: list[Note]) -> SendResult:
         added = updated = converted = 0
         unsupported = False
         retag: dict[str, list[int]] = {}  # notes sent before they had the lesson's tag
-        others: dict[str, dict] = {}  # per deck: its notes of the other Cartable note types
+        others: dict[str, dict] = {}  # per deck: its notes of the other Notosaurus note types
         for deck, nt in dict.fromkeys((n.deck, n.nt) for n in notes):
             # createDeck returns the id of the deck, existing or new. Searching by id
             # and comparing keys here avoids escaping names in Anki's search syntax.
@@ -150,7 +150,7 @@ async def send(notes: list[Note]) -> SendResult:
                     updated += 1
                     continue
                 if deck not in others:
-                    others[deck] = await _other_cartable_notes(client, deck)
+                    others[deck] = await _other_notosaurus_notes(client, deck)
                 # Sent before with other options (voice, reverse, typing, dictation): the same
                 # note moves to the new note type, keeping its review history
                 candidates = [
@@ -191,10 +191,10 @@ async def send(notes: list[Note]) -> SendResult:
         return result
 
 
-async def _other_cartable_notes(client: httpx.AsyncClient, deck: str) -> dict[tuple, list[dict]]:
-    """The deck's Cartable notes (not its subdecks'), by (family, key field, key value)."""
+async def _other_notosaurus_notes(client: httpx.AsyncClient, deck: str) -> dict[tuple, list[dict]]:
+    """The deck's Notosaurus notes (not its subdecks'), by (family, key field, key value)."""
     name = _search(deck)
-    ids = await _invoke(client, "findNotes", query=f'"deck:{name}" -"deck:{name}::*" "note:Cartable*"')
+    ids = await _invoke(client, "findNotes", query=f'"deck:{name}" -"deck:{name}::*" "note:Notosaurus*"')
     found = {}
     for info in await _invoke(client, "notesInfo", notes=ids) if ids else []:
         kind = family(info.get("modelName", ""))

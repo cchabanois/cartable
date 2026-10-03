@@ -1,4 +1,4 @@
-# Cartable's direct dependencies, with the oldest versions it works with.
+# Notosaurus's direct dependencies, with the oldest versions it works with.
 # requirements.txt pins every package (these and theirs) to exact versions, for every
 # system: what the Anki add-on, Docker and the CI install. After changing this file,
 # or to update the pins:

@@ -22,7 +22,7 @@ from .errors import AppError
 from .models import Card
 from .settings import Settings
 
-log = logging.getLogger("cartable")
+log = logging.getLogger("notosaurus")
 
 OPENROUTER = settings.OPENROUTER_URL
 NAME = re.compile(r"^picture-[a-z0-9]+-[a-f0-9]{8}\.(jpg|svg)$")  # files we write; blocks "../"

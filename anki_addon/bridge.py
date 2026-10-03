@@ -1,6 +1,6 @@
-"""A small AnkiConnect-compatible endpoint inside Anki, for the Cartable server.
+"""A small AnkiConnect-compatible endpoint inside Anki, for the Notosaurus server.
 
-It implements only the actions Cartable's ankiconnect.py uses, on 127.0.0.1 with
+It implements only the actions Notosaurus's ankiconnect.py uses, on 127.0.0.1 with
 a random key, so the same server code works with the real AnkiConnect
 (standalone mode) or with this bridge (add-on mode). Collection access happens
 on Anki's main thread, as Anki requires.
@@ -190,7 +190,7 @@ def _delete_notes(p: dict) -> None:
 
 
 def _delete_decks(p: dict) -> None:
-    # Cartable only asks for decks it found empty; their cards would go too (cardsToo)
+    # Notosaurus only asks for decks it found empty; their cards would go too (cardsToo)
     col = _col()
     ids = [deck_id for name in p["decks"] if (deck_id := col.decks.id_for_name(name))]
     col.decks.remove(ids)
@@ -199,7 +199,7 @@ def _delete_decks(p: dict) -> None:
 
 def _sync(p: dict) -> None:
     # Never open the login dialog in the middle of a send: report it instead
-    # (Cartable translates this into "Anki is not logged in to AnkiWeb").
+    # (Notosaurus translates this into "Anki is not logged in to AnkiWeb").
     if not mw.pm.sync_auth():
         raise BridgeError("sync: auth not configured")
     mw.on_sync_button_clicked()
@@ -207,7 +207,7 @@ def _sync(p: dict) -> None:
 
 def _sync_configured(p: dict) -> bool:
     """Whether the open profile is logged in to AnkiWeb (not an AnkiConnect action):
-    Cartable then doesn't try to sync a profile that can't."""
+    Notosaurus then doesn't try to sync a profile that can't."""
     return bool(mw.pm.sync_auth())
 
 
@@ -217,7 +217,7 @@ def _active_profile(p: dict) -> str | None:
 
 
 def _profiles(p: dict) -> list[str]:
-    """Every Anki profile (same action as AnkiConnect): owners to pick in Cartable's settings."""
+    """Every Anki profile (same action as AnkiConnect): owners to pick in Notosaurus's settings."""
     return list(mw.pm.profiles())
 
 
@@ -286,7 +286,7 @@ class Bridge:
 
         # Port 0: the system picks a free port; only this machine can connect.
         self._server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-        threading.Thread(target=self._server.serve_forever, name="cartable-bridge", daemon=True).start()
+        threading.Thread(target=self._server.serve_forever, name="notosaurus-bridge", daemon=True).start()
 
     def stop(self) -> None:
         if self._server:

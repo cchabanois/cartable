@@ -1,11 +1,11 @@
-"""Cartable inside Anki: runs the Cartable server while Anki is running.
+"""Notosaurus inside Anki: runs the Notosaurus server while Anki is running.
 
 - bridge.py: AnkiConnect-compatible endpoint, so "Add to Anki" writes the
   cards straight into the open profile (no AnkiConnect add-on needed); the
   server keeps running across profile switches;
 - launcher.py: starts the server in its own Python environment.
 
-The Cartable server can still run on its own (standalone mode); this add-on is
+The Notosaurus server can still run on its own (standalone mode); this add-on is
 just another way to launch it.
 """
 
@@ -78,10 +78,10 @@ def start() -> None:
     try:
         needs_install = install_needed(config())
     except LaunchError as e:
-        showWarning(f"{t('addon.startFailed')}\n{t(str(e))}", title="Cartable")
+        showWarning(f"{t('addon.startFailed')}\n{t(str(e))}", title="Notosaurus")
         return
     # Downloads uv, Python and libraries (~300 MB on disk): only with the user's consent.
-    if needs_install and not askUser(t("addon.installConfirm"), title="Cartable"):
+    if needs_install and not askUser(t("addon.installConfirm"), title="Notosaurus"):
         tooltip(t("addon.installDeclined"), period=6000)
         return
     stop()
@@ -93,10 +93,10 @@ def start() -> None:
         try:
             future.result()
         except LaunchError as e:
-            showWarning(f"{t('addon.startFailed')}\n{t(str(e))}", title="Cartable")
+            showWarning(f"{t('addon.startFailed')}\n{t(str(e))}", title="Notosaurus")
             return
         except Exception as e:  # unexpected: show it with the log
-            showText(f"{t('addon.startFailed')} {e}\n\n{server.log_tail()}", title="Cartable")
+            showText(f"{t('addon.startFailed')} {e}\n\n{server.log_tail()}", title="Notosaurus")
             return
         mw.progress.single_shot(2500, check_started)
 
@@ -108,13 +108,13 @@ def start() -> None:
 def check_started() -> None:
     if server.running():
         if not config().get("phone_help_shown"):
-            # First start: show how to open Cartable on the phone, once.
+            # First start: show how to open Notosaurus on the phone, once.
             mw.addonManager.writeConfig(__name__, {**config(), "phone_help_shown": True})
             show_phone()
         else:
             tooltip(t("addon.ready", url=urls()[1]), period=5000)
     else:
-        showText(t("addon.stoppedAtStart") + "\n\n" + server.log_tail(), title="Cartable")
+        showText(t("addon.stoppedAtStart") + "\n\n" + server.log_tail(), title="Notosaurus")
 
 
 def stop() -> None:
@@ -126,8 +126,8 @@ def stop() -> None:
 
 
 def on_addons_deleted(dialog, ids: list[str]) -> None:
-    """Cartable itself deleted: stop it, and remove its Python and libraries
-    (Anki2/cartable-runtime, outside the add-on's folder)."""
+    """Notosaurus itself deleted: stop it, and remove its Python and libraries
+    (Anki2/notosaurus-runtime, outside the add-on's folder)."""
     if __name__.split(".")[0] in ids:
         stop()
         remove_runtime()
@@ -136,11 +136,11 @@ def on_addons_deleted(dialog, ids: list[str]) -> None:
 def on_main_window_ready() -> None:
     if config().get("autostart", True):
         start()
-    # Stop with Anki itself, not with the profile: switching profiles keeps Cartable up.
+    # Stop with Anki itself, not with the profile: switching profiles keeps Notosaurus up.
     QApplication.instance().aboutToQuit.connect(stop)
 
 
-# --- Tools → Cartable menu -----------------------------------------------------
+# --- Tools → Notosaurus menu -----------------------------------------------------
 
 
 def open_in_browser() -> None:
@@ -150,7 +150,7 @@ def open_in_browser() -> None:
 
 
 def qr_png(text: str) -> bytes | None:
-    """QR code made by the Cartable server (Anki's Python can't install a QR library)."""
+    """QR code made by the Notosaurus server (Anki's Python can't install a QR library)."""
     port = config().get("port", 8000)
     url = f"http://127.0.0.1:{port}/api/qr?" + urllib.parse.urlencode({"text": text})
     try:
@@ -171,12 +171,12 @@ def phone_link() -> str | None:
 
 
 def show_phone() -> None:
-    """How to open Cartable on the phone: a QR code of the address (with the token that
+    """How to open Notosaurus on the phone: a QR code of the address (with the token that
     lets the phone in), and three steps."""
     _, lan = urls()
     if not server.running():
         start()
-        showInfo(t("addon.notRunningYet"), title="Cartable")
+        showInfo(t("addon.notRunningYet"), title="Notosaurus")
         return
     dialog = QDialog(mw)
     dialog.setWindowTitle(t("addon.phoneTitle"))
@@ -221,7 +221,7 @@ def show_address() -> None:
         where = t("addon.where", source=lay.source, data=lay.data) + (t("addon.dev") if lay.dev else "")
     except LaunchError as e:
         where = t(str(e))
-    showInfo(t("addon.address", state=state, lan=lan, local=local) + "\n\n" + where, title="Cartable")
+    showInfo(t("addon.address", state=state, lan=lan, local=local) + "\n\n" + where, title="Notosaurus")
 
 
 def restart() -> None:
@@ -235,7 +235,7 @@ def show_log() -> None:
 
 
 def setup_menu() -> None:
-    menu = QMenu("Cartable", mw)
+    menu = QMenu("Notosaurus", mw)
     for key, handler in [
         ("addon.menuOpen", open_in_browser),
         ("addon.menuPhone", show_phone),

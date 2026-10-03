@@ -1,14 +1,14 @@
 // Translations shared by the pages: static/i18n/<lang>.json, English as fallback.
 //
 // Language: the one picked on the page (kept on this device), else the one given
-// by the server when Cartable runs inside the Anki add-on (Anki's language), else
+// by the server when Notosaurus runs inside the Anki add-on (Anki's language), else
 // the browser's; English if we don't have a file for it.
 // Adding a language = adding static/i18n/<code>.json.
 //
 // In templates: x-text="$t('app.review.title')", with {placeholders}:
 // $t('app.photos.page', { n: 2 }), plurals with { count }: $t('common.count.cards', { count }).
 
-const LANG_KEY = "cartable.lang";  // language picked on the page ("" = automatic)
+const LANG_KEY = "notosaurus.lang";  // language picked on the page ("" = automatic)
 
 const I18N = {
   lang: "en",        // language in use

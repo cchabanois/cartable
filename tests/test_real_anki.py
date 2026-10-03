@@ -1,7 +1,7 @@
 """Against Anki's real engine (the `anki` package from PyPI, no Anki window).
 
 - The add-on's bridge (anki_addon/bridge.py) on a real collection, driven by the
-  Cartable server itself: what runs for add-on users.
+  Notosaurus server itself: what runs for add-on users.
 - Importing the exported .apkg, twice.
 
 Skipped when `anki` isn't installed: `pip install -r requirements-anki.txt`.
@@ -62,7 +62,7 @@ def load_bridge(mw):
     qt = types.ModuleType("aqt.qt")
     qt.QTimer = types.SimpleNamespace(singleShot=lambda ms, fn: threading.Timer(ms / 1000, fn).start())
     sys.modules.update({"aqt": aqt, "aqt.qt": qt})
-    spec = importlib.util.spec_from_file_location("cartable_bridge", Path("anki_addon/bridge.py"))
+    spec = importlib.util.spec_from_file_location("notosaurus_bridge", Path("anki_addon/bridge.py"))
     bridge = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(bridge)
     return bridge
@@ -77,9 +77,9 @@ def col(tmp_path):
 
 
 @pytest.fixture
-def cartable(tmp_path, monkeypatch):
-    monkeypatch.setenv("CARTABLE_DATA", str(tmp_path / "data"))
-    monkeypatch.setenv("CARTABLE_LLM", "fake")
+def notosaurus(tmp_path, monkeypatch):
+    monkeypatch.setenv("NOTOSAURUS_DATA", str(tmp_path / "data"))
+    monkeypatch.setenv("NOTOSAURUS_LLM", "fake")
     monkeypatch.setattr(tts, "_synthesize", fake_synthesize)
     with TestClient(app) as client:
         client.cookies.set(DEVICE_COOKIE, settings.device_token())  # a paired phone
@@ -87,14 +87,14 @@ def cartable(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def bridged(col, cartable, monkeypatch):
-    """Cartable → the add-on's bridge → the real collection, with "Léa" open."""
+def bridged(col, notosaurus, monkeypatch):
+    """Notosaurus → the add-on's bridge → the real collection, with "Léa" open."""
     mw = FakeMainWindow(col, "Léa", ["Léa", "Paul"])
     bridge = load_bridge(mw).Bridge()
     bridge.start()
-    monkeypatch.setenv("CARTABLE_ANKICONNECT_URL", bridge.url)
-    monkeypatch.setenv("CARTABLE_ANKICONNECT_KEY", bridge.key)
-    yield cartable, mw
+    monkeypatch.setenv("NOTOSAURUS_ANKICONNECT_URL", bridge.url)
+    monkeypatch.setenv("NOTOSAURUS_ANKICONNECT_KEY", bridge.key)
+    yield notosaurus, mw
     bridge.stop()
     mw.main.shutdown()
     for name in ("aqt", "aqt.qt"):
@@ -130,7 +130,7 @@ def test_bridge_on_a_real_collection(bridged, col):
     assert (res["synced"], res["sync_error"], res["sync_skipped"]) == (False, None, True)
 
     # What landed in the collection
-    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Cartable")]
+    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Notosaurus")]
     model = col.models.get(note_type.id)
     assert [f["name"] for f in model["flds"]] == ["Front", "Back", "Info", "Audio"]
     note_ids = col.find_notes(f'"note:{note_type.name}"')
@@ -164,12 +164,12 @@ def test_bridge_on_a_real_collection(bridged, col):
     assert res.json()["detail"]["code"] == "anki.no_profile"
 
 
-def test_apkg_import_then_reimport_updates(cartable, col, tmp_path):
-    lesson = extract(cartable)
+def test_apkg_import_then_reimport_updates(notosaurus, col, tmp_path):
+    lesson = extract(notosaurus)
     body = {"deck": lesson["deck"], "cards": lesson["cards"], "voice": VOICE, "lesson_id": lesson["id"]}
 
     def import_apkg(cards):
-        res = cartable.post("/api/export", json={**body, "cards": cards})
+        res = notosaurus.post("/api/export", json={**body, "cards": cards})
         assert res.status_code == 200
         path = tmp_path / "lesson.apkg"
         path.write_bytes(res.content)
@@ -215,7 +215,7 @@ def test_diagram_lesson_on_a_real_collection(bridged, col):
     body = {"deck": lesson["deck"], "cards": lesson["cards"], "lesson_id": lesson["id"]}
     assert client.post("/api/anki/send", json=body).json()["added"] == 3
 
-    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Cartable légendes")]
+    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Notosaurus légendes")]
     note_ids = col.find_notes(f'"note:{note_type.name}"')
     first = fields(col, min(note_ids))
     image = first["Image"].split('"')[1]
@@ -252,7 +252,7 @@ def test_picture_lesson_on_a_real_collection(bridged, col, monkeypatch):
     body = {"deck": "Anglais", "cards": cards, "lesson_id": lesson["id"]}
     assert client.post("/api/anki/send", json=body).json()["added"] == 4
 
-    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Cartable image")]
+    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Notosaurus image")]
     note_ids = sorted(col.find_notes(f'"note:{note_type.name}"'))
     assert len(note_ids) == 3  # the apple, the dog, the umbrella; "tomorrow" is a text card
     first = fields(col, note_ids[0])
@@ -271,7 +271,7 @@ def test_cloze_lesson_on_a_real_collection(bridged, col, tmp_path):
     body = {"deck": lesson["deck"], "cards": lesson["cards"], "lesson_id": lesson["id"]}
     assert client.post("/api/anki/send", json=body).json()["added"] == 3
 
-    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name == "Cartable texte à trous"]
+    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name == "Notosaurus texte à trous"]
     assert col.models.get(note_type.id)["type"] == 1  # a real cloze note type
     note_ids = sorted(col.find_notes(f'"note:{note_type.name}"'))
     # Anki makes one card per gap number: c1 and c2, c1 and c2, c1 (twice)
@@ -306,8 +306,8 @@ def test_typed_answer_and_dictation_on_a_real_collection(bridged, col):
     cards = [c for c in lesson["cards"] if c["front"].strip() and c["back"].strip()]
     assert res["added"] == len(cards)
 
-    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Cartable")]
-    assert note_type.name == "Cartable recto/verso à taper + dictée (audio)"
+    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Notosaurus")]
+    assert note_type.name == "Notosaurus recto/verso à taper + dictée (audio)"
     mother = col.find_notes('"Front:la mère"')
     recto, dictation = col.get_note(mother[0]).cards()  # a dictation card on top of the usual one
     assert "[[type:Back]]" in recto.question() and "[[type:Back]]" in recto.answer()  # Anki's box, then its check
@@ -322,7 +322,7 @@ def test_deleting_a_lesson_deletes_its_notes(bridged, col):
     lesson = extract(client)
     body = {"deck": lesson["deck"], "cards": lesson["cards"], "voice": VOICE, "lesson_id": lesson["id"]}
     assert client.post("/api/anki/send", json=body).json()["added"] == 6
-    tag = f"cartable::{lesson['id']}"
+    tag = f"notosaurus::{lesson['id']}"
     assert len(col.find_notes(f'"tag:{tag}"')) == 6
 
     # A note sent before notes had the lesson's tag, and one of the user's own in the deck
@@ -376,7 +376,7 @@ def test_options_changed_after_a_send_keep_the_review_history(bridged, col):
     assert (res["added"], res["converted"]) == (0, 6)
     assert sorted(col.find_notes("")) == notes_before
     name, by_template = cards()
-    assert name == "Cartable recto/verso + inverse + dictée (audio)"
+    assert name == "Notosaurus recto/verso + inverse + dictée (audio)"
     assert set(by_template) == {"Recto → Verso", "Verso → Recto", "Dictée"}
     recto = by_template["Recto → Verso"]
     assert (recto.id, recto.ivl, recto.reps) == (card.id, 12, 5)
@@ -386,7 +386,7 @@ def test_options_changed_after_a_send_keep_the_review_history(bridged, col):
     res = client.post("/api/anki/send", json={**body, "dictation": True}).json()
     assert res["converted"] == 6
     name, by_template = cards()
-    assert name == "Cartable recto/verso + dictée (audio)"
+    assert name == "Notosaurus recto/verso + dictée (audio)"
     assert set(by_template) == {"Recto → Verso", "Dictée"}  # matched by name, not by position
     assert (by_template["Recto → Verso"].id, by_template["Recto → Verso"].ivl) == (card.id, 12)
     assert by_template["Dictée"].id == dictation_id
@@ -400,7 +400,7 @@ def test_figure_lesson_on_a_real_collection(bridged, col):
     assert client.post("/api/anki/send", json=body).json()["added"] == 3
     svg = Path(col.media.dir()) / cards[0]["picture"]
     assert svg.suffix == ".svg" and svg.read_text(encoding="utf-8").startswith("<svg")  # in Anki's media, as sent
-    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Cartable image (")]
+    (note_type,) = [m for m in col.models.all_names_and_ids() if m.name.startswith("Notosaurus image (")]
     question = col.get_note(sorted(col.find_notes(f'"note:{note_type.name}"'))[0]).cards()[0].question()
     assert f'<img src="{cards[0]["picture"]}">' in question
 

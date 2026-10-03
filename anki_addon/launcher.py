@@ -1,10 +1,10 @@
-"""Start and stop the Cartable server as a separate process, from Anki.
+"""Start and stop the Notosaurus server as a separate process, from Anki.
 
 Two layouts:
 - packaged add-on: the server code ships in <add-on>/server/; uv installs
-  Python 3.13 and the server's dependencies into Anki2/cartable-runtime/ (removed
+  Python 3.13 and the server's dependencies into Anki2/notosaurus-runtime/ (removed
   with the add-on), data goes to <add-on>/user_files/data (kept across updates);
-- development: the add-on folder is a symlink to anki_addon/ in the Cartable
+- development: the add-on folder is a symlink to anki_addon/ in the Notosaurus
   repository; the repository itself and its .venv are used, with its data/.
 
 Everything can be overridden in the add-on config (Tools → Add-ons → Config).
@@ -30,8 +30,8 @@ USER_FILES = Path(__file__).parent / "user_files"  # not resolved: stays in addo
 # What the running server keeps open — its Python and libraries, its log, its working
 # folder — lives outside the add-on: to update it, Anki moves user_files/ away and
 # deletes the add-on's folder, which Windows refuses while a file in it is in use.
-# Anki2/cartable-runtime (next to addons21), removed with the add-on.
-RUNTIME = Path(__file__).parent.parent.parent / "cartable-runtime"
+# Anki2/notosaurus-runtime (next to addons21), removed with the add-on.
+RUNTIME = Path(__file__).parent.parent.parent / "notosaurus-runtime"
 
 
 class LaunchError(Exception):
@@ -48,7 +48,7 @@ class Layout:
 
 def layout(config: dict) -> Layout:
     packaged = ADDON_DIR / "server"
-    repo = ADDON_DIR.parent  # the Cartable repository, when the add-on is a symlink
+    repo = ADDON_DIR.parent  # the Notosaurus repository, when the add-on is a symlink
     if config.get("source"):
         source, dev = Path(config["source"]).expanduser(), True
     elif (packaged / "app" / "main.py").is_file():
@@ -105,7 +105,7 @@ def install_needed(config: dict) -> bool:
     if lay.python:
         return False
     venv = RUNTIME / "venv"
-    stamp = venv / ".cartable-requirements"
+    stamp = venv / ".notosaurus-requirements"
     ready = _venv_python(venv).exists() and stamp.exists() and stamp.read_text() == _requirements_hash(lay.source)
     return not ready
 
@@ -122,7 +122,7 @@ def uv_archive(system: str | None = None, machine: str | None = None) -> str | N
 
 
 def download_uv(log, archive: str | None = None, destination: Path | None = None) -> Path:
-    """Download the pinned uv into cartable-runtime/uv/, after checking its SHA-256."""
+    """Download the pinned uv into notosaurus-runtime/uv/, after checking its SHA-256."""
     archive = archive or uv_archive()
     if archive is None:
         raise LaunchError("errors.addon.uv_unsupported")
@@ -177,9 +177,9 @@ def find_uv(log) -> str:
 
 
 def ensure_venv(source: Path, log) -> Path:
-    """Create or update cartable-runtime/venv from requirements.txt. Slow the first time."""
+    """Create or update notosaurus-runtime/venv from requirements.txt. Slow the first time."""
     venv = RUNTIME / "venv"
-    stamp = venv / ".cartable-requirements"
+    stamp = venv / ".notosaurus-requirements"
     wanted = _requirements_hash(source)
     python = _venv_python(venv)
     if python.exists() and stamp.exists() and stamp.read_text() == wanted:
@@ -188,7 +188,7 @@ def ensure_venv(source: Path, log) -> Path:
     uv = find_uv(log)
     env = {
         **os.environ,
-        # Everything stays in cartable-runtime: removed with the add-on, never touches the
+        # Everything stays in notosaurus-runtime: removed with the add-on, never touches the
         # system's Python (a distribution upgrade can't break the environment).
         "UV_PYTHON_INSTALL_DIR": str(RUNTIME / "python"),
         "UV_NO_CONFIG": "1",  # ignore the user's own uv settings
@@ -208,10 +208,10 @@ def ensure_venv(source: Path, log) -> Path:
 
 
 def _remove_old_runtime() -> None:
-    """Before cartable-runtime, Python, uv and the log were in user_files/: no longer used."""
+    """Before notosaurus-runtime, Python, uv and the log were in user_files/: no longer used."""
     for name in ("venv", "python", "uv"):
         shutil.rmtree(USER_FILES / name, ignore_errors=True)
-    (USER_FILES / "cartable.log").unlink(missing_ok=True)
+    (USER_FILES / "notosaurus.log").unlink(missing_ok=True)
 
 
 def remove_runtime() -> None:
@@ -231,7 +231,7 @@ def _no_window() -> dict:
 class Server:
     def __init__(self) -> None:
         self.process: subprocess.Popen | None = None
-        self.log_path = RUNTIME / "cartable.log"
+        self.log_path = RUNTIME / "notosaurus.log"
 
     def running(self) -> bool:
         return self.process is not None and self.process.poll() is None
@@ -246,11 +246,11 @@ class Server:
         python = lay.python or ensure_venv(lay.source, log)
         env = {
             **os.environ,
-            "CARTABLE_DATA": str(lay.data),
-            "CARTABLE_EMBEDDED": "1",
-            "CARTABLE_LANG": lang,  # the page uses Anki's language (English if not translated)
-            "CARTABLE_ANKICONNECT_URL": bridge_url,
-            "CARTABLE_ANKICONNECT_KEY": bridge_key,
+            "NOTOSAURUS_DATA": str(lay.data),
+            "NOTOSAURUS_EMBEDDED": "1",
+            "NOTOSAURUS_LANG": lang,  # the page uses Anki's language (English if not translated)
+            "NOTOSAURUS_ANKICONNECT_URL": bridge_url,
+            "NOTOSAURUS_ANKICONNECT_KEY": bridge_key,
             "PYTHONUNBUFFERED": "1",
             "PYTHONDONTWRITEBYTECODE": "1",  # no __pycache__ left in the add-on's folder
         }

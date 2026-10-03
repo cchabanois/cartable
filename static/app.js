@@ -1,6 +1,6 @@
 const MAX_SIDE = 1600;   // px: enough to read a page, light to upload
 const JPEG_QUALITY = 0.85;
-const LAST_PROMPT = "cartable.prompt";
+const LAST_PROMPT = "notosaurus.prompt";
 
 // Case- and accent-insensitive form, for search.
 const normalize = (text) => text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
@@ -33,7 +33,7 @@ async function rotateBlob(blob) {
 
 async function api(path, options = {}) {
   // The server uses the page's language for default prompts and AI summaries.
-  const headers = { "X-Cartable-Lang": I18N.lang, ...options.headers };
+  const headers = { "X-Notosaurus-Lang": I18N.lang, ...options.headers };
   const res = await fetch(path, { ...options, headers });
   if (!res.ok) {
     let detail = res.statusText;
@@ -76,7 +76,7 @@ const withKey = (card) =>
 const newId = () => [...crypto.getRandomValues(new Uint8Array(6))].map((b) => b.toString(16).padStart(2, "0")).join("");
 
 document.addEventListener("alpine:init", () => {
-  Alpine.data("cartable", () => ({
+  Alpine.data("notosaurus", () => ({
     photos: [],          // { blob, url }
     prompts: [],
     selectedId: null,
@@ -109,7 +109,7 @@ document.addEventListener("alpine:init", () => {
     error: "",
     success: "",
     anki: { available: false },  // Anki reachable → direct send; `profile`: open Anki profile
-    settingsHere: true,          // false on a phone when Cartable runs in the Anki add-on
+    settingsHere: true,          // false on a phone when Notosaurus runs in the Anki add-on
     profileToApply: null,        // Anki profile switch waiting for the current task to finish
     diagramWarning: false,       // the AI model places diagram masks loosely: say so
     lessonOwner: "",              // Anki profile that created the open lesson ("" = nobody: shared)
@@ -216,7 +216,7 @@ document.addEventListener("alpine:init", () => {
         this.error = t("app.prompt.unavailable", { message: e.message });
         return;
       }
-      // Ids: the user's are numbers, Cartable's "cartable:…" (stored as text in the browser)
+      // Ids: the user's are numbers, Notosaurus's "notosaurus:…" (stored as text in the browser)
       const found = this.prompts.find((c) => String(c.id) === String(selectId)) ?? this.prompts[0];
       this.selectedId = found?.id ?? null;
       this.selectPrompt();
@@ -293,7 +293,7 @@ document.addEventListener("alpine:init", () => {
         ? { name: "", text: "", deck: "", voice: c?.voice ?? "", typing: false, dictation: false }
         : { ...this.form };
       if (mode === "copy") base.name = "";
-      // Cartable's prompts open read-only: "Duplicate" makes a copy to change
+      // Notosaurus's prompts open read-only: "Duplicate" makes a copy to change
       const builtin = mode === "edit" && Boolean(c?.builtin);
       if (builtin) {
         Object.assign(base, { name: c.name, text: c.text, deck: c.deck, voice: c.voice, typing: c.typing, dictation: c.dictation });
@@ -335,7 +335,7 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
-    // A copy of any prompt (Cartable's included), opened in the editor to be changed.
+    // A copy of any prompt (Notosaurus's included), opened in the editor to be changed.
     async duplicatePrompt(prompt) {
       try {
         const copy = await (await api(`/api/prompts/${encodeURIComponent(prompt.id)}/duplicate`, { method: "POST" })).json();
@@ -1086,7 +1086,7 @@ document.addEventListener("alpine:init", () => {
         a.download = `${this.deck.replace(/[\\/:*?"<>|]+/g, " - ")}.apkg`;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 10_000);
-        const failures = Number(res.headers.get("X-Cartable-Audio-Failures") || 0);
+        const failures = Number(res.headers.get("X-Notosaurus-Audio-Failures") || 0);
         if (failures) this.error = t("app.export.noSound", { count: failures });
         else this.notify(t("app.export.done"), true);
       } catch (e) {

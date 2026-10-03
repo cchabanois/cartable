@@ -29,7 +29,7 @@ from .errors import AppError
 from .models import AiCall, Card, Deck, Extraction, Frame, Mask, Revision
 from .settings import Settings
 
-log = logging.getLogger("cartable")
+log = logging.getLogger("notosaurus")
 
 
 SYSTEM_PROMPT = """\
@@ -113,7 +113,7 @@ is still the one you start reading with.
 
 
 # The AI calls of the request being handled (kind, list), set by `recording`.
-_recording: ContextVar[tuple[str, list[AiCall]] | None] = ContextVar("cartable_ai_calls", default=None)
+_recording: ContextVar[tuple[str, list[AiCall]] | None] = ContextVar("notosaurus_ai_calls", default=None)
 
 
 @contextmanager
@@ -586,7 +586,7 @@ def _openai_error(e: Exception, s: Settings) -> ExtractionError:
 
 
 def _usable(m) -> bool | None:
-    """Whether an OpenAI-compatible /models entry fits Cartable (image input, and
+    """Whether an OpenAI-compatible /models entry fits Notosaurus (image input, and
     structured output when the service lists parameters); None if it says nothing."""
     extra = m.model_extra or {}
     parameters = extra.get("supported_parameters")  # OpenRouter
@@ -873,7 +873,7 @@ class _CheckAnswer(BaseModel):
 
 
 async def check(s: Settings) -> dict:
-    """Check what Cartable needs from the model: reading an image and answering
+    """Check what Notosaurus needs from the model: reading an image and answering
     in the requested JSON format. Sends a tiny red image (a fraction of a cent).
 
     Returns {"vision": bool, "json": bool, "answer": str}; raises ExtractionError

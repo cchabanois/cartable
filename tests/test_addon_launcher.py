@@ -96,10 +96,11 @@ def test_install_needed(monkeypatch, tmp_path):
     (source / "app" / "main.py").write_text("")
     (source / "requirements.txt").write_text("fastapi\n")
     monkeypatch.setattr(launcher, "USER_FILES", tmp_path / "user_files")
+    monkeypatch.setattr(launcher, "RUNTIME", tmp_path / "cartable-runtime")
     config = {"source": str(source), "python": ""}
     assert launcher.install_needed(config)  # first start
 
-    venv = tmp_path / "user_files" / "venv"
+    venv = tmp_path / "cartable-runtime" / "venv"
     python = launcher._venv_python(venv)
     python.parent.mkdir(parents=True)
     python.write_text("")

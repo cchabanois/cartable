@@ -24,7 +24,7 @@ from aqt.qt import QAction, QApplication, QDialog, QDialogButtonBox, QLabel, QMe
 from aqt.utils import askUser, showInfo, showText, showWarning, tooltip
 
 from .bridge import Bridge
-from .launcher import LaunchError, Server, install_needed, layout
+from .launcher import LaunchError, Server, install_needed, layout, remove_runtime
 
 server = Server()
 bridge: Bridge | None = None
@@ -123,6 +123,14 @@ def stop() -> None:
     if bridge:
         bridge.stop()
         bridge = None
+
+
+def on_addons_deleted(dialog, ids: list[str]) -> None:
+    """Cartable itself deleted: stop it, and remove its Python and libraries
+    (Anki2/cartable-runtime, outside the add-on's folder)."""
+    if __name__.split(".")[0] in ids:
+        stop()
+        remove_runtime()
 
 
 def on_main_window_ready() -> None:
@@ -244,4 +252,6 @@ def setup_menu() -> None:
 
 setup_menu()
 gui_hooks.main_window_did_init.append(on_main_window_ready)
+if hasattr(gui_hooks, "addons_dialog_will_delete_addons"):
+    gui_hooks.addons_dialog_will_delete_addons.append(on_addons_deleted)
 atexit.register(server.stop)  # last resort if Anki exits without aboutToQuit

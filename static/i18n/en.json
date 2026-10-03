@@ -572,7 +572,7 @@
     "phoneSteps": "1. Connect the phone to the same Wi-Fi as this computer.\n2. Scan this QR code with the phone's camera.\n3. In the browser: menu → “Add to Home screen”, to use it like an app.\n\nSettings (AI keys…) open here, on the computer: Tools → Cartable → Settings.",
     "localOnly": "⚠ The server only listens on this computer (“host” set to 127.0.0.1): set “0.0.0.0” in the add-on config to reach it from the phone.",
     "notRunningYet": "Cartable is starting: try again in a few seconds.",
-    "installConfirm": "Before it can start, Cartable must install its components:\n\n• uv (from GitHub), Python 3.13 and its Python libraries (from PyPI): about 300 MB on disk;\n• only in the add-on's own folder: nothing changes on the rest of the computer, and removing the add-on removes them.\n\nThis takes a minute or two, the first time and after some updates. Install now?",
+    "installConfirm": "Before it can start, Cartable must install its components:\n\n• uv (from GitHub), Python 3.13 and its Python libraries (from PyPI): about 300 MB on disk;\n• only in Anki's folder (Anki2/cartable-runtime): nothing changes on the rest of the computer, and removing the add-on removes them.\n\nThis takes a minute or two, the first time and after some updates. Install now?",
     "installDeclined": "Cartable isn't started. To install it later: Tools → Cartable → Open Cartable."
   },
   "builtinPrompts": {

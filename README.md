@@ -30,7 +30,7 @@ Cartable starts and stops with Anki desktop and writes cards directly into the o
 
 1. Download `cartable-<version>.ankiaddon` from the [latest release](https://github.com/cchabanois/cartable/releases/latest), or build it: `python3 tools/build_addon.py` → `dist/cartable-<version>.ankiaddon`.
 2. Double-click the file (or *Tools → Add-ons → Install from file*) and restart Anki.
-3. On first start, the add-on asks before installing its components into its own `user_files/` folder (about 300 MB, kept by add-on updates, removed with the add-on): [uv](https://docs.astral.sh/uv/), Python 3.13 and the Python libraries. It uses the uv shipped with Anki 25.07 to 26.05 or one already installed; otherwise it downloads a pinned uv release from GitHub and checks its SHA-256.
+3. On first start, the add-on asks before installing its components into `Anki2/cartable-runtime/`, next to the add-ons (about 300 MB, kept by add-on updates, removed with the add-on; outside the add-on's own folder, so that Anki can update it while Cartable runs, Windows included): [uv](https://docs.astral.sh/uv/), Python 3.13 and the Python libraries. It uses the uv shipped with Anki 25.07 to 26.05 or one already installed; otherwise it downloads a pinned uv release from GitHub and checks its SHA-256.
 4. A QR code appears: scan it with the phone (same Wi-Fi) and add the page to the home screen.
 
 Everything else is in the **Tools → Cartable** menu: open, open on the phone (QR code), settings, server status, restart and log.

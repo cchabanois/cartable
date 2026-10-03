@@ -2,9 +2,8 @@
 
 Two layouts:
 - packaged add-on: the server code ships in <add-on>/server/; uv installs
-  Python 3.13 and the server's dependencies into <add-on>/user_files/
-  (kept across add-on updates, removed with the add-on), data goes to
-  <add-on>/user_files/data;
+  Python 3.13 and the server's dependencies into Anki2/cartable-runtime/ (removed
+  with the add-on), data goes to <add-on>/user_files/data (kept across updates);
 - development: the add-on folder is a symlink to anki_addon/ in the Cartable
   repository; the repository itself and its .venv are used, with its data/.
 
@@ -28,6 +27,11 @@ from pathlib import Path
 
 ADDON_DIR = Path(__file__).resolve().parent
 USER_FILES = Path(__file__).parent / "user_files"  # not resolved: stays in addons21 in dev too
+# What the running server keeps open — its Python and libraries, its log, its working
+# folder — lives outside the add-on: to update it, Anki moves user_files/ away and
+# deletes the add-on's folder, which Windows refuses while a file in it is in use.
+# Anki2/cartable-runtime (next to addons21), removed with the add-on.
+RUNTIME = Path(__file__).parent.parent.parent / "cartable-runtime"
 
 
 class LaunchError(Exception):
@@ -100,7 +104,7 @@ def install_needed(config: dict) -> bool:
     lay = layout(config)
     if lay.python:
         return False
-    venv = USER_FILES / "venv"
+    venv = RUNTIME / "venv"
     stamp = venv / ".cartable-requirements"
     ready = _venv_python(venv).exists() and stamp.exists() and stamp.read_text() == _requirements_hash(lay.source)
     return not ready
@@ -118,11 +122,11 @@ def uv_archive(system: str | None = None, machine: str | None = None) -> str | N
 
 
 def download_uv(log, archive: str | None = None, destination: Path | None = None) -> Path:
-    """Download the pinned uv into user_files/uv/, after checking its SHA-256."""
+    """Download the pinned uv into cartable-runtime/uv/, after checking its SHA-256."""
     archive = archive or uv_archive()
     if archive is None:
         raise LaunchError("errors.addon.uv_unsupported")
-    destination = destination or USER_FILES / "uv"
+    destination = destination or RUNTIME / "uv"
     url = UV_URL.format(version=UV_VERSION, archive=archive)
     log.write(f"downloading {url}\n")
     log.flush()
@@ -166,15 +170,15 @@ def find_uv(log) -> str:
             return str(path)
     except Exception:
         pass
-    downloaded = USER_FILES / "uv" / f"uv{EXE}"
+    downloaded = RUNTIME / "uv" / f"uv{EXE}"
     if downloaded.exists():
         return str(downloaded)
     return shutil.which("uv") or str(download_uv(log))
 
 
 def ensure_venv(source: Path, log) -> Path:
-    """Create or update user_files/venv from requirements.txt. Slow the first time."""
-    venv = USER_FILES / "venv"
+    """Create or update cartable-runtime/venv from requirements.txt. Slow the first time."""
+    venv = RUNTIME / "venv"
     stamp = venv / ".cartable-requirements"
     wanted = _requirements_hash(source)
     python = _venv_python(venv)
@@ -184,9 +188,9 @@ def ensure_venv(source: Path, log) -> Path:
     uv = find_uv(log)
     env = {
         **os.environ,
-        # Everything stays in user_files: removed with the add-on, never touches the
+        # Everything stays in cartable-runtime: removed with the add-on, never touches the
         # system's Python (a distribution upgrade can't break the environment).
-        "UV_PYTHON_INSTALL_DIR": str(USER_FILES / "python"),
+        "UV_PYTHON_INSTALL_DIR": str(RUNTIME / "python"),
         "UV_NO_CONFIG": "1",  # ignore the user's own uv settings
     }
 
@@ -203,6 +207,19 @@ def ensure_venv(source: Path, log) -> Path:
     return python
 
 
+def _remove_old_runtime() -> None:
+    """Before cartable-runtime, Python, uv and the log were in user_files/: no longer used."""
+    for name in ("venv", "python", "uv"):
+        shutil.rmtree(USER_FILES / name, ignore_errors=True)
+    (USER_FILES / "cartable.log").unlink(missing_ok=True)
+
+
+def remove_runtime() -> None:
+    """The add-on is being deleted: its Python, libraries and log go too (the server
+    must be stopped first, or Windows keeps them)."""
+    shutil.rmtree(RUNTIME, ignore_errors=True)
+
+
 def _no_window() -> dict:
     """On Windows, don't flash a console window for child processes."""
     return {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}
@@ -214,14 +231,15 @@ def _no_window() -> dict:
 class Server:
     def __init__(self) -> None:
         self.process: subprocess.Popen | None = None
-        self.log_path = USER_FILES / "cartable.log"
+        self.log_path = RUNTIME / "cartable.log"
 
     def running(self) -> bool:
         return self.process is not None and self.process.poll() is None
 
     def start(self, config: dict, bridge_url: str, bridge_key: str, lang: str) -> None:
         """Blocking (venv creation, process start): call it from a background thread."""
-        USER_FILES.mkdir(parents=True, exist_ok=True)
+        RUNTIME.mkdir(parents=True, exist_ok=True)
+        _remove_old_runtime()
         lay = layout(config)
         lay.data.mkdir(parents=True, exist_ok=True)
         log = open(self.log_path, "a", encoding="utf-8")  # noqa: SIM115 (kept open: the server writes to it)
@@ -234,6 +252,7 @@ class Server:
             "CARTABLE_ANKICONNECT_URL": bridge_url,
             "CARTABLE_ANKICONNECT_KEY": bridge_key,
             "PYTHONUNBUFFERED": "1",
+            "PYTHONDONTWRITEBYTECODE": "1",  # no __pycache__ left in the add-on's folder
         }
         # Anki's own Python settings must not leak into the server's interpreter.
         for var in ("PYTHONHOME", "PYTHONPATH"):
@@ -242,16 +261,18 @@ class Server:
             str(python),
             "-m",
             "uvicorn",
+            "--app-dir",  # the code, from the add-on; the working folder stays outside it
+            str(lay.source),
             "app.main:app",
             "--host",
             str(config.get("host", "0.0.0.0")),
             "--port",
             str(config.get("port", 8000)),
         ]
-        log.write(f"\n--- starting: {' '.join(command)} (in {lay.source})\n")
+        log.write(f"\n--- starting: {' '.join(command)}\n")
         log.flush()
         self.process = subprocess.Popen(
-            command, cwd=lay.source, env=env, stdout=log, stderr=subprocess.STDOUT, **_no_window()
+            command, cwd=RUNTIME, env=env, stdout=log, stderr=subprocess.STDOUT, **_no_window()
         )
 
     def stop(self) -> None:

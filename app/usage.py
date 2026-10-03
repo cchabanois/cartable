@@ -21,11 +21,17 @@ def _path():
     return storage.data_dir() / "ai-calls.json"
 
 
+# ai-calls.json's format; storage.migrate brings older files up to it
+FORMAT = 1
+
+
 def _load() -> list[Entry]:
     """The journal; the first time, filled with the calls the lessons already keep."""
     data = storage.read_json(_path())
     if data is not None:
-        return [Entry(**e) for e in data]
+        # Format 0 → 1: the bare list of calls, now under "calls"
+        data = storage.migrate({"calls": data} if isinstance(data, list) else data, "ai-calls", FORMAT, {0: dict})
+        return [Entry(**e) for e in data["calls"]]
     entries = []
     for summary in lessons.list_all():
         for call in summary.ai_calls:
@@ -36,7 +42,7 @@ def _load() -> list[Entry]:
 
 
 def _save(entries: list[Entry]) -> None:
-    storage.write_json(_path(), [e.model_dump() for e in entries])
+    storage.write_json(_path(), {"format": FORMAT, "calls": [e.model_dump() for e in entries]})
 
 
 def _key(e: Entry) -> tuple:

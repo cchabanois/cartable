@@ -12,8 +12,11 @@ import re
 import tempfile
 import threading
 import unicodedata
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
+
+from .errors import AppError
 
 # Endpoints run in a thread pool: serialize read-modify-write cycles.
 lock = threading.RLock()
@@ -41,6 +44,29 @@ def read_json(path: Path, default=None):
         return json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         return default
+
+
+class DataTooNew(AppError):
+    """Data written by a newer Cartable: not read, so this older one can't damage it."""
+
+    status = 409
+
+    def __init__(self, what: str, version: int, known: int):
+        super().__init__("data.too_new", what=what)
+        self.detail_text = f"{what}: format {version}, this Cartable knows up to {known}"
+
+
+def migrate(data: dict, what: str, current: int, steps: dict[int, Callable[[dict], dict]]) -> dict:
+    """Bring data read from a file up to the `current` format, one step at a time:
+    steps[n] turns format n into n + 1. Files without "format" are format 0 (written
+    before formats). Data from a newer format is refused (DataTooNew)."""
+    version = data.get("format", 0)
+    if not isinstance(version, int) or version > current:
+        raise DataTooNew(what, version, current)
+    while version < current:
+        data = steps[version](data)
+        version += 1
+    return {**data, "format": current}
 
 
 def write_json(path: Path, data) -> None:

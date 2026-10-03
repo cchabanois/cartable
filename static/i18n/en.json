@@ -543,6 +543,9 @@
     },
     "figure": {
       "invalid": "The figure drawn by the AI can't be read: draw it again."
+    },
+    "data": {
+      "too_new": "This data ({what}) comes from a newer version of Cartable: update Cartable to use it."
     }
   },
   "demo": {

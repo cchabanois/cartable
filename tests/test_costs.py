@@ -110,7 +110,7 @@ def test_deleting_a_lesson_keeps_what_was_spent(admin, monkeypatch, tmp_path):
     monkeypatch.setattr(llm, "_openai_client", lambda s: broken)
     assert admin.post("/api/extract", data={"prompt": "words"}).status_code == 502
     assert (costs()["total"], costs()["failed"]) == (0.025, 0.005)
-    journal = json.loads((tmp_path / "data" / "ai-calls.json").read_text(encoding="utf-8"))
+    journal = json.loads((tmp_path / "data" / "ai-calls.json").read_text(encoding="utf-8"))["calls"]
     assert [e["lesson_id"] is None for e in journal] == [False, False, True]
 
 
@@ -122,8 +122,8 @@ def test_journal_starts_from_the_lessons(client, tmp_path):
     from app import usage
 
     assert usage.totals().total == 0.0  # fake calls cost nothing, but they are back in the journal
-    assert len(json.loads(journal.read_text(encoding="utf-8"))) == 1
+    assert len(json.loads(journal.read_text(encoding="utf-8"))["calls"]) == 1
     body = {"deck": lesson["deck"], "cards": lesson["cards"], "instruction": "x"}
     client.post(f"/api/lessons/{lesson['id']}/revise", json=body)
-    entries = json.loads(journal.read_text(encoding="utf-8"))
+    entries = json.loads(journal.read_text(encoding="utf-8"))["calls"]
     assert [e["kind"] for e in entries] == ["extract", "revise"]  # no duplicate

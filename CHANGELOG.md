@@ -66,6 +66,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Changed
 
+- The data files carry their format (`"format"` in `lesson.json`, `settings.json`, `prompts.json`, `ai-calls.json`): older files are brought up to date when read, one step at a time (the past conversions became these steps); a file from a newer Cartable is never read nor rewritten ("comes from a newer version of Cartable").
 - Card pictures are drawn by the cards' own service when it can draw (Gemini, OpenAI, OpenRouter), and the settings say so ("Drawn by OpenAI, the cards' own service"); another service is a visible choice ("Claude can't draw: the pictures go through OpenRouter"), or "No pictures". The image model is chosen within that service, no longer guessed from its name. A model saved before keeps the service it went through.
 - Settings, OpenRouter: the model field suggests every model as one types; the suggested ones are the buttons (no more switching the field's list).
 - The settings follow the order things are set: the AI service, its access (key, address), then the model with its test, then the pictures' model. The models list themselves as soon as the access is saved.

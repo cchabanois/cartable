@@ -29,7 +29,7 @@ Notosaurus was built for learning languages (French → Spanish vocabulary and s
 
 Notosaurus starts and stops with Anki desktop and writes cards directly into the open profile. You don't need AnkiConnect.
 
-1. Download `notosaurus-<version>.ankiaddon` from the [latest release](https://github.com/cchabanois/notosaurus/releases/latest), or build it: `python3 tools/build_addon.py` → `dist/notosaurus-<version>.ankiaddon`.
+1. Download `notosaurus-<version>.ankiaddon` from the [latest release](https://github.com/cchabanois/notosaurus/releases/latest) (to build it yourself, see [CONTRIBUTING.md](CONTRIBUTING.md)).
 2. Double-click the file (or *Tools → Add-ons → Install from file*) and restart Anki.
 3. On first start, the add-on asks before installing its components into `Anki2/notosaurus-runtime/`, next to the add-ons (about 300 MB, kept by add-on updates, removed with the add-on; outside the add-on's own folder, so that Anki can update it while Notosaurus runs, Windows included): [uv](https://docs.astral.sh/uv/), Python 3.13 and the Python libraries. It uses the uv shipped with Anki 25.07 to 26.05 or one already installed; otherwise it downloads a pinned uv release from GitHub and checks its SHA-256.
 4. A QR code appears: scan it with the phone (same Wi-Fi) and add the page to the home screen.
@@ -109,78 +109,13 @@ data/
   cache/tts/                                 voice previews, safe to delete
 ```
 
-JSON files are written to a temporary file and then renamed, so a crash never leaves a half-written file.
-
 In the add-on, `data/` lives in the add-on's `user_files/` folder.
 
 ## Languages
 
 The interface follows the page's language picker, then Anki's language (in the add-on), then the browser's, and falls back to English.
 
-**To add a language**, copy `static/i18n/en.json` to `static/i18n/<code>.json` (e.g. `es.json`, `pt-br.json`) and translate the values. That single file covers:
-
-- the interface;
-- error messages;
-- the default prompts;
-- the add-on's menu.
-
-A test checks that every language has exactly the same keys as English, and another that every language fits a narrow phone (360 px): no page wider than the screen, no button or title cut, no placeholder longer than its field. Translations use Anki's own words (its official translations: deck = *mazo*, *Stapel*, *mazzo*, *baralho*…) and the school words of the country.
-
-The server never builds sentences: its errors are codes (`llm.overloaded`, `lesson.not_owner`…) that the page translates. Instructions sent to the AI are in English, and the user's prompt decides the language of the cards.
-
-## Development
-
-```sh
-.venv/bin/pip install -r requirements-dev.txt
-.venv/bin/pytest
-.venv/bin/ruff check . && .venv/bin/ruff format --check .   # lint and formatting (pyproject.toml)
-```
-
-`requirements.txt` pins every package to an exact version, for every system, so a new release of a library can't break an install (the add-on installs it on the user's computer). The direct dependencies are in `requirements.in`; to change them or update the pins (Dependabot proposes updates every week):
-
-```sh
-uv pip compile requirements.in --universal --python-version 3.13 -o requirements.txt --upgrade
-```
-
-`tests/test_page.py` drives the pages in a real browser (Playwright, headless Chromium): the page saving as it goes, generating again and undoing, deleting a lesson, the settings. It is skipped unless Playwright is installed: `.venv/bin/pip install -r requirements-page.txt`, then `.venv/bin/python -m playwright install chromium` (or set `NOTOSAURUS_TEST_CHROMIUM=/usr/bin/chromium` to use the system's Chromium).
-
-`tests/test_real_anki.py` runs the add-on's bridge and the `.apkg` import against Anki's real engine (the `anki` package, no Anki window). It is skipped unless that package is installed: `.venv/bin/pip install -r requirements-anki.txt`.
-
-To develop the add-on against this checkout, link it into Anki's add-ons folder and restart Anki:
-
-```sh
-ln -s "$PWD/anki_addon" ~/.local/share/Anki2/addons21/notosaurus
-```
-
-The add-on then runs the server from this repository, with its `.venv` and its `data/` folder.
-
-Stack:
-
-- back end: FastAPI + Pydantic;
-- front end: Alpine.js, with no build step;
-- decks: [genanki](https://github.com/kerrickstaley/genanki), with stable GUIDs so re-importing updates cards;
-- QR codes: [segno](https://github.com/heuer/segno).
-
-| Path | Content |
-|---|---|
-| `app/main.py` | FastAPI routes and static files |
-| `app/llm.py` | card extraction and AI correction (Gemini, Claude, OpenAI-compatible, fake) |
-| `app/lessons.py` | saved lessons, one folder each |
-| `app/anki.py` | `.apkg` builder (genanki, audio, reverse cards) |
-| `app/ankiconnect.py` | direct send through AnkiConnect or the add-on's bridge |
-| `app/tts.py` | edge-tts audio |
-| `app/pictures.py` | pictures on cards, drawn by an image model |
-| `app/diagrams.py` | diagram labels: boxes from the AI, card images with the labels hidden |
-| `app/prompts.py` | saved prompts |
-| `app/settings.py` | settings, API keys, admin password |
-| `app/i18n.py`, `static/i18n.js`, `static/i18n/` | languages |
-| `app/errors.py` | errors as translatable codes |
-| `app/storage.py` | data folder, atomic JSON writes, readable file names |
-| `static/` | the phone page and the settings page |
-| `anki_addon/` | the Anki add-on: server launcher and an AnkiConnect-compatible bridge |
-| `tools/build_addon.py` | builds `dist/notosaurus-<version>.ankiaddon` |
-| `tools/changelog_section.py` | release notes of a version, from `CHANGELOG.md` |
-| `tools/make_icons.py` | the logo images and the icons (home screen, browser), from `assets/notosaurus-logo.png` |
+To add a language, see [CONTRIBUTING.md](CONTRIBUTING.md#adding-a-language): it takes a single file.
 
 ## Good to know
 
@@ -191,16 +126,9 @@ Stack:
 - **Never expose AnkiConnect or Notosaurus to the Internet.** Keep them on your local network.
 - **edge-tts is unofficial.** Microsoft could shut it down.
 
-## Releasing
+## Contributing
 
-The version lives in one place, `pyproject.toml` ([semantic versioning](https://semver.org/)). The server reads it (shown at the bottom of ⚙️), and the add-on build writes it into Anki's add-on list.
-
-`pyproject.toml` holds the version being prepared. After every merge on `main`, the *Draft release* workflow keeps a draft GitHub release `vX.Y.Z` up to date: the add-on built from `main`, and the **Unreleased** section of [CHANGELOG.md](CHANGELOG.md) as notes.
-
-1. Every pull request adds a line under **Unreleased**.
-2. To release, open a pull request that renames **Unreleased** to `[X.Y.Z] - yyyy-mm-dd` (keep an empty **Unreleased** above it, and update the links at the bottom). Once merged, the draft shows these notes.
-3. Review the draft on GitHub (*Releases*) and click *Publish release*: GitHub creates the tag `vX.Y.Z` on that commit.
-4. In the next pull request, set the next version in `pyproject.toml` (until then, the draft isn't updated).
+Setting up, tests, architecture, translations and releases: see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

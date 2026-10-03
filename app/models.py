@@ -20,6 +20,11 @@ class Card(BaseModel):
         "or the text with its gaps for a cloze card (see the rules)."
     )
     back: str = Field(description="Back: the answer (e.g. the translation in the language being learned).")
+    choices: list[str] = Field(
+        default_factory=list,
+        description="Only for a multiple-choice or true/false card (see the rules): the wrong options. "
+        "Empty otherwise.",
+    )
     info: str = Field(default="", description="Useful extra info: gender, plural, example… Empty if none.")
     subdeck: str = Field(
         default="", description='Sub-deck (e.g. "Vocabulary", "Conjugation"). Empty for a single deck.'

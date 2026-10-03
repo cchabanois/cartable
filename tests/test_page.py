@@ -222,3 +222,16 @@ def test_fun_facts_switch(page):
     sync_api.expect(fact).to_be_visible()
     assert fact.input_value().startswith("Le savais-tu")
     sync_api.expect(page.locator(".flash .fun-fact:visible")).to_have_count(1)  # the others have none
+
+
+def test_multiple_choice_wrong_answers_edited(page):
+    generate_free(page, "QCM sur la Révolution")
+    first = page.locator(".flash").first
+    sync_api.expect(first.locator(".choice input")).to_have_count(3)
+    assert first.locator("input.back").get_attribute("placeholder") == "Bonne réponse"
+    first.get_by_role("button", name="+ mauvaise réponse").click()
+    first.locator(".choice input").nth(3).fill("1830")
+    first.get_by_role("button", name="Retirer cette réponse").first.click()  # 1715 goes
+    sync_api.expect(page.locator(".save-pill")).to_have_class(SAVED)
+    (summary,) = lessons(page)
+    assert lesson(page, summary["id"])["cards"][0]["choices"] == ["1799", "1804", "1830"]

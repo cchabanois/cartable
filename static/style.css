@@ -419,6 +419,12 @@ h2 {
 .flash .back { font-weight: 700; color: var(--accent); }
 .flash .meta { display: flex; gap: .4rem; align-items: center; margin-top: .15rem; }
 .flash .info { flex: 1; min-width: 0; font-size: .85rem; color: var(--muted); }
+.flash .choices { margin-top: .2rem; }
+.flash .choice { display: flex; gap: .3rem; align-items: center; color: var(--muted); }
+.flash .choice .wrong { color: var(--danger); font-weight: 800; }
+.flash .choice input { flex: 1; min-width: 0; }
+.flash .choice .icon-btn { width: 32px; height: 32px; font-size: .8rem; }
+.flash .choices .link-btn { font-size: .8rem; }
 .flash .fun-fact { display: flex; gap: .3rem; align-items: center; font-size: .85rem; }
 .flash .fun-fact input { flex: 1; min-width: 0; font-style: italic; color: var(--muted); }
 .switch.fun-facts { margin: .5rem 0 .25rem; }

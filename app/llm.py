@@ -58,6 +58,16 @@ A hint may follow: "{{c1::1789::année}}". Hide what matters (dates, names, key 
 words), not small words. The back is empty, or a short extra shown with the answer. \
 In a gap, never write "}}" inside a formula: add a space ("} }"). Other cards have no \
 gaps.
+- Multiple choice and true/false: when the instructions ask for multiple-choice \
+questions (QCM, quiz) or true/false statements, the front is the question (or the \
+statement), the back is the right answer, written as one of the options, and \
+"choices" holds the wrong options only. Multiple choice: three wrong options unless \
+the instructions say otherwise, plausible (the same kind and length as the right \
+answer, common mistakes), never also right, no "all/none of the above". True/false: \
+the back is the word for true or for false in the instructions' language ("Vrai" or \
+"Faux"), "choices" the other word; about as many false statements as true ones, the \
+false ones wrong by one precise thing (a date, a name, a number), never a trick in \
+the wording. Other cards have no choices.
 - Plain text in every field: no HTML tags and no Markdown (no <b>, no **bold**), even \
 for words in bold on the page; only the MathJax and cloze syntaxes above.
 - One idea per card; keep front and back short.
@@ -778,6 +788,8 @@ def _fake(images: list[Image], prompt: str, deck: str) -> Deck:
         return _fake_pictures()
     if any(w in prompt.lower() for w in ("cloze", "trous", "gaps")):
         return _fake_cloze()
+    if any(w in prompt.lower() for w in ("qcm", "quiz", "vrai", "true")):
+        return _fake_choices()
     if any(w in prompt.lower() for w in ("figure", "géométrie", "geometry", "triangle")):
         return _fake_figures()
     return _fake_vocabulary(images, prompt)
@@ -846,6 +858,27 @@ def _fake_cloze() -> Deck:
                 front="La {{c1::Déclaration des droits de l'homme et du citoyen}} est adoptée en {{c1::août}} 1789.",
                 back="",
             ),
+        ],
+    )
+
+
+def _fake_choices() -> Deck:
+    """Demo mode, multiple-choice prompt: two questions and two true/false statements."""
+    return Deck(
+        deck="Histoire::La Révolution française",
+        cards=[
+            Card(
+                front="En quelle année commence la Révolution française ?",
+                back="1789",
+                choices=["1715", "1799", "1804"],
+            ),
+            Card(
+                front="Quel roi est guillotiné en 1793 ?",
+                back="Louis XVI",
+                choices=["Louis XIV", "Louis XV", "Charles X"],
+            ),
+            Card(front="La Bastille est prise le 14 juillet 1789.", back="Vrai", choices=["Faux"]),
+            Card(front="Napoléon est sacré empereur en 1789.", back="Faux", choices=["Vrai"], info="En 1804."),
         ],
     )
 

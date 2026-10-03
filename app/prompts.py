@@ -22,6 +22,8 @@ BUILTIN = (
     "sentences",
     "questions",
     "cloze",
+    "quiz",
+    "true_false",
     "formulas",
     "school_formulas",
     "geometry",

@@ -274,11 +274,15 @@ async def _card_audio(req: ExportRequest, background: BackgroundTasks) -> tuple[
         directory = Path(tempfile.mkdtemp(prefix="notosaurus-audio-"))
         background.add_task(shutil.rmtree, directory, ignore_errors=True)
     # Not read aloud: a back with a formula (the voice would read the MathJax code),
-    # a text with gaps (its back is only an extra)
+    # a text with gaps (its back is only an extra), a multiple choice (the options are read)
     backs = [
         c.back.strip()
         for c in req.cards
-        if c.front.strip() and c.back.strip() and not tts.has_math(c.back) and not anki.is_cloze(c.front)
+        if c.front.strip()
+        and c.back.strip()
+        and not tts.has_math(c.back)
+        and not anki.is_cloze(c.front)
+        and not anki.is_choice(c)
     ]
     audio, failures = await tts.tts_many(backs, req.voice, directory)
     tts.prune(directory, set(audio.values()))

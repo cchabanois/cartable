@@ -81,6 +81,10 @@
       "info": "+ info (genre, pluriel…)",
       "infoLabel": "Info",
       "funFact": "Le savais-tu ?",
+      "rightChoice": "Bonne réponse",
+      "wrongChoice": "Mauvaise réponse",
+      "addChoice": "+ mauvaise réponse",
+      "removeChoice": "Retirer cette réponse",
       "subdeck": "sous-paquet",
       "subdeckLabel": "Sous-paquet",
       "listen": "Écouter le verso",
@@ -612,6 +616,18 @@
     "cloze": {
       "name": "Texte à trous",
       "text": "Crée des cartes texte à trous avec les phrases importantes de la leçon : dans chaque phrase, cache ce qu'il faut retenir (dates, noms, mots-clés), un trou par notion, trois au plus par phrase. Verso : vide.",
+      "deck": "{matière}::{titre de la leçon}",
+      "voice": ""
+    },
+    "quiz": {
+      "name": "QCM",
+      "text": "Crée un QCM pour réviser la leçon : une question par notion importante (dates, définitions, notions clés), avec la bonne réponse et trois mauvaises réponses plausibles. Questions courtes, en français. Info : une courte explication de la bonne réponse, si elle aide.",
+      "deck": "{matière}::{titre de la leçon}",
+      "voice": ""
+    },
+    "true_false": {
+      "name": "Vrai / faux",
+      "text": "Crée des affirmations vrai / faux pour réviser la leçon : autant de fausses que de vraies, les fausses avec une seule erreur précise (une date, un nom, un nombre). Info : pour une affirmation fausse, la correction.",
       "deck": "{matière}::{titre de la leçon}",
       "voice": ""
     },

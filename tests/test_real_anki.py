@@ -415,3 +415,37 @@ def test_figure_lesson_on_a_real_collection(bridged, col):
     res = client.post("/api/anki/send", json={**body, "cards": moved}).json()
     assert (res["added"], res["converted"]) == (0, 1)
     assert image in col.get_note(note_id).cards()[0].question()
+
+
+def test_multiple_choice_lesson_on_a_real_collection(bridged, col, tmp_path):
+    client, _ = bridged
+    lesson = client.post("/api/extract", data={"prompt": "QCM sur la Révolution"}).json()
+    body = {"deck": lesson["deck"], "cards": lesson["cards"], "lesson_id": lesson["id"]}
+    assert client.post("/api/anki/send", json=body).json()["added"] == 4
+
+    note_ids = sorted(col.find_notes('"note:Notosaurus QCM"'))
+    card = col.get_note(note_ids[0]).cards()[0]
+    assert "<li>1789</li>" in card.question() and 'class="right"' not in card.question()  # none marked
+    assert '<li class="right">1789</li>' in card.answer()
+    # Sent again after an edit: the same notes, updated
+    lesson["cards"][0]["choices"] = ["1715", "1799"]
+    body["cards"] = lesson["cards"]
+    assert client.post("/api/anki/send", json=body).json()["updated"] == 4
+    assert "1804" not in col.get_note(note_ids[0]).cards()[0].question()
+
+    # Imported as a package too
+    path = tmp_path / "quiz.apkg"
+    path.write_bytes(client.post("/api/export", json=body).content)
+    other = anki_collection.Collection(str(tmp_path / "anki" / "other.anki2"))
+    try:
+        other.import_anki_package(
+            anki_collection.ImportAnkiPackageRequest(
+                package_path=str(path),
+                options=anki_collection.ImportAnkiPackageOptions(
+                    with_scheduling=False, merge_notetypes=True, update_notes=IF_NEWER, update_notetypes=IF_NEWER
+                ),
+            )
+        )
+        assert other.card_count() == 4
+    finally:
+        other.close()

@@ -9,6 +9,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Multiple-choice (QCM) and true/false cards: two new prompts, the wrong answers editable in the review, and a “Notosaurus QCM” note type in Anki (the options on the question, the right one marked on the answer).
 - Optional “Did you know?” facts (a switch under the prompt, off by default, kept on the device): the AI adds a short, well-known fact to some cards, shown on the back in Anki under the info, and editable in the review.
 - The lesson's photos open in full screen with a tap (‹ › or a swipe between pages, a tap on the photo for its real size); the cards' pictures and figures too.
 

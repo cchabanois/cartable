@@ -9,6 +9,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Spanish, German, Italian and Portuguese (Brazil): the interface, the Anki add-on's menus and Notosaurus's prompts, with Anki's own words (its official translations) and each country's school words. A page test checks that every language fits a narrow phone.
 - Settings: the lessons are grouped by owner (the Anki profiles in Anki's order, then those gone from Anki, then nobody's), each with its lesson count and AI cost, folded at first, then by subject.
 - The lessons are grouped by subject, the deck's first level (« Anglais » → « Leçon 1 », « Leçon 2 »), the subject worked on last first. With many lessons: a search (no case, no accents), the 3 most recent first, and the subjects folded but the open lesson's (opened or closed by hand, kept on the device).
 - Multiple-choice (QCM) and true/false cards: two new prompts, the wrong answers editable in the review, and a “Notosaurus QCM” note type in Anki (the options on the question, the right one marked on the answer).
@@ -91,6 +92,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Fixed
 
+- Changing the language now changes Notosaurus's prompts too (their names and the text shown), unless the text was changed for this time.
+- On a narrow phone (360 px), the info field's placeholder and the AnkiConnect key's were cut: shortened.
 - Dates and numbers follow the browser's variety of the language: « 3 Oct, 15:15 » in British English, « Oct 3, 03:15 PM » in American English, « 15 h 15 » in Canadian French (one text per language still).
 - The exported .apkg has the type `application/apkg`, so AnkiDroid opens it straight from the download.
 - The add-on can be updated while Notosaurus runs, on Windows too: its Python, libraries, log and working folder move to `Anki2/notosaurus-runtime/`, outside the add-on's folder that Anki replaces (Windows refuses to move files in use). They are installed there once more (with the usual question), the old ones removed; deleting the add-on removes them.

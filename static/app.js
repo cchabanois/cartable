@@ -134,6 +134,8 @@ document.addEventListener("alpine:init", () => {
     unpaired: false,             // this device has no token yet: it must scan the QR code
 
     async init() {
+      // Notosaurus's prompts come in the page's language: again when it changes
+      document.addEventListener("i18n:changed", () => this.reloadPrompts());
       // Any change to the open lesson is saved automatically.
       Alpine.effect(() => {
         const snapshot = this.snapshot();
@@ -248,6 +250,19 @@ document.addEventListener("alpine:init", () => {
       const found = this.prompts.find((c) => String(c.id) === String(selectId)) ?? this.prompts[0];
       this.selectedId = found?.id ?? null;
       this.selectPrompt();
+    },
+
+    // Again, the selection kept (the free prompt too). The text shown follows the
+    // prompt (now in the page's language) unless it was changed for this time.
+    async reloadPrompts() {
+      const keepText = this.selectedId === null || this.isModified();
+      try {
+        this.prompts = await (await api("/api/prompts")).json();
+      } catch {
+        return;  // the old list stays
+      }
+      if (this.selectedId !== null && !this.current()) this.selectedId = this.prompts[0]?.id ?? null;  // deleted meanwhile
+      if (!keepText) this.selectPrompt();
     },
 
     current() {

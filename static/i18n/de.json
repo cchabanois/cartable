@@ -1,0 +1,687 @@
+{
+  "meta": {
+    "name": "Deutsch",
+    "englishName": "German"
+  },
+  "common": {
+    "close": "Schließen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "optional": "(optional)",
+    "failed": "Fehlgeschlagen: {message}",
+    "language": "Sprache",
+    "languageAuto": "Automatisch ({name})",
+    "count": {
+      "cards": {
+        "one": "{count} Karte",
+        "other": "{count} Karten"
+      },
+      "lessons": {
+        "one": "{count} Lektion",
+        "other": "{count} Lektionen"
+      }
+    }
+  },
+  "app": {
+    "tagline": "Eine Lektion auf einem Foto, ein Anki-Stapel.",
+    "profile": {
+      "open": "Geöffnetes Anki-Benutzerprofil",
+      "none": "Kein Benutzerprofil in Anki geöffnet",
+      "noneShort": "keins",
+      "switched": "👤 Anki-Benutzerprofil: {profile}. Seine Lektionen sind unter 📚."
+    },
+    "lessonsButton": "Lektionen",
+    "newLesson": "Neue Lektion",
+    "newLessonShort": "＋ Neu",
+    "newLessonHint": "Neue Lektion: Die aktuelle bleibt unter 📚 Lektionen",
+    "newLessonAction": "＋ Neue Lektion",
+    "lessonKept": "„{deck}“ bleibt unter 📚 Lektionen.",
+    "settings": "Einstellungen",
+    "photos": {
+      "title": "Fotos der Lektion",
+      "page": "Seite {n}",
+      "remove": "Diese Seite entfernen",
+      "rotate": "Foto um eine Vierteldrehung drehen",
+      "takePhoto": "Foto aufnehmen",
+      "nextPage": "Nächste Seite",
+      "gallery": "Galerie",
+      "unreadable": "„{name}“ kann nicht gelesen werden."
+    },
+    "prompt": {
+      "title": "Anweisungen",
+      "free": "✏️ Frei",
+      "freeHint": "Anweisungen nur für dieses Mal, nicht gespeichert",
+      "freePlaceholder": "Schreib, was die KI mit der Lektion machen soll, z. B. „eine Karte pro Datum, vorne das Ereignis, hinten das Datum“.",
+      "freeNote": "Freie Anweisungen: Sie bleiben bei der Lektion, werden aber nicht zu deinen Anweisungen hinzugefügt.",
+      "funFacts": "💡 „Wusstest du schon?“ hinzufügen",
+      "all": "Alle",
+      "new": "💾 Neu",
+      "newHint": "Gespeicherte Anweisungen anlegen, um sie wiederzuverwenden",
+      "text": "Text der Anweisungen",
+      "modified": "✏️ Nur für dieses Mal geändert.",
+      "edit": "✏️ Anweisungen bearbeiten",
+      "saveAsNew": "💾 Als neue Anweisungen speichern",
+      "regenerate": "✨ Neu erzeugen",
+      "fromPrompt": "✨ Nur aus den Anweisungen erzeugen",
+      "fromPromptHint": "Kein Foto? Die KI erstellt die Karten aus deinen Anweisungen: Schreib die Wörter hinein oder nenne ein Thema. Prüfe die Karten gut.",
+      "regenerateHint": "(ersetzt die Karten)",
+      "unavailable": "Anweisungen nicht verfügbar: {message}",
+      "builtin": "Anweisungen von Notosaurus: schreibgeschützt, werden mit der App verbessert",
+      "regenerateNewHint": "(neue Lektion)",
+      "regenerateExported": "Schon an Anki gesendet: Die gesendeten Karten bleiben dort, die neuen kommen beim nächsten Senden dazu.",
+      "regenerated": "✨ Karten neu erzeugt."
+    },
+    "review": {
+      "title": "Durchsicht",
+      "saved": "✓ Gespeichert",
+      "saving": "Wird gespeichert …",
+      "notSaved": "⚠ Nicht gespeichert",
+      "deck": "Stapel",
+      "otherProfileOpen": "— aber „{profile}“ ist in Anki geöffnet",
+      "front": "Vorderseite",
+      "back": "Rückseite",
+      "extra": "Rückseite (optional)",
+      "info": "+ Info",
+      "infoLabel": "Info",
+      "funFact": "Wusstest du schon?",
+      "rightChoice": "Richtige Antwort",
+      "wrongChoice": "Falsche Antwort",
+      "addChoice": "+ falsche Antwort",
+      "removeChoice": "Diese Antwort entfernen",
+      "subdeck": "Unterstapel",
+      "subdeckLabel": "Unterstapel",
+      "listen": "Rückseite anhören",
+      "removeCard": "Karte löschen",
+      "addCard": "＋ Karte hinzufügen",
+      "reverse": "Umgekehrte Karte hinzufügen",
+      "reverseHint": "(Rückseite → Vorderseite)",
+      "typing": "Antwort eintippen",
+      "typingHint": "(Anki vergleicht Buchstabe für Buchstabe: ideal für die Rechtschreibung)",
+      "dictation": "Diktat hinzufügen",
+      "dictationHint": "(Rückseite hören, aufschreiben)",
+      "dictationNoVoice": "(wähle zuerst eine Stimme)",
+      "voiceIncluded": "🔊 Stimme <code>{voice}</code>, im Stapel enthalten.",
+      "voiceDevice": "🔊 Vom Gerät vorgelesen, auf <code>{voice}</code>.",
+      "badgeNew": "neu",
+      "badgeModified": "geändert",
+      "noCards": "Keine Karten gefunden: Prüfe die Fotos oder die Anweisungen.",
+      "owner": "👤 Lektion von <strong>{owner}</strong>",
+      "sharedSwitch": "Mit den anderen Benutzerprofilen geteilt",
+      "choice": "🤖 {choice}",
+      "promptUsed": "📝 Für diese Lektion verwendete Anweisungen",
+      "clozeHint": "Lückentext: {{c1::…}} verdeckt, was zwischen den Klammern steht. Jede Nummer ergibt eine Karte in Anki; dieselbe Nummer verdeckt mehrere Lücken gleichzeitig.",
+      "diagramHint": "Abbildung: Zieh eine rote Maske, um sie zu verschieben, und ihre runde Ecke, um ihre Größe zu ändern, sodass sie die ganze Beschriftung verdeckt. Der gestrichelte Rahmen ist das, was Anki vom Foto zeigt: Zieh an seinen blauen Ecken, um es zuzuschneiden.",
+      "diagramWarning": "Mit diesem KI-Modell (Claude) sind die Masken auf Handschrift manchmal zu klein: Prüfe, ob sie die ganze Beschriftung verdecken.",
+      "cropFrame": "Was Anki vom Foto zeigt",
+      "readOnly": "🔒 Schreibgeschützt: Nur das Benutzerprofil von {owner} kann sie ändern. Du kannst sie trotzdem zu deinem Anki hinzufügen."
+    },
+    "revise": {
+      "label": "Karten mit KI korrigieren",
+      "placeholder": "✨ Mit KI korrigieren: „lösch die Karte zum Vater“, „du hast die Farben vergessen“ …",
+      "button": "Korrigieren",
+      "undo": "↩ Rückgängig",
+      "undone": "Korrektur rückgängig gemacht.",
+      "added": {
+        "one": "+{count} neu",
+        "other": "+{count} neu"
+      },
+      "modified": {
+        "one": "{count} geändert",
+        "other": "{count} geändert"
+      },
+      "removed": {
+        "one": "−{count} entfernt",
+        "other": "−{count} entfernt"
+      },
+      "noChange": "keine Änderung"
+    },
+    "actions": {
+      "generate": "✨ Karten erzeugen",
+      "startWithPhoto": "📷 Fotografiere zuerst die Lektion",
+      "downloadApkg": "Die .apkg-Datei herunterladen",
+      "addToAnki": "📥 Zu Anki hinzufügen",
+      "sending": "Wird an Anki gesendet …",
+      "exportApkg": "⬇️ Für Anki exportieren (.apkg)",
+      "exporting": "Stapel wird vorbereitet …"
+    },
+    "loading": {
+      "reading": "Lektion wird gelesen …",
+      "writing": "Karten werden erstellt …",
+      "revising": "Karten werden korrigiert …",
+      "duration": "Das dauert meist 10 bis 30 Sekunden."
+    },
+    "send": {
+      "added": {
+        "one": "{count} Karte hinzugefügt",
+        "other": "{count} Karten hinzugefügt"
+      },
+      "updated": {
+        "one": "{count} aktualisiert",
+        "other": "{count} aktualisiert"
+      },
+      "nothing": "nichts zu ändern",
+      "done": "✓ In Anki: {parts}.",
+      "synced": "Mit AnkiWeb synchronisiert.",
+      "butWarning": "Karten gesendet, aber: {warnings}.",
+      "noSync": "keine Synchronisierung mit AnkiWeb ({reason})",
+      "noSound": {
+        "one": "{count} Karte ohne Ton",
+        "other": "{count} Karten ohne Ton"
+      },
+      "converted": {
+        "one": "{count} davon auf die neuen Optionen umgestellt (Verlauf bleibt erhalten)",
+        "other": "{count} davon auf die neuen Optionen umgestellt (Verlauf bleibt erhalten)"
+      },
+      "oldAnkiConnect": "AnkiConnect ist zu alt, um die Optionen bereits gesendeter Karten zu ändern: Sie bleiben neben den neuen (aktualisiere AnkiConnect oder nutze die Notosaurus-Erweiterung)"
+    },
+    "export": {
+      "noSound": "Stapel exportiert, aber {count} Karte(n) ohne Ton (Sprachausgabe nicht verfügbar).",
+      "done": "✓ Paket heruntergeladen: Öffne es mit Anki."
+    },
+    "audio": {
+      "failed": "Wiedergabe nicht möglich: unbekannte Stimme oder Sprachausgabe nicht verfügbar.",
+      "blocked": "Der Browser hat die Tonwiedergabe blockiert."
+    },
+    "lessons": {
+      "title": "Meine Lektionen",
+      "ankiProfile": "👤 Anki-Benutzerprofil: <strong>{profile}</strong>",
+      "none": "Keine Lektionen für dieses Benutzerprofil.",
+      "noDeck": "Ohne Stapel",
+      "search": "🔍 Lektion suchen …",
+      "recent": "Zuletzt",
+      "found": "Gefunden",
+      "notFound": "Keine Lektion passt.",
+      "exported": "exportiert",
+      "delete": "Lektion löschen",
+      "confirmDelete": "„{deck}“ löschen?",
+      "openFailed": "Lektion kann nicht geöffnet werden: {message}",
+      "sharedBadge": "geteilt",
+      "checkingAnki": "Ihre Karten werden in Anki gesucht …",
+      "alsoAnki": "Auch ihre {count} Karten in Anki löschen",
+      "alsoAnkiHint": "(ihr Wiederholungsverlauf geht verloren)",
+      "ankiClosed": "Anki ist in diesem Benutzerprofil nicht geöffnet: Die bereits gesendeten Karten bleiben dort.",
+      "deleteLesson": "Lektion löschen",
+      "deleteBoth": "Lektion und die {count} Karten löschen",
+      "deletedInAnki": "🗑 {count} Karten aus Anki gelöscht.",
+      "deletedNoSync": "Karten aus Anki gelöscht, aber keine Synchronisierung mit AnkiWeb ({reason})."
+    },
+    "picker": {
+      "title": "Anweisungen",
+      "label": "Alle Anweisungen",
+      "search": "🔍 Suchen (Englisch, Verben …)",
+      "none": "Keine Anweisungen passen.",
+      "delete": "Die Anweisungen „{name}“ löschen",
+      "duplicate": "Die Anweisungen „{name}“ duplizieren"
+    },
+    "editor": {
+      "new": "Neue Anweisungen",
+      "edit": "Anweisungen bearbeiten",
+      "name": "Name",
+      "namePlaceholder": "Z. B. Vokabeln DE → Englisch",
+      "text": "Anweisungen",
+      "textPlaceholder": "Z. B. Erstelle Anki-Karten Deutsch → Englisch mit den Vokabeln der Lektion …",
+      "deck": "Vorgeschlagener Stapelname",
+      "deckPlaceholder": "Englisch::Lektion {n}",
+      "deckHint": "Die Teile in geschweiften Klammern werden aus der Lektion ergänzt.",
+      "options": "Kartenoptionen",
+      "voice": "Stimme für die Rückseite",
+      "listenVoice": "Stimme anhören",
+      "female": "weiblich",
+      "male": "männlich",
+      "create": "Anweisungen anlegen",
+      "required": "Ein Name und ein Text sind nötig.",
+      "confirmDelete": "Die Anweisungen „{name}“ löschen?",
+      "copyName": "{name} (Kopie)",
+      "builtin": "⭐ Anweisungen von Notosaurus",
+      "builtinHint": "Diese Anweisungen gehören zu Notosaurus und werden mit ihm verbessert: Dupliziere sie, um sie anzupassen (Sprache, Stimme, Stapel …).",
+      "duplicate": "⧉ Duplizieren",
+      "duplicateToChange": "⧉ Zum Ändern duplizieren",
+      "voiceMode": {
+        "none": "Ohne Ton",
+        "auto": "Automatisch",
+        "pick": "Stimme wählen"
+      },
+      "voiceModeHint": {
+        "none": "Die Rückseiten werden nicht vorgelesen.",
+        "auto": "Die KI erkennt die Sprache der Rückseiten, und Notosaurus nimmt eine Stimme dieser Sprache (britisches Englisch → Sonia, Französisch → Denise …).",
+        "pick": "Tippe den Anfang der Sprache („de-DE“, „en-GB“ …), um die Stimmen zu sehen; ▶ zum Anhören."
+      }
+    },
+    "pictures": {
+      "drawing": "🎨 Wird gezeichnet …",
+      "failed": {
+        "one": "{count} Bild konnte nicht gezeichnet werden: Diese Karte hat keins.",
+        "other": "{count} Bilder konnten nicht gezeichnet werden: Diese Karten haben keins."
+      },
+      "panel": "Bild",
+      "subject": "Was gezeichnet werden soll (auf Englisch)",
+      "subjectPlaceholder": "z. B. a red apple",
+      "draw": "🎨 Zeichnen",
+      "redraw": "🎨 Neu zeichnen",
+      "photo": "📷 Mein Foto",
+      "remove": "✕ Kein Bild",
+      "cost": "Eine Zeichnung kostet etwa 3 bis 7 US-Cent; dein eigenes Foto ist kostenlos.",
+      "figure": "Die zu zeichnende Figur (mit Beschriftungen)",
+      "figurePlaceholder": "z. B. ein bei C rechtwinkliges Dreieck, die Hypotenuse mit „c“ beschriftet",
+      "figureCost": "Die Figur zeichnet die KI der Karten, für weniger als einen US-Cent; dein eigenes Foto ist kostenlos.",
+      "onBack": "Auf der Rückseite (mit der Antwort)"
+    },
+    "pairing": {
+      "title": "Gerät nicht zugelassen"
+    },
+    "viewer": {
+      "label": "Foto in groß",
+      "previous": "Vorheriges Foto",
+      "next": "Nächstes Foto"
+    }
+  },
+  "admin": {
+    "title": "Einstellungen",
+    "create": {
+      "title": "🔐 Passwort anlegen",
+      "hint": "Diese Seite enthält die API-Schlüssel. Wähle ein Passwort, um sie zu schützen: Die anderen Nutzer der App können sie dann nicht öffnen.",
+      "button": "Anlegen und weiter"
+    },
+    "locked": {
+      "title": "🔒 Geschützte Einstellungen",
+      "password": "Admin-Passwort",
+      "button": "Entsperren"
+    },
+    "password": "Passwort",
+    "confirm": "Bestätigung",
+    "mismatch": "Die beiden Passwörter stimmen nicht überein.",
+    "changed": "Passwort geändert.",
+    "savedButton": "✓ Gespeichert",
+    "saving": "Wird gespeichert …",
+    "testing": "Wird getestet …",
+    "provider": {
+      "title": "KI-Dienst",
+      "gemini": {
+        "name": "Gemini (Google)",
+        "description": "Schnell und günstig. Es gibt eine kostenlose Stufe, die aber manchmal überlastet ist."
+      },
+      "anthropic": {
+        "name": "Claude (Anthropic)",
+        "description": "Liest sehr gut, auch Handschrift. Kostenpflichtig, ein paar Cent pro Lektion."
+      },
+      "openai": {
+        "name": "OpenAI (GPT)",
+        "description": "GPT-Modelle, mit einem OpenAI-Schlüssel. Kostenpflichtig, ein paar Cent pro Lektion."
+      },
+      "openrouter": {
+        "name": "OpenRouter",
+        "description": "Ein Schlüssel für Gemini, Claude, GPT, Mistral … und immer ihre neueste Version. Die genauen Kosten jeder Lektion."
+      },
+      "compatible": {
+        "name": "Anderer OpenAI-kompatibler Dienst",
+        "description": "Ein Modell zu Hause (Ollama, LM Studio …) oder ein anderer Dienst (Mistral …), unter seiner Adresse."
+      },
+      "fake": {
+        "name": "Demo",
+        "description": "Vorgefertigte Karten, für Tests und Entwicklung.",
+        "warning": "Demomodus: Die Karten kommen nicht aus deinen Fotos, sie sind immer gleich. Wähle einen anderen Dienst, um Notosaurus zu nutzen."
+      },
+      "model": "Modell",
+      "default": "{model} (Standard)",
+      "modelHint": "Leer lassen für das Standardmodell.",
+      "fallbacks": "Ersatzmodelle",
+      "fallbacksHint": "Werden der Reihe nach versucht, wenn das Hauptmodell überlastet ist (durch Kommas getrennt)."
+    },
+    "access": {
+      "title": "Zugang",
+      "geminiKey": "Gemini-API-Schlüssel",
+      "geminiHelp": "Erstelle einen auf <a href=\"https://aistudio.google.com/apikey\" target=\"_blank\" rel=\"noopener\">aistudio.google.com/apikey</a>.",
+      "anthropicKey": "Anthropic-API-Schlüssel",
+      "anthropicHelp": "Erstelle einen auf <a href=\"https://console.anthropic.com/settings/keys\" target=\"_blank\" rel=\"noopener\">console.anthropic.com</a>.",
+      "openaiKey": "OpenAI-API-Schlüssel",
+      "openrouterKey": "OpenRouter-API-Schlüssel",
+      "compatibleKey": "API-Schlüssel des Dienstes (für ein lokales Modell oft unnötig)",
+      "keySaved": "{masked} (gespeichert)",
+      "pasteKey": "Schlüssel hier einfügen",
+      "replaceHint": "Um ihn zu ersetzen, füge den neuen Schlüssel ein.",
+      "willBeCleared": "Wird beim Speichern gelöscht.",
+      "clear": "{label} löschen",
+      "apiAddress": "API-Adresse",
+      "ollamaHint": "OpenAI-kompatibler Dienst: Seine Adresse endet meist auf <code>/v1</code> (lokales Ollama: <code>http://localhost:11434/v1</code>).",
+      "test": "🔌 Testen (ein Bild lesen + JSON)",
+      "testOk": "✓ {model} liest Bilder und antwortet im richtigen Format ({seconds} s).",
+      "testNoVision": "⚠ {model} antwortet, scheint das Bild aber nicht zu sehen (es sagte „{answer}“ für ein rotes Quadrat). Wähle ein Modell, das Bilder annimmt.",
+      "testNoJson": "⚠ {model} antwortet nicht im verlangten JSON-Format: Wähle ein anderes Modell.",
+      "testRefused": "⚠ {model} nimmt keine Bilder an („{refused}“). Wähle ein Modell mit Bilderkennung."
+    },
+    "voice": {
+      "title": "Stimmen der Karten",
+      "rate": "Sprechtempo",
+      "slow": "Langsam (−25 %)",
+      "slower": "Etwas langsamer (−10 %)",
+      "normal": "Normal",
+      "hint": "Die Stimme selbst wird in den jeweiligen Anweisungen gewählt."
+    },
+    "anki": {
+      "title": "📥 Direkt an Anki senden",
+      "embedded": "✓ Notosaurus läuft in der <strong>Anki-Erweiterung</strong>: „Zu Anki hinzufügen“ schreibt direkt in das geöffnete Benutzerprofil, ohne AnkiConnect.",
+      "howTo": "Um Karten ohne <code>.apkg</code>-Datei hinzuzufügen: in Anki auf dem Computer <em>Extras → Erweiterungen → Erweiterungen herunterladen</em>, Code <code>2055492159</code> (AnkiConnect), dann Anki neu starten. Anki muss beim Senden geöffnet sein. Oder installiere die Notosaurus-Erweiterung, die Notosaurus in Anki ausführt.",
+      "address": "AnkiConnect-Adresse",
+      "addressHint": "Anki auf demselben Computer wie Notosaurus: <code>http://localhost:8765</code>.",
+      "key": "AnkiConnect-Schlüssel",
+      "keyPlaceholder": "Nur wenn „apiKey“ gesetzt ist",
+      "clearKey": "AnkiConnect-Schlüssel löschen",
+      "sync": "Nach dem Senden mit AnkiWeb synchronisieren",
+      "syncHint": "(um die Karten aufs Handy zu bekommen)",
+      "test": "🔌 Verbindung mit Anki testen",
+      "testOk": "✓ Anki antwortet (AnkiConnect Version {version}, Benutzerprofil „{profile}“).",
+      "testOkAddon": "✓ Anki antwortet (Notosaurus-Erweiterung, Benutzerprofil „{profile}“).",
+      "testNoProfile": "Anki antwortet, aber kein Benutzerprofil ist geöffnet: Öffne eins in Anki.",
+      "syncOn": "✓ „{profile}“ ist bei AnkiWeb angemeldet.",
+      "syncOff": "„{profile}“ ist nicht bei AnkiWeb angemeldet: keine Synchronisierung nach dem Senden. Melde dich zum Synchronisieren in Anki an (Schaltfläche „Synchronisieren“)."
+    },
+    "lessons": {
+      "title": "Lektionen",
+      "hint": "Wem jede Lektion gehört. Eine Lektion kann nur vom Anki-Benutzerprofil ihres Besitzers geändert werden; ohne Besitzer gehört sie allen. Änderungen hier gelten sofort.",
+      "ankiClosed": "Anki ist nicht erreichbar: Öffne es, um unter seinen Benutzerprofilen zu wählen.",
+      "none": "Noch keine Lektionen.",
+      "owner": "Besitzer",
+      "noOwner": "Niemand (gehört allen)",
+      "missing": "{owner} (nicht mehr in Anki)",
+      "shared": "Mit den anderen Benutzerprofilen geteilt",
+      "delete": "Lektion löschen",
+      "confirmDelete": "Die Lektion „{deck}“ für alle Benutzerprofile löschen? Ihre Fotos und Karten werden entfernt.",
+      "changed": "„{deck}“: gespeichert.",
+      "alsoAnki": "Auch ihre {count} Karten in Anki löschen? Ihr Wiederholungsverlauf geht verloren.\n\nOK: auch die Karten löschen. Abbrechen: die Karten in Anki behalten."
+    },
+    "passwordSection": {
+      "title": "🔐 Admin-Passwort",
+      "new": "Neues Passwort",
+      "button": "Passwort ändern"
+    },
+    "service": {
+      "keyAt": "Erstelle einen Schlüssel auf",
+      "vision": "Wähle ein Modell, das Bilder annimmt (Bilderkennung).",
+      "loadModels": "📋 Modelle des Dienstes laden",
+      "loading": "Wird geladen …",
+      "noModels": "Der Dienst hat keine Modelle geliefert.",
+      "modelsVision": {
+        "one": "{count} Modell, das Bilder annimmt, in der Liste vorgeschlagen.",
+        "other": "{count} Modelle, die Bilder annehmen, in der Liste vorgeschlagen."
+      },
+      "modelsAll": {
+        "one": "{count} Modell vorgeschlagen: Der Dienst sagt nicht, ob es Bilder annimmt, prüfe es mit „Testen“.",
+        "other": "{count} Modelle vorgeschlagen: Der Dienst sagt nicht, welche Bilder annehmen, prüfe es mit „Testen“."
+      },
+      "noVisionModels": "Keines der Modelle dieses Dienstes nimmt Bilder an: Eines wird gebraucht, um die Fotos der Lektionen zu lesen.",
+      "aliases": "Vorgeschlagene Modelle",
+      "aliasesHint": "Immer die neueste Version jedes Modells (⭐: empfohlen, am genauesten bei Abbildungen). Oder tippe oben den Namen eines der {count} Modelle ein."
+    },
+    "costs": {
+      "total": "💰 KI: {cost} insgesamt",
+      "estimated": "≈ geschätzt nach den öffentlichen Preisen (OpenRouter: genaue Kosten). Mit einem kostenlosen Gemini-Schlüssel wird nichts berechnet.",
+      "none": "KI-Kosten: nicht erfasst (ältere Lektion)",
+      "unknown": "Preis unbekannt",
+      "tokens": "{input} Token rein, {output} raus",
+      "extracts": {
+        "one": "{count} Erzeugung",
+        "other": "{count} Erzeugungen"
+      },
+      "revisions": {
+        "one": "{count} Korrektur",
+        "other": "{count} Korrekturen"
+      },
+      "kind": {
+        "extract": "Erzeugung",
+        "revise": "Korrektur",
+        "picture": "Bild"
+      },
+      "deleted": "davon {cost} für inzwischen gelöschte Lektionen",
+      "failed": "davon {cost} für fehlgeschlagene Erzeugungen (keine Lektion)",
+      "unknownCount": {
+        "one": "+ {count} Aufruf mit unbekanntem Preis",
+        "other": "+ {count} Aufrufe mit unbekanntem Preis"
+      },
+      "cents": "{cents} US-Cent",
+      "pictures": {
+        "one": "{count} Bild",
+        "other": "{count} Bilder"
+      }
+    },
+    "instructions": {
+      "title": "📝 Anweisungen für die KI",
+      "hint": "Werden jeder Erzeugung und Korrektur hinzugefügt, zusätzlich zu den für die Lektion gewählten Anweisungen. Bei Widerspruch gelten die der Lektion.",
+      "general": "Für alle Benutzerprofile",
+      "generalPlaceholder": "z. B. britisches Englisch; Nomen immer mit Artikel",
+      "profile": "Für {profile}",
+      "missingProfile": "Für {profile} (nicht mehr in Anki)",
+      "profilePlaceholder": "z. B. in der 8. Klasse; kurze Antworten",
+      "noProfiles": "Öffne Anki, um Anweisungen für jedes seiner Benutzerprofile festzulegen."
+    },
+    "notSaved": "Nicht gespeichert",
+    "pictures": {
+      "model": "Bildmodell",
+      "hint": "Für Anweisungen wie „Vorderseite: das Bild des Wortes“. Von unter einem Cent bis zu ein paar US-Cent pro Bild, je nach Modell.",
+      "title": "Bilder auf den Karten",
+      "service": "Dienst, der sie zeichnet",
+      "sameAsCards": "Derselbe wie für die Karten",
+      "noneChip": "Keine Bilder",
+      "noKey": "Schlüssel fehlt (Abschnitt Zugang)",
+      "drawnBySame": "Gezeichnet von {service}, dem Dienst der Karten.",
+      "drawnBy": "Gezeichnet von {service}.",
+      "cantDraw": "{cards} kann nicht zeichnen: Die Bilder laufen über {service}.",
+      "nobody": "{cards} kann nicht zeichnen, und kein anderer Dienst hat einen Schlüssel: Füge einen Gemini-, OpenAI- oder OpenRouter-Schlüssel hinzu, um Bilder zu bekommen.",
+      "missingKey": "{service} hat keinen Schlüssel: Füge ihn hinzu oder wähle einen anderen Dienst.",
+      "noneChosen": "Keine Bilder auf den Karten.",
+      "auto": "Automatisch"
+    },
+    "phones": {
+      "title": "📱 Handys",
+      "hint": "Scanne diesen QR-Code mit dem Handy: Er öffnet Notosaurus und lässt dieses Handy zu. Füge die Seite dann zum Startbildschirm hinzu.",
+      "qr": "QR-Code, um Notosaurus auf dem Handy zu öffnen",
+      "security": "Nur Geräte, die diesen QR-Code gescannt haben, können Notosaurus über das WLAN nutzen (der Computer selbst immer). Ohne HTTPS hält das Neugierige und andere Websites ab, nicht jemanden, der das WLAN ausspioniert.",
+      "unpair": "Alle Handys abmelden",
+      "confirmUnpair": "Alle Handys abmelden? Jedes muss den QR-Code erneut scannen (nützlich, wenn ein Handy verloren oder verliehen wurde).",
+      "unpaired": "Handys abgemeldet: Scanne den neuen QR-Code auf jedem.",
+      "thisDevice": "Oder lass das Gerät zu, auf dem du das liest (Docker, ein anderer Computer)"
+    },
+    "model": {
+      "title": "Modell"
+    }
+  },
+  "errors": {
+    "unknown": "Unerwarteter Fehler ({code}).",
+    "invalid": "Ungültiger Wert.",
+    "unreachable": "Server nicht erreichbar.",
+    "prompt": {
+      "not_found": "Anweisungen nicht gefunden.",
+      "builtin": "Diese Anweisungen gehören zu Notosaurus: Dupliziere sie, um sie zu ändern."
+    },
+    "lesson": {
+      "not_found": "Lektion nicht gefunden.",
+      "read_only": "Schreibgeschützt: Nur das Anki-Benutzerprofil von {owner} kann diese Lektion ändern."
+    },
+    "photo": {
+      "not_found": "Foto nicht gefunden."
+    },
+    "extract": {
+      "no_input": "Füge ein Foto hinzu oder schreib Anweisungen.",
+      "too_many": "Höchstens {max} Fotos.",
+      "bad_format": "Format nicht unterstützt: {format}"
+    },
+    "export": {
+      "no_cards": "Keine vollständige Karte zum Exportieren."
+    },
+    "llm": {
+      "missing_model": "Kein Modell gewählt: Wähle eins in den Einstellungen (⚙️).",
+      "unknown_provider": "Unbekannter KI-Dienst: {provider}.",
+      "missing_key": "Kein {provider}-Schlüssel: Füge ihn in den Einstellungen hinzu (⚙️).",
+      "invalid_key": "Ungültiger {provider}-Schlüssel: Prüfe ihn in den Einstellungen (⚙️).",
+      "quota": "{provider}-Kontingent erreicht, versuch es gleich noch einmal.",
+      "overloaded": "{provider} ist gerade überlastet ({status}), versuch es in einer Minute noch einmal.",
+      "api_error": "{provider}-API-Fehler ({status}): {detail}",
+      "unreachable": "Die {provider}-API ist nicht erreichbar.",
+      "empty_answer": "{provider} hat nichts zurückgegeben (Bilder abgelehnt oder unlesbar?).",
+      "invalid_answer": "Das Modell hat keine gültigen Karten geliefert, versuch es noch einmal.",
+      "truncated": "Antwort abgeschnitten: zu viele Karten auf einmal, versuch es mit weniger Seiten.",
+      "refused": "Das Modell hat sich geweigert, diese Bilder zu verarbeiten.",
+      "missing_url": "Gib die Adresse des Dienstes in den Einstellungen an (⚙️)."
+    },
+    "anki": {
+      "unreachable": "Anki ist nicht erreichbar: Starte Anki auf dem Computer.",
+      "bad_response": "Unerwartete Antwort: Ist AnkiConnect wirklich unter dieser Adresse?",
+      "error": "Anki ({action}): {detail}",
+      "no_profile": "Kein Benutzerprofil in Anki geöffnet: Öffne eins und versuch es noch einmal.",
+      "sync_not_logged_in": "Anki ist nicht bei AnkiWeb angemeldet: Klick einmal in Anki auf „Synchronisieren“, um dich anzumelden"
+    },
+    "tts": {
+      "voices_unavailable": "Stimmenliste nicht verfügbar: {detail}",
+      "no_preview_for_anki_locale": "Für eine Anki-Sprachangabe (es_ES) gibt es keine Vorschau: Das Gerät liest sie vor.",
+      "failed": "Sprachausgabe fehlgeschlagen: {detail}"
+    },
+    "admin": {
+      "password_required": "Admin-Passwort erforderlich.",
+      "wrong_password": "Falsches Passwort.",
+      "local_only": "Die Einstellungen öffnest du in Anki, auf dem Computer: Extras → Notosaurus → Einstellungen."
+    },
+    "addon": {
+      "source_not_found": "Code des Notosaurus-Servers nicht gefunden.",
+      "uv_unsupported": "Dieser Computer wird nicht unterstützt (kein uv dafür): Installiere uv selbst (https://docs.astral.sh/uv/) und starte Anki dann neu.",
+      "uv_download_failed": "uv konnte nicht von GitHub heruntergeladen werden (siehe Protokoll). Prüfe die Internetverbindung, dann Extras → Notosaurus → Server neu starten.",
+      "install_failed": "Die Komponenten von Notosaurus konnten nicht installiert werden (siehe Protokoll)."
+    },
+    "picture": {
+      "no_model": "Kein Bildmodell: Lege eins in den Einstellungen fest (oder einen Gemini- oder OpenRouter-Schlüssel).",
+      "unknown_model": "Unbekanntes Bildmodell: {model}.",
+      "missing_key": "Kein {service}-Schlüssel für das Bildmodell.",
+      "failed": "Das Bild konnte nicht gezeichnet werden: {detail}",
+      "empty": "Das Bildmodell hat kein Bild geliefert.",
+      "quota": "{service} lehnt ab: Kontingent für das Bildmodell überschritten (ein kostenloser Schlüssel kann nicht zeichnen). Wähle in den Einstellungen ein Bildmodell über einen anderen Dienst.",
+      "no_subject": "Schreib zuerst, was gezeichnet werden soll."
+    },
+    "card": {
+      "not_found": "Diese Karte gibt es nicht mehr: Lade die Lektion neu."
+    },
+    "device": {
+      "not_paired": "Dieses Gerät ist noch nicht zugelassen: Scanne den QR-Code von Notosaurus (in Anki: Extras → Notosaurus → Auf dem Handy öffnen; sonst in den Einstellungen, auf dem Computer)."
+    },
+    "figure": {
+      "invalid": "Die von der KI gezeichnete Figur ist nicht lesbar: Zeichne sie neu."
+    },
+    "data": {
+      "too_new": "Diese Daten ({what}) stammen aus einer neueren Version von Notosaurus: Aktualisiere Notosaurus, um sie zu nutzen."
+    }
+  },
+  "demo": {
+    "removed": "Letzte Karte entfernt (Demo).",
+    "added": "Eine Karte hinzugefügt (Demo).",
+    "addedFront": "(Demo-Ergänzung)"
+  },
+  "addon": {
+    "menuOpen": "Notosaurus öffnen",
+    "menuAddress": "Serverstatus …",
+    "menuRestart": "Server neu starten",
+    "menuLog": "Serverprotokoll",
+    "startFailed": "Notosaurus konnte nicht starten:",
+    "stoppedAtStart": "Der Notosaurus-Server hat beim Starten angehalten.",
+    "ready": "Notosaurus ist bereit: {url}",
+    "running": "läuft",
+    "stopped": "angehalten",
+    "address": "Notosaurus-Server: {state}.\n\nAuf dem Handy (gleiches WLAN): {lan}\nAuf diesem Computer: {local}",
+    "where": "Code: {source}\nDaten: {data}",
+    "dev": " (Entwicklung)",
+    "restarting": "Notosaurus startet neu …",
+    "emptyLog": "(leeres Protokoll)",
+    "logTitle": "Notosaurus — Protokoll",
+    "menuPhone": "Auf dem Handy öffnen …",
+    "menuSettings": "Einstellungen",
+    "phoneTitle": "Notosaurus auf dem Handy öffnen",
+    "phoneSteps": "1. Verbinde das Handy mit demselben WLAN wie diesen Computer.\n2. Scanne diesen QR-Code mit der Kamera des Handys.\n3. Im Browser: Menü → „Zum Startbildschirm hinzufügen“, um es wie eine App zu nutzen.\n\nDie Einstellungen (KI-Schlüssel …) öffnest du hier, auf dem Computer: Extras → Notosaurus → Einstellungen.",
+    "localOnly": "⚠ Der Server hört nur auf diesem Computer („host“ auf 127.0.0.1): Setze „0.0.0.0“ in der Konfiguration der Erweiterung, um ihn vom Handy aus zu erreichen.",
+    "notRunningYet": "Notosaurus startet: Versuch es in ein paar Sekunden noch einmal.",
+    "installConfirm": "Bevor Notosaurus starten kann, muss es seine Komponenten installieren:\n\n• uv (von GitHub), Python 3.13 und seine Python-Bibliotheken (von PyPI): etwa 300 MB auf der Festplatte;\n• nur im Anki-Ordner (Anki2/notosaurus-runtime): Am restlichen Computer ändert sich nichts, und mit der Erweiterung werden sie wieder entfernt.\n\nDas dauert ein bis zwei Minuten, beim ersten Mal und nach manchen Updates. Jetzt installieren?",
+    "installDeclined": "Notosaurus ist nicht gestartet. Zum späteren Installieren: Extras → Notosaurus → Notosaurus öffnen."
+  },
+  "builtinPrompts": {
+    "auto": {
+      "name": "Automatisch (nach der Lektion)",
+      "text": "Sieh dir die Lektion an und wähle die nützlichsten Karten, um sie zu lernen:\n- Vokabeln einer Sprache: eine Karte pro Wort oder Ausdruck, vorne auf Deutsch, hinten in der gelernten Sprache;\n- Lernstoff eines Fachs (Geschichte, Naturwissenschaften, Erdkunde …): kurze Fragen / Antworten oder Lückentexte für die Sätze, die man sich merken muss;\n- Formeln: eine Karte pro Formel (vorne: was sie berechnet, hinten: die Formel);\n- Geometrie: Karten mit einer genauen Figur, wenn sie hilft;\n- Abbildung mit Beschriftungen: Abbildung zum Beschriften, eine Karte pro Beschriftung.\nMisch sie, wenn die Seite mehreres davon enthält.\nSag in einem Satz, was du gewählt hast.",
+      "deck": "{Fach}::{Titel der Lektion}",
+      "voice": "auto"
+    },
+    "vocabulary": {
+      "name": "Vokabeln einer Sprache",
+      "text": "Erstelle Anki-Karten mit den Vokabeln der Sprachlektion. Ein Wort oder Ausdruck pro Karte. Vorne in meiner Sprache, hinten in der gelernten Sprache, bei Nomen mit Artikel. Gib unter „Info“ das Genus an, den Plural, wenn er unregelmäßig ist, und ein kurzes Beispiel, wenn die Lektion eins enthält.",
+      "deck": "{Sprache}::Lektion {n}",
+      "voice": "auto"
+    },
+    "sentences": {
+      "name": "Sätze einer Sprache",
+      "text": "Erstelle Anki-Karten mit den vollständigen Sätzen der Sprachlektion. Vorderseite: der Satz in meiner Sprache. Rückseite: der Satz in der gelernten Sprache.",
+      "deck": "{Sprache}::Lektion {n}::Sätze",
+      "voice": "auto"
+    },
+    "questions": {
+      "name": "Fragen / Antworten",
+      "text": "Erstelle Karten Frage → Antwort, um den Inhalt der Lektion zu lernen (Daten, Definitionen, Schlüsselbegriffe). Kurze, genaue Fragen und knappe Antworten, auf Deutsch.",
+      "deck": "{Fach}::{Titel der Lektion}"
+    },
+    "cloze": {
+      "name": "Lückentext",
+      "text": "Erstelle Lückentext-Karten mit den wichtigen Sätzen der Lektion: Verdecke in jedem Satz, was man sich merken muss (Daten, Namen, Schlüsselwörter), eine Lücke pro Begriff, höchstens drei pro Satz. Rückseite: leer.",
+      "deck": "{Fach}::{Titel der Lektion}",
+      "voice": ""
+    },
+    "quiz": {
+      "name": "Multiple Choice",
+      "text": "Erstelle einen Multiple-Choice-Test, um die Lektion zu lernen: eine Frage pro wichtigem Punkt (Daten, Definitionen, Schlüsselbegriffe), mit der richtigen Antwort und drei plausiblen falschen. Kurze Fragen, auf Deutsch. Info: eine kurze Erklärung der richtigen Antwort, wenn sie hilft.",
+      "deck": "{Fach}::{Titel der Lektion}",
+      "voice": ""
+    },
+    "true_false": {
+      "name": "Richtig / falsch",
+      "text": "Erstelle Richtig-/Falsch-Aussagen, um die Lektion zu lernen: genauso viele falsche wie richtige, jede falsche mit genau einem präzisen Fehler (ein Datum, ein Name, eine Zahl). Info: bei einer falschen Aussage die Berichtigung.",
+      "deck": "{Fach}::{Titel der Lektion}",
+      "voice": ""
+    },
+    "formulas": {
+      "name": "Formeln (Mathe, Physik …)",
+      "text": "Erstelle eine Karte pro Formel der Lektion. Vorderseite: was die Formel berechnet (oder ihr Name). Rückseite: die Formel. Info: wofür jeder Buchstabe steht. Wenn es in der Formel um eine Figur geht (Kreisfläche, Pythagoras …), füge diese Figur mit ihren Buchstaben hinzu.",
+      "deck": "{Fach}::Formeln",
+      "voice": ""
+    },
+    "school_formulas": {
+      "name": "Mathe-Formeln der Sekundarstufe I",
+      "text": "Erstelle Karten für die wichtigsten Mathe-Formeln der Sekundarstufe I (Klasse 5 bis 10): Flächen und Umfänge (Quadrat, Rechteck, Dreieck, Kreis), Volumen (Würfel, Quader, Zylinder, Kegel, Kugel), Satz des Pythagoras, Strahlensatz, Trigonometrie (sin, cos, tan), binomische Formeln, Potenzen, Proportionalität und Prozentrechnung, Durchschnittsgeschwindigkeit. Vorderseite: was die Formel berechnet. Rückseite: die Formel. Info: wofür jeder Buchstabe steht, mit Einheit, wenn nötig. Wenn es in der Formel um eine Figur geht (Kreisfläche, Pythagoras …), füge diese Figur mit ihren Buchstaben hinzu.",
+      "deck": "Mathe::Formeln der Sekundarstufe I",
+      "voice": ""
+    },
+    "geometry": {
+      "name": "Geometrie (mit Figuren)",
+      "text": "Erstelle Karten, um die Geometrie der Lektion (oder des Themas unten) zu lernen: Figuren, Eigenschaften, Fachbegriffe (Hypotenuse, Radius, Mittelsenkrechte …). Füge eine genaue Figur hinzu, wenn sie beim Antworten hilft, ohne je die Antwort darauf zu schreiben.",
+      "deck": "Mathe::{Titel der Lektion}",
+      "voice": ""
+    },
+    "diagram": {
+      "name": "Abbildung beschriften",
+      "text": "Das Foto zeigt eine Abbildung mit Beschriftungen (Namen, die durch einen Pfeil oder eine Linie mit der Zeichnung verbunden sind). Verdecke den Text jeder Beschriftung hinter einer Nummer und erstelle eine Karte pro Beschriftung. Vorderseite: die Abbildung mit der Frage „Was ist (n)?“. Rückseite: der Text der Beschriftung.",
+      "deck": "{Fach}::{Titel der Abbildung}"
+    },
+    "pictures": {
+      "name": "Wörter in Bildern",
+      "text": "Erstelle Karten mit den Wörtern der Lektion (ohne Foto: 10 häufige Wörter zu dem Thema, das ich hier ergänze). Vorderseite: das Bild des Wortes mit der Frage „Wie sagt man das?“. Rückseite: das Wort in der gelernten Sprache, mit Artikel. Info: das Wort auf Deutsch.",
+      "deck": "{Sprache}::Bilder",
+      "voice": "auto"
+    },
+    "wordlist": {
+      "name": "Wortliste (ohne Foto)",
+      "text": "Erstelle eine Karte pro Wort der Liste unten. Vorderseite: das Wort auf Deutsch. Rückseite: seine Übersetzung ins Englische.\nListe: ",
+      "deck": "{Sprache}::Wörter",
+      "voice": "auto"
+    },
+    "dictation": {
+      "name": "Wörterdiktat",
+      "text": "Erstelle eine Karte pro Wort, das man richtig schreiben können muss, aus der Lektion oder aus der Liste unten. Vorderseite: ein kurzer Satz mit dem Wort, in dem das Wort durch „…“ ersetzt ist (seine Bedeutung, wenn der Satz nicht reicht, um es zu erraten). Rückseite: das Wort allein, genau so geschrieben wie im Satz. Info: ein nützlicher Rechtschreibtipp (Groß- und Kleinschreibung, ss/ß, Dehnungs-h, Wortfamilie …), sonst leer.",
+      "deck": "Deutsch::Rechtschreibung",
+      "voice": "auto",
+      "typing": true,
+      "dictation": true
+    }
+  }
+}

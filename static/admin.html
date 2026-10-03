@@ -297,7 +297,7 @@
           </div>
           <!-- By owner, then by subject (the deck's first level) -->
           <template x-for="o in lessonTree()" :key="o.key">
-            <details class="owner-group" open>
+            <details class="owner-group">
               <summary>
                 <strong :class="{ warn: o.missing }"
                         x-text="!o.owner ? $t('admin.lessons.noOwner') : o.missing ? $t('admin.lessons.missing', { owner: o.owner }) : '👤 ' + o.owner"></strong>

@@ -9,7 +9,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
-- Settings: the lessons are grouped by owner (the Anki profiles in Anki's order, then those gone from Anki, then nobody's), each with its lesson count and AI cost and foldable, then by subject.
+- Settings: the lessons are grouped by owner (the Anki profiles in Anki's order, then those gone from Anki, then nobody's), each with its lesson count and AI cost, folded at first, then by subject.
 - The lessons are grouped by subject, the deck's first level (« Anglais » → « Leçon 1 », « Leçon 2 »), the subject worked on last first. With many lessons: a search (no case, no accents), the 3 most recent first, and the subjects folded but the open lesson's (opened or closed by hand, kept on the device).
 - Multiple-choice (QCM) and true/false cards: two new prompts, the wrong answers editable in the review, and a “Notosaurus QCM” note type in Anki (the options on the question, the right one marked on the answer).
 - Optional “Did you know?” facts (a switch under the prompt, off by default, kept on the device): the AI adds a short, well-known fact to some cards, shown on the back in Anki under the info, and editable in the review.

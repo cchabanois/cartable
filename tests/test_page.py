@@ -312,7 +312,10 @@ def test_admin_lessons_by_owner_then_subject(page, clock):
     owners = page.locator(".owner-group > summary strong")
     sync_api.expect(owners).to_have_text(["👤 Léa", "👤 Paul", "Personne (commune à tous)"])  # nobody's last
     lea = page.locator(".owner-group").first
-    sync_api.expect(lea.locator("summary small")).to_contain_text("2 leçons")
+    sync_api.expect(lea.locator("> summary small")).to_contain_text("2 leçons")
+    sync_api.expect(page.locator(".admin-lesson-head:visible")).to_have_count(0)  # folded: the owners alone
+    lea.locator("> summary").click()
+    sync_api.expect(page.locator(".admin-lesson-head:visible")).to_have_count(2)
     sync_api.expect(lea.locator(".subject-group h3")).to_have_text(["Anglais"])
     sync_api.expect(lea.locator(".admin-lesson-head strong")).to_have_text(["Leçon 2", "Leçon 1"])
     sync_api.expect(page.locator(".owner-group").last.locator(".admin-lesson-head strong")).to_have_text(["SVT"])

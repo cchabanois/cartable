@@ -4,6 +4,9 @@
 
 > From school bag to flashcards: snap a lesson, get an Anki deck.
 
+<p align="center"><a href="https://www.youtube.com/shorts/Q7bUTMEj6Kk"><img src="docs/src/assets/demo.gif" alt="Notosaurus on a phone: a notebook page becomes Anki cards. Click to watch the full demo on YouTube." width="280"></a><br>
+▶ <a href="https://www.youtube.com/shorts/Q7bUTMEj6Kk">Watch the full demo</a> (75 s) · 📖 <a href="https://cchabanois.github.io/notosaurus/">Documentation</a></p>
+
 Take photos of a lesson with your phone. A vision AI reads the pages and drafts Anki cards. You review and fix them, then send them straight into Anki or download a `.apkg`.
 
 Notosaurus was built for learning languages (French → Spanish vocabulary and sentences, with audio), but a prompt can ask for any kind of question/answer card.

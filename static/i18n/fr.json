@@ -254,6 +254,11 @@
     },
     "pairing": {
       "title": "Appareil non autorisé"
+    },
+    "viewer": {
+      "label": "Photo en grand",
+      "previous": "Photo précédente",
+      "next": "Photo suivante"
     }
   },
   "admin": {

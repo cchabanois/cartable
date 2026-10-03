@@ -104,6 +104,7 @@ document.addEventListener("alpine:init", () => {
     // Natural-language correction of the cards; `undo` holds the previous version.
     revision: { text: "", busy: false, summary: "", stats: "", undo: null },
     successNext: false,          // the success toast offers to start a new lesson
+    viewer: { open: false, list: [], index: 0, zoomed: false, touchX: 0 },  // a photo in full
     removal: { open: false, lesson: null, checking: false, available: false, count: 0, anki: false, busy: false },
     editor: { open: false, id: null, name: "", text: "", deck: "", voice: "", error: "" },
     error: "",
@@ -200,6 +201,22 @@ document.addEventListener("alpine:init", () => {
       } catch (e) {
         this.error = e.message;
       }
+    },
+
+    // --- Viewer: a photo (or a card's picture) in full ---------------------
+    openViewer(list, index) {
+      this.viewer = { open: true, list, index, zoomed: false, touchX: 0 };
+    },
+
+    moveViewer(step) {
+      const n = this.viewer.list.length;
+      this.viewer.index = (this.viewer.index + step + n) % n;
+      this.viewer.zoomed = false;
+    },
+
+    swipeViewer(x) {
+      const dx = x - this.viewer.touchX;
+      if (Math.abs(dx) > 50 && this.viewer.list.length > 1) this.moveViewer(dx < 0 ? 1 : -1);
     },
 
     removePhoto(i) {

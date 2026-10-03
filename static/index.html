@@ -81,7 +81,7 @@
       <div class="strip">
         <template x-for="(p, i) in photos" :key="p.url">
           <figure class="thumb">
-            <img :src="p.url" :alt="$t('app.photos.page', { n: i + 1 })">
+            <img :src="p.url" :alt="$t('app.photos.page', { n: i + 1 })" @click="openViewer(photos.map((x) => x.url), i)">
             <figcaption x-text="i + 1"></figcaption>
             <button class="thumb-remove" @click="removePhoto(i)" :aria-label="$t('app.photos.remove')">✕</button>
             <button class="thumb-rotate" x-show="!readOnly()" @click="rotatePhoto(i)" :disabled="loading"
@@ -233,7 +233,8 @@
             </template>
             <!-- Picture card: the picture shows with the front text (or with the answer, below) -->
             <div class="card-picture" :class="{ figure: card.figure }" x-show="!card.picture_on_back && (card.picture || card._drawing || ((card.picture_prompt || card.figure) && drawing))">
-              <img x-show="card.picture && !card._drawing" :src="card.picture && pictureUrl(card)" :alt="card.figure || card.picture_prompt">
+              <img x-show="card.picture && !card._drawing" :src="card.picture && pictureUrl(card)" :alt="card.figure || card.picture_prompt"
+                   @click="openViewer([pictureUrl(card)], 0)">
               <span class="drawing" x-show="!card.picture || card._drawing" x-text="$t('app.pictures.drawing')"></span>
             </div>
             <div class="flash-body">
@@ -247,7 +248,8 @@
               <div class="math-preview back" x-show="hasMath(card.back)" x-html="previewHtml(card.back)"></div>
               <!-- The picture belongs to the answer ("What is a tangent?"): shown under it, as in Anki -->
               <div class="card-picture on-back" :class="{ figure: card.figure }" x-show="card.picture_on_back && (card.picture || card._drawing || ((card.picture_prompt || card.figure) && drawing))">
-                <img x-show="card.picture && !card._drawing" :src="card.picture && pictureUrl(card)" :alt="card.figure || card.picture_prompt">
+                <img x-show="card.picture && !card._drawing" :src="card.picture && pictureUrl(card)" :alt="card.figure || card.picture_prompt"
+                   @click="openViewer([pictureUrl(card)], 0)">
                 <span class="drawing" x-show="!card.picture || card._drawing" x-text="$t('app.pictures.drawing')"></span>
               </div>
               <div class="meta">
@@ -501,6 +503,26 @@
       </div>
     </form>
   </aside>
+
+  <!-- A photo (or a card's picture) in full: ‹ › or a swipe between pages, a tap on it for its real size -->
+  <div class="viewer" x-cloak x-show="viewer.open" x-transition.opacity role="dialog" :aria-label="$t('app.viewer.label')"
+       @keydown.escape.window="viewer.open = false" @keydown.arrow-left.window="viewer.open && moveViewer(-1)"
+       @keydown.arrow-right.window="viewer.open && moveViewer(1)" @click.self="viewer.open = false"
+       @touchstart="viewer.touchX = $event.touches[0].clientX"
+       @touchend="if (!viewer.zoomed) swipeViewer($event.changedTouches[0].clientX)">
+    <div class="viewer-frame" :class="{ zoomed: viewer.zoomed }" @click.self="viewer.open = false">
+      <img :src="viewer.list[viewer.index]" :alt="$t('app.photos.page', { n: viewer.index + 1 })"
+           @click="viewer.zoomed = !viewer.zoomed">
+    </div>
+    <button class="viewer-close" @click="viewer.open = false" :aria-label="$t('common.close')">✕</button>
+    <template x-if="viewer.list.length > 1">
+      <div>
+        <button class="viewer-nav prev" @click="moveViewer(-1)" :aria-label="$t('app.viewer.previous')">‹</button>
+        <button class="viewer-nav next" @click="moveViewer(1)" :aria-label="$t('app.viewer.next')">›</button>
+        <span class="viewer-count" x-text="`${viewer.index + 1} / ${viewer.list.length}`"></span>
+      </div>
+    </template>
+  </div>
 
   <!-- Deleting a lesson: its cards in Anki too? (asked, never by default) -->
   <div class="sheet-backdrop top" x-cloak x-show="removal.open" x-transition.opacity @click="removal.open = false"></div>

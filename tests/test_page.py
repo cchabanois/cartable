@@ -173,3 +173,38 @@ def test_settings_show_what_the_service_needs(page):
     # In the order things are set: the service, its access, then the model
     titles = [" ".join(t.split()) for t in page.locator("section.panel h2:visible").all_inner_texts()]
     assert titles[:4] == ["1 Service d'IA", "2 Accès", "3 Modèle", "4 Images des cartes"]
+    # The settings save themselves a moment later: done before the next test's data
+    page.wait_for_function("Alpine.$data(document.querySelector('[x-data]')).saveState === 'saved'")
+
+
+def png(color: str) -> bytes:
+    import io
+
+    from PIL import Image
+
+    out = io.BytesIO()
+    Image.new("RGB", (600, 800), color).save(out, "PNG")
+    return out.getvalue()
+
+
+def test_photos_and_pictures_seen_in_full(page):
+    page.goto("/")
+    page.locator("input[type=file][multiple]").set_input_files(
+        [{"name": f"page-{n}.png", "mimeType": "image/png", "buffer": png(c)} for n, c in ((1, "red"), (2, "blue"))]
+    )
+    page.locator(".thumb img").first.click()
+    viewer = page.locator(".viewer")
+    sync_api.expect(viewer).to_be_visible()
+    sync_api.expect(viewer.locator(".viewer-count")).to_have_text("1 / 2")
+    viewer.get_by_role("button", name="Photo suivante").click()
+    sync_api.expect(viewer.locator(".viewer-count")).to_have_text("2 / 2")
+    viewer.locator(".viewer-frame img").click()  # its real size, to pan
+    sync_api.expect(viewer.locator(".viewer-frame")).to_have_class(re.compile(r"\bzoomed\b"))
+    page.keyboard.press("Escape")
+    sync_api.expect(viewer).to_be_hidden()
+
+    # A card's figure too, alone: no arrows
+    generate_free(page, "Le triangle rectangle (géométrie)")
+    page.locator(".card-picture img").first.click()
+    sync_api.expect(viewer).to_be_visible()
+    sync_api.expect(viewer.locator(".viewer-nav")).to_have_count(0)

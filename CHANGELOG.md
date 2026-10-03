@@ -91,6 +91,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Fixed
 
+- Dates and numbers follow the browser's variety of the language: « 3 Oct, 15:15 » in British English, « Oct 3, 03:15 PM » in American English, « 15 h 15 » in Canadian French (one text per language still).
 - The exported .apkg has the type `application/apkg`, so AnkiDroid opens it straight from the download.
 - The add-on can be updated while Notosaurus runs, on Windows too: its Python, libraries, log and working folder move to `Anki2/notosaurus-runtime/`, outside the add-on's folder that Anki replaces (Windows refuses to move files in use). They are installed there once more (with the usual question), the old ones removed; deleting the add-on removes them.
 - The settings no longer offer OpenRouter's `:batch` models: half price, but answered up to hours later, while a lesson is waited for.

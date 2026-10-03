@@ -319,3 +319,19 @@ def test_admin_lessons_by_owner_then_subject(page, clock):
     sync_api.expect(lea.locator(".subject-group h3")).to_have_text(["Anglais"])
     sync_api.expect(lea.locator(".admin-lesson-head strong")).to_have_text(["Leçon 2", "Leçon 1"])
     sync_api.expect(page.locator(".owner-group").last.locator(".admin-lesson-head strong")).to_have_text(["SVT"])
+
+
+@pytest.mark.parametrize(
+    ("locale", "date"), [("en-GB", "3 Oct, 10:00"), ("en-US", "Oct 3, 10:00 AM"), ("fr-CA", "10 h 00")]
+)
+def test_dates_in_the_browser_variety(page, clock, browser, server, locale, date):
+    """One English text, but the dates as the browser writes them."""
+    page.request.post("/api/extract", multipart={"prompt": FRONT_PROMPT})  # saved at 10:00:00
+    context = browser.new_context(locale=locale, viewport={"width": 390, "height": 844}, base_url=server)
+    try:
+        other = context.new_page()
+        other.goto("/")
+        other.locator(".chip-btn").first.click()
+        sync_api.expect(other.locator(".lesson small").first).to_contain_text(date)
+    finally:
+        context.close()

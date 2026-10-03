@@ -45,12 +45,13 @@ async function api(path, options = {}) {
   return res;
 }
 
-function storage(action, value) {
+function storage(action, value, key = LAST_PROMPT) {
   try {
-    if (action === "get") return localStorage.getItem(LAST_PROMPT);
-    localStorage.setItem(LAST_PROMPT, value);
+    if (action === "get") return localStorage.getItem(key);
+    localStorage.setItem(key, value);
   } catch {}
 }
+const FUN_FACTS = "notosaurus.funFacts";  // the "did you know" switch, kept on this device
 
 const RECENT_PROMPTS = 4;  // chips shown before "All"
 const SAVE_DELAY = 800;  // ms: save shortly after the last edit
@@ -70,7 +71,7 @@ const escapeHtml = (text) => text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<"
 
 let nextKey = 0;
 const withKey = (card) =>
-  ({ info: "", subdeck: "", tags: [], picture: "", picture_prompt: "", figure: "", picture_on_back: false, ...card, key: nextKey++ });
+  ({ info: "", fun_fact: "", subdeck: "", tags: [], picture: "", picture_prompt: "", figure: "", picture_on_back: false, ...card, key: nextKey++ });
 
 // A card's stable id (crypto.randomUUID needs HTTPS; getRandomValues doesn't)
 const newId = () => [...crypto.getRandomValues(new Uint8Array(6))].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -92,6 +93,7 @@ document.addEventListener("alpine:init", () => {
     photosEdited: false,         // photos added or removed since the lesson was shown
     typing: false,               // the answer is typed in Anki
     dictation: false,            // a dictation card: hear the back, type it
+    funFacts: storage("get", undefined, FUN_FACTS) === "1",  // ask for "did you know" facts (off by default)
     lessons: [],         // saved lesson summaries
     lessonId: null,       // open lesson (null = new lesson, not generated yet)
     saveState: "",       // "", "pending", "saving", "saved", "error"
@@ -153,6 +155,7 @@ document.addEventListener("alpine:init", () => {
         const config = await (await api("/api/config")).json();
         this.diagramWarning = config.diagram_warning;
       } catch {}
+      this.$watch("funFacts", (on) => storage("set", on ? "1" : "0", FUN_FACTS));
       await Promise.all([this.loadPrompts(storage("get")), this.loadLessons()]);
       this.checkAnki();
       // Anki may be started later: check again when coming back to the app.
@@ -402,6 +405,7 @@ document.addEventListener("alpine:init", () => {
       // Generated again: the options set in the review stay, the prompt's are added
       body.append("typing", Boolean(this.form.typing || (inPlace && this.typing)));
       body.append("dictation", Boolean(this.form.dictation || (inPlace && this.dictation)));
+      if (this.funFacts) body.append("fun_facts", "true");
       if (this.selectedId) body.append("prompt_id", this.selectedId);
       try {
         const url = inPlace ? `/api/lessons/${this.lessonId}/regenerate` : "/api/extract";

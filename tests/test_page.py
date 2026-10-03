@@ -208,3 +208,17 @@ def test_photos_and_pictures_seen_in_full(page):
     page.locator(".card-picture img").first.click()
     sync_api.expect(viewer).to_be_visible()
     sync_api.expect(viewer.locator(".viewer-nav")).to_have_count(0)
+
+
+def test_fun_facts_switch(page):
+    page.goto("/")
+    switch = page.get_by_text("💡 Ajouter des « Le savais-tu ? »")
+    assert not page.locator(".switch.fun-facts input").is_checked()  # off by default
+    switch.click()
+    page.reload()  # kept on the device
+    assert page.locator(".switch.fun-facts input").is_checked()
+    generate_free(page, FRONT_PROMPT)
+    fact = page.locator(".flash .fun-fact input").first
+    sync_api.expect(fact).to_be_visible()
+    assert fact.input_value().startswith("Le savais-tu")
+    sync_api.expect(page.locator(".flash .fun-fact:visible")).to_have_count(1)  # the others have none

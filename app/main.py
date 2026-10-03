@@ -179,6 +179,7 @@ async def _generate(
     typing: bool,
     dictation: bool,
     lesson_id: str | None = None,
+    fun_facts: bool = False,
 ) -> Generated:
     """Read the photos (or, without photos, work from the prompt alone): the lesson's
     new content, not saved yet."""
@@ -194,7 +195,7 @@ async def _generate(
     profile = await ankiconnect.active_profile() or ""  # the lesson belongs to this Anki profile
     with llm.recording("extract") as calls:  # model, tokens and cost, kept with the lesson
         try:
-            found = await extract_cards(data, prompt, deck, profile, await decks.known(profile))
+            found = await extract_cards(data, prompt, deck, profile, await decks.known(profile), fun_facts=fun_facts)
         except Exception:
             usage.add(calls, lesson_id=None)  # answered but unusable: paid for, no lesson saved
             raise
@@ -219,9 +220,10 @@ async def extract(
     prompt_id: str | None = Form(None),
     typing: bool = Form(False),
     dictation: bool = Form(False),
+    fun_facts: bool = Form(False),
 ) -> Lesson:
     """A new lesson (photos + cards), saved so it can be reopened."""
-    g = await _generate(images, prompt, deck, voice, prompt_id, typing, dictation)
+    g = await _generate(images, prompt, deck, voice, prompt_id, typing, dictation, fun_facts=fun_facts)
     created = lessons.create(g.content, prompt, g.photos, g.profile, g.found.frames, g.calls, g.found.choice)
     usage.add(g.calls, created.id, created.deck)
     return created
@@ -237,11 +239,12 @@ async def regenerate(
     prompt_id: str | None = Form(None),
     typing: bool = Form(False),
     dictation: bool = Form(False),
+    fun_facts: bool = Form(False),
 ) -> Lesson:
     """Generate the lesson again (other prompt, other photos) in its place, instead of
     a second lesson. Only its owner's profile may."""
     old = await _editable(id)
-    g = await _generate(images, prompt, deck, voice, prompt_id, typing, dictation, lesson_id=id)
+    g = await _generate(images, prompt, deck, voice, prompt_id, typing, dictation, lesson_id=id, fun_facts=fun_facts)
     # The options set in the review stay (the prompt's are added): only the cards change
     g.content.reverse = old.reverse
     g.content.typing = g.content.typing or old.typing

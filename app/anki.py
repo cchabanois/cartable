@@ -260,7 +260,7 @@ def notes(
                     fields={
                         "Text": _html(front),
                         "Extra": _html(back),
-                        "Info": _html(card.info.strip()),
+                        "Info": _info(card),
                         "Id": card.id or f"{req.lesson_id or ''}:{i}",
                     },
                     tags=[_tag(t) for t in card.tags if t.strip()] + own_tags,
@@ -274,7 +274,7 @@ def notes(
         nt = diagram_nt if i in images else (answer_picture_nt if on_back else picture_nt) if i in pictures else text_nt
         if typing and tts.has_math(back) and nt is text_nt:
             nt = math_nt
-        values = {"Front": _html(front), "Back": _html(back), "Info": _html(card.info.strip())}
+        values = {"Front": _html(front), "Back": _html(back), "Info": _info(card)}
         media = []
         if "Audio" in nt.fields:
             mp3 = audio.get(back)
@@ -324,6 +324,16 @@ def lesson_notes(req: ExportRequest) -> list[Note]:
         return notes(req, images=diagrams_, pictures=pictures_)
     except AppError:  # no card
         return []
+
+
+def _info(card) -> str:
+    """The Info field: the card's info, then its "did you know" (💡, in italics). Styled
+    inline: the note types already in Anki keep their own CSS."""
+    info, fact = _html(card.info.strip()), card.fun_fact.strip()
+    if not fact:
+        return info
+    style = "margin-top:8px;font-style:italic"
+    return f'{info}<div style="{style}">💡 {_html(fact)}</div>'
 
 
 def _html(text: str) -> str:

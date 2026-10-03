@@ -115,6 +115,51 @@ school words of the country.
 The server never builds sentences: its errors are codes (`llm.overloaded`,
 `lesson.not_owner`…) that the page translates.
 
+## User documentation
+
+The user documentation is a website in `docs/`, built with
+[Astro Starlight](https://starlight.astro.build) and published on GitHub Pages
+(https://cchabanois.github.io/notosaurus/) by the *Documentation site* workflow, on every
+merge on `main` that changes it. It needs Node.js only to build the site; Notosaurus itself
+doesn't use it.
+
+```sh
+cd docs
+npm install
+npm run dev      # http://localhost:4321/notosaurus/, reloads on every change
+npm run build    # what the workflow publishes, in docs/dist
+```
+
+- Pages are Markdown files in `docs/src/content/docs/`: English at the root, the other
+  languages in a folder named after their code (`fr/`, `es/`, `de/`, `it/`, `pt-br/`), with
+  the same file names. A page not translated yet shows the English one, with a notice.
+- The sidebar, the languages and the site's settings are in `docs/astro.config.mjs`.
+- Use the interface's own words, in each language (`static/i18n/<lang>.json`), and Anki's.
+
+### Screenshots
+
+The screenshots in `docs/src/assets/screenshots/<lang>/` are taken by
+`tools/docs_screenshots.py`, from demo lessons stored in `docs/demo/<lang>/lessons/`
+(made from the pages in `docs/demo/inputs/`, no personal data). Retake them whenever the
+interface changes; it needs Playwright (`requirements-page.txt`) and makes no AI call:
+
+```sh
+.venv/bin/python tools/docs_screenshots.py shoot                # every language
+.venv/bin/python tools/docs_screenshots.py shoot --lang fr
+```
+
+For a new language, make its demo lessons once with a real AI (a few cents; the API keys
+are read from `--settings` and never written to the repository), then take its screenshots:
+
+```sh
+.venv/bin/python tools/docs_screenshots.py generate --lang es --settings data/settings.json
+```
+
+The script runs Notosaurus as in the add-on, with a fake Anki (profiles Léa and Paul) and a
+fake API key, so no real key or name appears in the screenshots. A new language also needs
+its entries in `LESSONS`, `INSTRUCTIONS` and `CORRECTION_TYPED` in the script, and its
+`docs/demo/inputs/*.<lang>.html` pages.
+
 ## Pull requests
 
 `main` is protected: every change goes through a pull request. Each pull request adds a

@@ -1,0 +1,49 @@
+---
+title: Notosaurus
+description: Snap a lesson with your phone, get Anki flashcards. A free, open-source add-on for Anki.
+template: splash
+hero:
+  tagline: Snap a lesson with your phone. Get Anki flashcards in seconds, ready to review.
+  image:
+    file: ../../assets/logo.webp
+  actions:
+    - text: Get started
+      link: getting-started/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/cchabanois/notosaurus
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+import demo from '../../assets/demo.gif';
+
+<img class="demo" src={demo.src} alt="Notosaurus on a phone: a vocabulary page becomes cards, a diagram gets its labels hidden, geometry cards get exact figures" />
+
+<CardGrid stagger>
+	<Card title="From a photo" icon="seti:image">
+		Photograph a notebook or textbook page. A vision AI reads it, handwriting included, and
+		drafts the cards.
+	</Card>
+	<Card title="You stay in charge" icon="pencil">
+		Review every card, or ask in plain words: “add the plural on the back”, “you forgot the
+		colours”.
+	</Card>
+	<Card title="Diagrams, formulas, figures" icon="puzzle">
+		Labels of a diagram hidden behind numbers, formulas in MathJax, exact geometry figures,
+		fill-in-the-blanks and quizzes.
+	</Card>
+	<Card title="Straight into Anki" icon="rocket">
+		One tap sends the deck to Anki, with audio. Review on AnkiDroid or AnkiMobile, synced by
+		AnkiWeb.
+	</Card>
+	<Card title="Made for families" icon="star">
+		One Anki profile per child, each with their own lessons. Children's photos go only to the
+		AI service you choose.
+	</Card>
+	<Card title="Free and open source" icon="github">
+		Bring your own AI key (Gemini, Claude, OpenAI, OpenRouter, or a model at home). No
+		subscription.
+	</Card>
+</CardGrid>

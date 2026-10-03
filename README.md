@@ -21,7 +21,7 @@ Notosaurus was built for learning languages (French → Spanish vocabulary and s
 - **Lessons are saved** (photos + cards), so you can reopen, fix and re-send them later.
 - **One lesson list per Anki profile**, handy when each child has their own profile. The profile that creates a lesson owns it and can share it with the other profiles.
 - **Choice of AI**: Gemini, Claude, or any OpenAI-compatible service (OpenAI, OpenRouter, Mistral, Ollama…).
-- **English and French**, and adding a language takes a single file.
+- **English, French, Spanish, German, Italian and Portuguese (Brazil)**, and adding a language takes a single file.
 
 ## Two ways to run it
 
@@ -124,7 +124,7 @@ The interface follows the page's language picker, then Anki's language (in the a
 - the default prompts;
 - the add-on's menu.
 
-A test checks that every language has exactly the same keys as English.
+A test checks that every language has exactly the same keys as English, and another that every language fits a narrow phone (360 px): no page wider than the screen, no button or title cut, no placeholder longer than its field. Translations use Anki's own words (its official translations: deck = *mazo*, *Stapel*, *mazzo*, *baralho*…) and the school words of the country.
 
 The server never builds sentences: its errors are codes (`llm.overloaded`, `lesson.not_owner`…) that the page translates. Instructions sent to the AI are in English, and the user's prompt decides the language of the cards.
 

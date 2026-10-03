@@ -25,8 +25,10 @@ def test_notosaurus_prompts(client):
     assert fr[0]["name"] == "Automatique (d'après la leçon)" and fr[0]["voice"] == "auto"
     en = client.get("/api/prompts", headers={"X-Notosaurus-Lang": "en"}).json()
     assert en[1]["name"] == "Vocabulary of a language"  # the same prompts, in English
-    de = client.get("/api/prompts", headers={"X-Notosaurus-Lang": "de"}).json()
-    assert de[1]["name"] == "Vocabulary of a language"  # no German file: English
+    de = client.get("/api/prompts", headers={"X-Notosaurus-Lang": "de-AT"}).json()
+    assert de[1]["name"] == "Vokabeln einer Sprache"
+    ja = client.get("/api/prompts", headers={"X-Notosaurus-Lang": "ja"}).json()
+    assert ja[1]["name"] == "Vocabulary of a language"  # no Japanese file: English
 
     for method in ("PUT", "DELETE"):
         r = client.request(method, "/api/prompts/notosaurus:questions", json={"name": "x", "text": "y"})
@@ -735,8 +737,9 @@ def test_all_error_codes_translated():
 
 def test_language_choice(monkeypatch):
     assert i18n.resolve("fr-FR") == "fr"
-    assert i18n.resolve("de-DE", "en-US") == "en"
-    assert i18n.resolve("de") is None
+    assert i18n.resolve("pt-BR") == "pt" and i18n.resolve("pt_PT") == "pt"
+    assert i18n.resolve("ja-JP", "en-US") == "en"
+    assert i18n.resolve("ja") is None
     monkeypatch.setenv("NOTOSAURUS_LANG", "fr_FR")  # Anki's language, set by the add-on
     assert i18n.anki_language() == "fr"
     monkeypatch.setenv("NOTOSAURUS_LANG", "ja_JP")
@@ -748,8 +751,15 @@ def test_language_choice(monkeypatch):
 def test_lang_route(client, monkeypatch):
     assert client.get("/api/lang").json() == {
         "lang": None,
-        "available": ["en", "fr"],
-        "names": {"en": "English", "fr": "Français"},
+        "available": ["de", "en", "es", "fr", "it", "pt"],
+        "names": {
+            "de": "Deutsch",
+            "en": "English",
+            "es": "Español",
+            "fr": "Français",
+            "it": "Italiano",
+            "pt": "Português (Brasil)",
+        },
     }
     monkeypatch.setenv("NOTOSAURUS_LANG", "fr_FR")
     assert client.get("/api/lang").json()["lang"] == "fr"

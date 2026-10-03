@@ -335,3 +335,47 @@ def test_dates_in_the_browser_variety(page, clock, browser, server, locale, date
         sync_api.expect(other.locator(".lesson small").first).to_contain_text(date)
     finally:
         context.close()
+
+
+# What doesn't fit on a narrow phone: the page wider than the screen, a button or
+# title cut, a placeholder longer than its field
+CUT = """() => {
+  const width = document.documentElement.clientWidth, found = [];
+  if (document.documentElement.scrollWidth > width) found.push(`page: ${document.documentElement.scrollWidth}px`);
+  for (const el of document.querySelectorAll("button, .chip, .badge, summary, h2, h3, label")) {
+    if (el.getBoundingClientRect().width && el.scrollWidth > el.clientWidth + 2) found.push(el.innerText.trim());
+  }
+  const canvas = document.createElement("canvas").getContext("2d");
+  for (const el of document.querySelectorAll("input[placeholder]")) {
+    if (!el.getBoundingClientRect().width || el.value) continue;
+    const style = getComputedStyle(el);
+    canvas.font = style.font;
+    const room = el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    if (canvas.measureText(el.placeholder).width > room + 1) found.push(el.placeholder);
+  }
+  return [...new Set(found)];
+}"""
+
+
+@pytest.mark.parametrize("lang", ["en", "fr", "es", "de", "it", "pt"])
+def test_every_language_fits_a_narrow_phone(page, browser, server, lang):
+    context = browser.new_context(locale="fr-FR", viewport={"width": 360, "height": 780}, base_url=server)
+    context.add_init_script(f"localStorage.setItem('notosaurus.lang', '{lang}')")
+    try:
+        other = context.new_page()
+        other.goto("/")
+        other.wait_for_function("document.documentElement.classList.contains('i18n-ready')")
+        other.locator(".chip").first.click()  # the free prompt
+        other.locator("textarea[x-ref=promptText]").fill("QCM sur la Révolution")
+        other.locator(".from-prompt button").click()
+        other.locator(".flash").first.wait_for()
+        assert other.evaluate(CUT) == []
+        other.goto("/admin.html")
+        other.locator("input[autocomplete=new-password]").first.fill("secret")
+        other.locator("input[autocomplete=new-password]").nth(1).fill("secret")
+        other.locator("button.btn.primary.wide").first.click()  # create the password
+        other.locator("section.panel h2").nth(3).wait_for()
+        assert other.evaluate(CUT) == []
+        other.wait_for_function("Alpine.$data(document.querySelector('[x-data]')).saveState !== 'pending'")
+    finally:
+        context.close()

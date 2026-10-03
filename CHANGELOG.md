@@ -3,7 +3,7 @@
 All notable changes to Notosaurus. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and versions follow [Semantic Versioning](https://semver.org/) (while in 0.x, anything may still change).
 
-Each pull request adds a line under **Unreleased**. See [Releasing](README.md#releasing) for how a version is published.
+Each pull request adds a line under **Unreleased**. See [Releasing](CONTRIBUTING.md#releasing) for how a version is published.
 
 ## [Unreleased]
 
@@ -73,6 +73,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Changed
 
+- Documentation: the README is for people installing and using Notosaurus; setting up, tests, architecture, adding a language and releasing moved to [CONTRIBUTING.md](CONTRIBUTING.md).
 - A light pastel blue background (it was beige), with borders and fields to match: the water of the Notosaurus logo. Dark mode unchanged.
 - Cartable is now Notosaurus: the app, the add-on (`notosaurus-<version>.ankiaddon`, Tools → Notosaurus), the Anki note types ("Notosaurus recto/verso"…), the notes' tag (`notosaurus::<lesson>`), the environment variables (`NOTOSAURUS_*`), the add-on's runtime folder (`Anki2/notosaurus-runtime`).
 - The Notosaurus logo: large on the home screen, its head in the app bar (on phones, instead of the name, which the home screen shows in full). On a white card, readable in dark mode too. The home screen and browser icons are its head too, under new file names (phones keep an icon by its address); `tools/make_icons.py` makes every image from `assets/notosaurus-logo.png`.

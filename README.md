@@ -179,7 +179,7 @@ Stack:
 | `anki_addon/` | the Anki add-on: server launcher and an AnkiConnect-compatible bridge |
 | `tools/build_addon.py` | builds `dist/cartable-<version>.ankiaddon` |
 | `tools/changelog_section.py` | release notes of a version, from `CHANGELOG.md` |
-| `tools/make_icons.py` | the PNG icons for phones' home screens, from `static/icon.svg` |
+| `tools/make_icons.py` | the logo images and the icons (home screen, browser), from `assets/notosaurus-logo.png` |
 
 ## Good to know
 

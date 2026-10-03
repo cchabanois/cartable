@@ -4,7 +4,7 @@
   "description": "Snap a lesson, get an Anki deck.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f2ea",
+  "background_color": "#eaf3fa",
   "theme_color": "#0e6377",
   "lang": "en",
   "icons": [

@@ -7,6 +7,7 @@
 """
 
 import hashlib
+import logging
 import re
 import shutil
 import uuid
@@ -15,6 +16,8 @@ from pathlib import Path
 
 from . import storage
 from .models import AiCall, Card, Frame, Lesson, LessonIn, LessonSummary
+
+log = logging.getLogger("cartable")
 
 ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")  # folder names we create; blocks "../"
 
@@ -45,8 +48,12 @@ def _count_photos(path: Path) -> int:
     return len(list(path.glob("page-*.jpg")))
 
 
+# lesson.json's format; storage.migrate brings older files up to it
+FORMAT = 1
+
+
 def _read(path: Path) -> Lesson:
-    data = storage.read_json(path / "lesson.json")
+    data = storage.migrate(storage.read_json(path / "lesson.json"), "lesson", FORMAT, {0: dict})
     lesson = Lesson(id=path.name, photo_count=_count_photos(path), **data)
     # Cards saved before cards had ids: the same id at every reading, until it's saved
     for n, card in enumerate(lesson.cards):
@@ -65,7 +72,7 @@ def with_ids(cards: list[Card]) -> list[Card]:
 
 def _write(path: Path, lesson: Lesson) -> None:
     with_ids(lesson.cards)
-    storage.write_json(path / "lesson.json", lesson.model_dump(exclude={"id", "photo_count"}))
+    storage.write_json(path / "lesson.json", {"format": FORMAT, **lesson.model_dump(exclude={"id", "photo_count"})})
 
 
 def _new_folder(deck: str) -> Path:
@@ -127,10 +134,14 @@ def list_all() -> list[LessonSummary]:
     root = _root()
     if not root.is_dir():
         return []
-    summaries = [
-        LessonSummary(card_count=len(lesson.cards), **lesson.model_dump(exclude={"cards"}))
-        for lesson in (_read(p) for p in root.iterdir() if (p / "lesson.json").is_file())
-    ]
+    summaries = []
+    for path in (p for p in root.iterdir() if (p / "lesson.json").is_file()):
+        try:
+            lesson = _read(path)
+        except storage.DataTooNew as e:  # saved by a newer Cartable: left alone
+            log.warning("Lesson %s not listed: %s", path.name, e.detail_text)
+            continue
+        summaries.append(LessonSummary(card_count=len(lesson.cards), **lesson.model_dump(exclude={"cards"})))
     return sorted(summaries, key=lambda s: (s.updated_at, s.id), reverse=True)
 
 

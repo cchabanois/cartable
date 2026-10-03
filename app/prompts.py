@@ -52,17 +52,28 @@ def _path():
     return storage.data_dir() / "prompts.json"
 
 
+# prompts.json's format; storage.migrate brings older files up to it
+FORMAT = 1
+
+
+def _format_1(data: dict) -> dict:
+    """Format 0 → 1: before Cartable's prompts, the file was a list, seeded once with the
+    default prompts: read as the user's prompts, without the old defaults left unchanged."""
+    if "list" not in data:  # already {"user", "builtin_used"}, before formats
+        return data
+    return {"user": [p for p in data["list"] if p.get("text") not in REPLACED], "builtin_used": {}}
+
+
 def _read() -> tuple[list[Prompt], dict[str, str]]:
     data = storage.read_json(_path())
     if data is None:
         return [], {}
-    if isinstance(data, list):  # before Cartable's prompts
-        return [Prompt(**p) for p in data if p.get("text") not in REPLACED], {}
+    data = storage.migrate({"list": data} if isinstance(data, list) else data, "prompts", FORMAT, {0: _format_1})
     return [Prompt(**p) for p in data.get("user", [])], dict(data.get("builtin_used", {}))
 
 
 def _write(user: list[Prompt], used: dict[str, str]) -> None:
-    storage.write_json(_path(), {"user": [p.model_dump() for p in user], "builtin_used": used})
+    storage.write_json(_path(), {"format": FORMAT, "user": [p.model_dump() for p in user], "builtin_used": used})
 
 
 def _builtins(lang: str, used: dict[str, str]) -> list[Prompt]:

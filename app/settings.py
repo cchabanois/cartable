@@ -129,17 +129,30 @@ def _split_openai(values: dict, url: str | None, keys: dict[str, str]) -> None:
         values["llm"] = chosen
 
 
-def _stored() -> dict:
-    stored = storage.read_json(_path(), default={})
-    if "openai_base_url" in stored or "openai_keys" in stored:  # saved before the split
+# settings.json's format; storage.migrate brings older files up to it
+FORMAT = 1
+
+
+def _format_1(stored: dict) -> dict:
+    """Format 0 → 1: OpenAI, OpenRouter and the compatible services become providers of
+    their own; the pictures get a service of their own."""
+    stored = dict(stored)
+    if "openai_base_url" in stored or "openai_keys" in stored:  # one provider, a key per address
         url = stored.pop("openai_base_url", None) or OPENAI_URL
         keys = dict(stored.pop("openai_keys", {}))
         if "openai_api_key" in stored:  # older still: one key, for the address saved with it
             keys.setdefault(url, stored.pop("openai_api_key"))
         _split_openai(stored, url, keys)
-    if stored.get("picture_model") and "picture_service" not in stored:  # saved before the picture service
+    if stored.get("picture_model") and "picture_service" not in stored:  # its service was told by its name
         stored["picture_service"] = _picture_service_of(stored["picture_model"])
     return stored
+
+
+def _stored() -> dict:
+    stored = storage.read_json(_path(), default=None)
+    if stored is None:
+        return {"format": FORMAT}
+    return storage.migrate(stored, "settings", FORMAT, {0: _format_1})
 
 
 def _picture_service_of(model: str) -> str:
@@ -201,7 +214,7 @@ def save(changes: dict) -> Settings:
 
 
 def _write(stored: dict) -> None:
-    storage.write_json(_path(), stored)
+    storage.write_json(_path(), {**stored, "format": FORMAT})
     os.chmod(_path(), 0o600)  # API keys inside
 
 

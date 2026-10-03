@@ -543,6 +543,9 @@
     },
     "figure": {
       "invalid": "La figure dessinée par l'IA n'est pas lisible : redessine-la."
+    },
+    "data": {
+      "too_new": "Ces données ({what}) viennent d'une version plus récente de Cartable : mets Cartable à jour pour les utiliser."
     }
   },
   "demo": {

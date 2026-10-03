@@ -81,11 +81,15 @@ def _paired(request: Request) -> bool:
 async def paired_devices_only(request: Request, call_next):
     path = request.url.path
     allowed = path in UNPAIRED_ALLOWED or path.startswith(UNPAIRED_PREFIXES)
-    if path.startswith("/api/") and not allowed and not _paired(request):
+    try:
+        paired = _paired(request)
+    except AppError as e:  # e.g. settings from a newer Cartable: said, as any error
+        return JSONResponse(status_code=e.status, content={"detail": e.detail()})
+    if path.startswith("/api/") and not allowed and not paired:
         return JSONResponse(status_code=401, content={"detail": AppError("device.not_paired").detail()})
     response = await call_next(request)
     given = request.query_params.get("k")
-    if settings.is_device_token(given) and request.cookies.get(DEVICE_COOKIE) != given:
+    if given and paired and request.cookies.get(DEVICE_COOKIE) != given and settings.is_device_token(given):
         response.set_cookie(
             DEVICE_COOKIE,
             given,

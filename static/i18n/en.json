@@ -249,7 +249,7 @@
       "cost": "A drawing costs about 3 to 7 US¢; your own photo is free.",
       "figure": "The figure to draw (labels included)",
       "figurePlaceholder": "e.g. a triangle with a right angle at C, the hypotenuse labelled “c”",
-      "figureCost": "A figure is drawn by the cards' AI, about 1 to 2 US¢; your own photo is free.",
+      "figureCost": "A figure is drawn by the cards' AI, for under a US cent; your own photo is free.",
       "onBack": "On the back (with the answer)"
     },
     "pairing": {

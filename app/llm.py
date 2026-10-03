@@ -89,10 +89,14 @@ empty for words that can't be drawn clearly (abstract words). The front is then 
 text shown with the picture, as the instructions say (a question like "How do you say \
 it in English?", or empty if they want the picture alone). Never put the answer in \
 the picture's description. Leave "picture" and "id" empty.
-- Figures: when a card needs an exact figure (geometry: a right triangle, a circle and \
-its radius, angles; a figure with measures; a simple labelled diagram), fill "figure" \
-with a precise description of it, in the language of the instructions: the shapes, \
-their proportions, which angles are right, and every label with its exact text. It \
+- Figures: when a card is about a figure, fill "figure" with a precise description of \
+it, in the language of the instructions: the shapes, their proportions, which angles \
+are right, and every label with its exact text. A card is about a figure when it is \
+about geometry: a formula of a figure (the area of a triangle: the triangle with its \
+base b and height h drawn), a theorem (Pythagoras: the right triangle with its sides \
+a, b, c), a notion (a tangent, a perpendicular bisector), a figure with measures, a \
+simple labelled diagram. The figure's letters are those of the card. Unless the \
+instructions ask for no figures. It \
 is drawn as a clean, exact figure (not by an image model). Use "picture_prompt" for \
 objects, animals and scenes, "figure" for these figures; leave the other empty.
 - Where a picture or figure goes: on the front when it is needed to answer ("What is \
@@ -253,7 +257,9 @@ async def draw_figure(s: Settings, description: str) -> str:
     if s.llm == "fake":
         await record(s, "fake", "fake", 0, 0, cost=0.0)
         return _fake_figure(description)
-    drawing = await _generate(s, [], f"Figure to draw: {description.strip()}", figures.Drawing, figures.RULES)
+    drawing = await _generate(
+        s, [], f"Figure to draw: {description.strip()}", figures.Drawing, figures.RULES, light=True
+    )
     return drawing.svg
 
 
@@ -380,16 +386,18 @@ def _keep_masks(
 
 
 async def _generate[T: BaseModel](
-    s: Settings, images: list[Image], text: str, schema: type[T], system: str = SYSTEM_PROMPT
+    s: Settings, images: list[Image], text: str, schema: type[T], system: str = SYSTEM_PROMPT, light: bool = False
 ) -> T:
     """Send photos + text to the configured provider and parse the answer as `schema`.
-    `system`: the fixed rules (the cards' by default)."""
+    `system`: the fixed rules (the cards' by default). `light`: a task that needs little
+    thinking (drawing a figure described precisely): the model thinks as little as it
+    can, where the service lets us say so — cheaper and faster."""
     if s.llm == "gemini":
-        return await _gemini(s, images, text, schema, system)
+        return await _gemini(s, images, text, schema, system, light)
     if s.llm == "anthropic":
-        return await _anthropic(s, images, text, schema, system)
+        return await _anthropic(s, images, text, schema, system)  # Claude only thinks when asked to
     if s.llm in settings.OPENAI_LIKE:
-        return await _openai(s, images, text, schema, system)
+        return await _openai(s, images, text, schema, system, light)
     raise ExtractionError("llm.unknown_provider", provider=s.llm)
 
 
@@ -410,7 +418,7 @@ def _gemini_client(s: Settings):
 
 
 async def _gemini[T: BaseModel](
-    s: Settings, images: list[Image], text: str, schema: type[T], system: str = SYSTEM_PROMPT
+    s: Settings, images: list[Image], text: str, schema: type[T], system: str = SYSTEM_PROMPT, light: bool = False
 ) -> T:
     from google.genai import errors, types
 
@@ -423,6 +431,8 @@ async def _gemini[T: BaseModel](
         response_json_schema=schema.model_json_schema(),
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
     )
+    if light and s.model_for_provider().startswith("gemini-3"):  # older models set thinking otherwise
+        config.thinking_config = types.ThinkingConfig(thinking_level=types.ThinkingLevel.MINIMAL)
     models = [s.model_for_provider()]
     models += [m.strip() for m in s.fallback_models.split(",") if m.strip()]
 
@@ -667,7 +677,7 @@ async def list_models(s: Settings) -> dict:
 
 
 async def _openai[T: BaseModel](
-    s: Settings, images: list[Image], text: str, schema: type[T], system: str = SYSTEM_PROMPT
+    s: Settings, images: list[Image], text: str, schema: type[T], system: str = SYSTEM_PROMPT, light: bool = False
 ) -> T:
     """OpenAI-compatible providers: Ollama (qwen2.5vl, gemma3…), etc."""
     import openai
@@ -695,7 +705,13 @@ async def _openai[T: BaseModel](
                 "json_schema": {"name": schema.__name__.lower(), "schema": schema.model_json_schema()},
             },
             # OpenRouter tells the exact cost of the call when asked
-            extra_body={"usage": {"include": True}} if s.llm == "openrouter" else None,
+            # OpenRouter: the exact cost of the call; and, for a light task, as little
+            # thinking as the model allows (a model that doesn't think ignores it)
+            extra_body=(
+                {"usage": {"include": True}, **({"reasoning": {"effort": "minimal"}} if light else {})}
+                if s.llm == "openrouter"
+                else None
+            ),
         )
         usage = response.usage
         if usage:

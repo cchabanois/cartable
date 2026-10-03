@@ -74,6 +74,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](CONTRIBUTING
 
 ### Changed
 
+- The README shows the Notosaurus logo.
 - Documentation: the README is for people installing and using Notosaurus; setting up, tests, architecture, adding a language and releasing moved to [CONTRIBUTING.md](CONTRIBUTING.md).
 - A light pastel blue background (it was beige), with borders and fields to match: the water of the Notosaurus logo. Dark mode unchanged.
 - Cartable is now Notosaurus: the app, the add-on (`notosaurus-<version>.ankiaddon`, Tools → Notosaurus), the Anki note types ("Notosaurus recto/verso"…), the notes' tag (`notosaurus::<lesson>`), the environment variables (`NOTOSAURUS_*`), the add-on's runtime folder (`Anki2/notosaurus-runtime`).

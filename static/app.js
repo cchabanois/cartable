@@ -69,7 +69,8 @@ const GAP_END = /(?:::[^{}]*?)?\}\}/g;
 const escapeHtml = (text) => text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 let nextKey = 0;
-const withKey = (card) => ({ info: "", subdeck: "", tags: [], picture: "", picture_prompt: "", ...card, key: nextKey++ });
+const withKey = (card) =>
+  ({ info: "", subdeck: "", tags: [], picture: "", picture_prompt: "", figure: "", ...card, key: nextKey++ });
 
 // A card's stable id (crypto.randomUUID needs HTTPS; getRandomValues doesn't)
 const newId = () => [...crypto.getRandomValues(new Uint8Array(6))].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -894,7 +895,7 @@ document.addEventListener("alpine:init", () => {
     // the user's own photo, or no picture.
     togglePicturePanel(card) {
       card._panel = !card._panel;
-      if (card._panel) card._subject = card.picture_prompt || card.back;
+      if (card._panel) card._subject = card.figure || card.picture_prompt || card.back;
     },
 
     async pictureAction(card, request) {
@@ -906,6 +907,7 @@ document.addEventListener("alpine:init", () => {
         const res = await (await api(`/api/lessons/${this.lessonId}/cards/${card.id}/picture${request.path ?? ""}`, request)).json();
         card.picture = res.card.picture;
         card.picture_prompt = res.card.picture_prompt;
+        card.figure = res.card.figure;
         if (!card.picture) card._panel = false;
       } catch (e) {
         this.error = e.message;
@@ -938,7 +940,7 @@ document.addEventListener("alpine:init", () => {
     },
 
     async drawPictures() {
-      if (this.readOnly() || !this.cards.some((c) => c.picture_prompt && !c.picture)) return;
+      if (this.readOnly() || !this.cards.some((c) => (c.picture_prompt || c.figure) && !c.picture)) return;
       if (this.saveTimer) await this.saveNow();
       this.drawing = true;
       const lessonId = this.lessonId;

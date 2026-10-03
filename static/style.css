@@ -756,3 +756,6 @@ h2 {
 .phones .qr { display: block; margin: .5rem auto 1rem; border-radius: var(--radius-sm); background: #fff; padding: .5rem; }
 
 .picture-summary { margin: 0 0 .75rem; font-weight: 700; }
+
+/* A figure (SVG drawn by the AI): white like a textbook figure, in light and dark mode */
+.card-picture.figure img { background: #fff; width: min(100%, 400px); height: auto; }

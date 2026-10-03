@@ -31,6 +31,11 @@ class Card(BaseModel):
         description="Only when the instructions ask for a picture on the card (see the rules): what to draw, "
         "in English. Empty otherwise.",
     )
+    figure: str = Field(
+        default="",
+        description="Only when the card needs an exact figure (see the rules): what to draw, every label "
+        "with its exact text. Empty otherwise.",
+    )
     # Set by Cartable, not by the AI:
     picture: str = Field(default="", description="Leave empty.")  # file in the lesson's images/ folder
     id: str = Field(default="", description="Leave empty.")  # stable: tells Anki which note a card is
@@ -196,9 +201,10 @@ class SettingsUpdate(BaseModel):
 
 
 class PictureRequest(BaseModel):
-    """Draw a card's picture again, with what to draw (None: the card's own)."""
+    """Draw a card's picture again, with what to draw (None: the card's own): its subject,
+    or a figure's description."""
 
-    subject: str | None = Field(default=None, max_length=300)
+    subject: str | None = Field(default=None, max_length=1000)
 
 
 class LessonAccess(BaseModel):

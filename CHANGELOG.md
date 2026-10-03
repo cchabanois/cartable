@@ -9,6 +9,8 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Figures on cards: when a card needs an exact figure (geometry, a figure with measures, a simple labelled diagram), the AI describes it and Cartable has it drawn as SVG by the cards' own AI (about 1 to 2 US¢ each), exact and with clean labels, where image models draw text and measures badly. The SVG is cleaned to shapes and text only and served so that nothing in it can run; it shows in the review and goes to Anki like the pictures. The 🖼️ panel edits the figure's description and draws it again.
+
 - Tests of the pages in a real browser (Playwright, headless Chromium), in the CI: the page saving as it goes, generating again and undoing, deleting the open lesson, the settings showing what each AI service needs.
 
 - With OpenRouter, the settings suggest a short list: its "~…-latest" models, always the latest version of each main family (Gemini Flash ⭐ recommended, Claude Sonnet, GPT Mini…), with their readable names; every model on demand. The list loads by itself when OpenRouter has a key. Choosing OpenRouter now suggests `~google/gemini-flash-latest`.

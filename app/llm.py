@@ -89,6 +89,14 @@ empty for words that can't be drawn clearly (abstract words). The front is then 
 text shown with the picture, as the instructions say (a question like "How do you say \
 it in English?", or empty if they want the picture alone). Never put the answer in \
 the picture's description. Leave "picture" and "id" empty.
+- Figures: when a card needs an exact figure (geometry: a right triangle, a circle and \
+its radius, angles; a figure with measures; a simple labelled diagram), fill "figure" \
+with a precise description of it, in the language of the instructions: the shapes, \
+their proportions, which angles are right, and every label with its exact text. It \
+is drawn as a clean, exact figure (not by an image model), and shown with the front. \
+Never put the answer on the figure when the card asks for it (a side to name stays \
+unlabelled, or is labelled with a letter only). Use "picture_prompt" for objects, \
+animals and scenes, "figure" for these figures; leave the other empty.
 - Text lines: for each photo, its longest line of printed text (a title, a sentence): \
 the box of its first word and the box of its last word, in reading order, in the same \
 format as the diagram boxes. On a photo taken sideways or upside down, the first word \
@@ -235,6 +243,17 @@ async def extract_cards(
     )
 
 
+async def draw_figure(s: Settings, description: str) -> str:
+    """The SVG of a figure, drawn by the cards' AI with the drawing rules (figures.py)."""
+    from . import figures
+
+    if s.llm == "fake":
+        await record(s, "fake", "fake", 0, 0, cost=0.0)
+        return _fake_figure(description)
+    drawing = await _generate(s, [], f"Figure to draw: {description.strip()}", figures.Drawing, figures.RULES)
+    return drawing.svg
+
+
 def _revision_text(
     prompt: str,
     deck: Deck,
@@ -313,7 +332,8 @@ async def revise_cards(
 
 def _keep_ids(revised: list[Card], before: list[Card]) -> None:
     """A revised card keeps the id and the picture of the card it was (same front and
-    back, else same back, else same front): Anki updates its note, the picture stays."""
+    back, else same back, else same front): Anki updates its note, the picture stays —
+    unless what to draw changed (the picture's subject, the figure's description)."""
     left = list(before)
     for card in revised:
         match = next((c for c in left if (c.front, c.back) == (card.front, card.back)), None)
@@ -321,8 +341,9 @@ def _keep_ids(revised: list[Card], before: list[Card]) -> None:
         match = match or next((c for c in left if c.front == card.front and c.front), None)
         if match:
             card.id = match.id
-            if not card.picture_prompt or card.picture_prompt == match.picture_prompt:
-                card.picture, card.picture_prompt = match.picture, match.picture_prompt
+            unchanged = (card.picture_prompt, card.figure) == (match.picture_prompt, match.figure)
+            if unchanged or not (card.picture_prompt or card.figure):
+                card.picture, card.picture_prompt, card.figure = match.picture, match.picture_prompt, match.figure
             left.remove(match)
         else:
             card.id, card.picture = "", ""  # a new card: its id comes when saved
@@ -354,14 +375,17 @@ def _keep_masks(
         used.add((card.mask.page, card.mask.n))
 
 
-async def _generate[T: BaseModel](s: Settings, images: list[Image], text: str, schema: type[T]) -> T:
-    """Send photos + text to the configured provider and parse the answer as `schema`."""
+async def _generate[T: BaseModel](
+    s: Settings, images: list[Image], text: str, schema: type[T], system: str = SYSTEM_PROMPT
+) -> T:
+    """Send photos + text to the configured provider and parse the answer as `schema`.
+    `system`: the fixed rules (the cards' by default)."""
     if s.llm == "gemini":
-        return await _gemini(s, images, text, schema)
+        return await _gemini(s, images, text, schema, system)
     if s.llm == "anthropic":
-        return await _anthropic(s, images, text, schema)
+        return await _anthropic(s, images, text, schema, system)
     if s.llm in settings.OPENAI_LIKE:
-        return await _openai(s, images, text, schema)
+        return await _openai(s, images, text, schema, system)
     raise ExtractionError("llm.unknown_provider", provider=s.llm)
 
 
@@ -381,14 +405,16 @@ def _gemini_client(s: Settings):
     )
 
 
-async def _gemini[T: BaseModel](s: Settings, images: list[Image], text: str, schema: type[T]) -> T:
+async def _gemini[T: BaseModel](
+    s: Settings, images: list[Image], text: str, schema: type[T], system: str = SYSTEM_PROMPT
+) -> T:
     from google.genai import errors, types
 
     client = _gemini_client(s)
     contents = [types.Part.from_bytes(data=img.data, mime_type=img.media_type) for img in images]
     contents.append(text)
     config = types.GenerateContentConfig(
-        system_instruction=SYSTEM_PROMPT,
+        system_instruction=system,
         response_mime_type="application/json",
         response_json_schema=schema.model_json_schema(),
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
@@ -436,7 +462,9 @@ def _anthropic_client(s: Settings):
     return anthropic.AsyncAnthropic(api_key=s.anthropic_api_key)
 
 
-async def _anthropic[T: BaseModel](s: Settings, images: list[Image], text: str, schema: type[T]) -> T:
+async def _anthropic[T: BaseModel](
+    s: Settings, images: list[Image], text: str, schema: type[T], system: str = SYSTEM_PROMPT
+) -> T:
     import anthropic
 
     client = _anthropic_client(s)
@@ -457,7 +485,7 @@ async def _anthropic[T: BaseModel](s: Settings, images: list[Image], text: str, 
         response = await client.messages.parse(
             model=s.model_for_provider(),
             max_tokens=16000,
-            system=SYSTEM_PROMPT,
+            system=system,
             messages=[{"role": "user", "content": content}],
             output_format=schema,
             # If the model refuses, the API reruns the request on a fallback model.
@@ -634,7 +662,9 @@ async def list_models(s: Settings) -> dict:
     }
 
 
-async def _openai[T: BaseModel](s: Settings, images: list[Image], text: str, schema: type[T]) -> T:
+async def _openai[T: BaseModel](
+    s: Settings, images: list[Image], text: str, schema: type[T], system: str = SYSTEM_PROMPT
+) -> T:
     """OpenAI-compatible providers: Ollama (qwen2.5vl, gemma3…), etc."""
     import openai
 
@@ -653,7 +683,7 @@ async def _openai[T: BaseModel](s: Settings, images: list[Image], text: str, sch
         response = await client.chat.completions.create(
             model=s.model_for_provider(),
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": system},
                 {"role": "user", "content": content},
             ],
             response_format={
@@ -707,6 +737,8 @@ def _fake(images: list[Image], prompt: str, deck: str) -> Deck:
         return _fake_pictures()
     if any(w in prompt.lower() for w in ("cloze", "trous", "gaps")):
         return _fake_cloze()
+    if any(w in prompt.lower() for w in ("figure", "géométrie", "geometry", "triangle")):
+        return _fake_figures()
     return _fake_vocabulary(images, prompt)
 
 
@@ -718,6 +750,37 @@ def _fake_pictures() -> Deck:
         cards=[
             Card(front="Comment dit-on en anglais ?" if subject else "demain", back=back, picture_prompt=subject)
             for subject, back in words
+        ],
+    )
+
+
+def _fake_figure(description: str) -> str:
+    """Demo mode: a right triangle, its first label taken from the description."""
+    label = (description.split("«")[1].split("»")[0].strip() if "«" in description else "hypoténuse")[:30]
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="white"/>'
+        '<polygon points="80,240 320,240 80,60" fill="none" stroke="black" stroke-width="2"/>'
+        '<rect x="80" y="225" width="15" height="15" fill="none" stroke="black"/>'
+        f'<text x="215" y="140" font-family="sans-serif" font-size="16" transform="rotate(37 215 140)">{label}</text>'
+        "</svg>"
+    )
+
+
+def _fake_figures() -> Deck:
+    """Demo mode, figure prompt: geometry cards with figures to draw."""
+    return Deck(
+        deck="Maths::Le triangle rectangle",
+        cards=[
+            Card(
+                front="Comment s'appelle le côté opposé à l'angle droit ?",
+                back="l'hypoténuse",
+                figure="Un triangle rectangle ABC, rectangle en C, l'angle droit marqué, sans autre étiquette.",
+            ),
+            Card(
+                front="Quel théorème relie les côtés de ce triangle ?",
+                back="le théorème de Pythagore",
+                figure="Un triangle rectangle, l'hypoténuse étiquetée « c », les autres côtés « a » et « b ».",
+            ),
         ],
     )
 

@@ -550,18 +550,22 @@ async def redraw_picture(id: str, card_id: str, req: PictureRequest) -> dict:
     lesson = await _editable(id)
     cards = [card.model_copy(deep=True) for card in lesson.cards]
     card = cards[_card(lesson, card_id)]
-    subject = (req.subject if req.subject is not None else card.picture_prompt).strip()
+    # A figure is redrawn from its description, a picture from its subject (the text given)
+    current = card.figure if card.figure else card.picture_prompt
+    subject = (req.subject if req.subject is not None else current).strip()
     if not subject:
         raise AppError("picture.no_subject")
+    if card.figure:
+        card.figure = subject
+    else:
+        card.picture_prompt = subject
     s = settings.current()
-    with llm.recording("picture") as calls:
+    with llm.recording("picture") as calls:  # figures count as pictures in the costs
         try:
-            jpeg = await pictures.picture(s, subject, fresh=True)
+            card.picture = await pictures.figure_or_picture(s, lessons.folder(id) / "images", card, fresh=True)
         finally:
             lessons.add_ai_calls(id, calls)
             usage.add(calls, id, lesson.deck)
-    card.picture_prompt = subject
-    card.picture = pictures.save(lessons.folder(id) / "images", card, jpeg)
     return {"card": card, "lesson": _save_card(lessons.get(id), cards)}
 
 
@@ -586,7 +590,7 @@ async def remove_picture(id: str, card_id: str) -> dict:
     lesson = await _editable(id)
     cards = [card.model_copy(deep=True) for card in lesson.cards]
     card = cards[_card(lesson, card_id)]
-    card.picture = card.picture_prompt = ""
+    card.picture = card.picture_prompt = card.figure = ""
     return {"card": card, "lesson": _save_card(lesson, cards)}
 
 
@@ -597,6 +601,13 @@ async def get_picture(id: str, name: str) -> FileResponse:
     path = folder / "images" / name if folder and pictures.NAME.match(name) else None
     if path is None or not path.is_file():
         raise AppError("photo.not_found", 404)
+    if path.suffix == ".svg":
+        # Cleaned already; and even opened on its own, nothing in it may run or load
+        headers = {
+            "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'",
+            "X-Content-Type-Options": "nosniff",
+        }
+        return FileResponse(path, media_type="image/svg+xml", headers=headers)
     return FileResponse(path, media_type="image/jpeg")
 
 

@@ -24,6 +24,7 @@ BUILTIN = (
     "cloze",
     "formulas",
     "school_formulas",
+    "geometry",
     "diagram",
     "pictures",
     "wordlist",

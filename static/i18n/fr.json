@@ -577,7 +577,7 @@
   "builtinPrompts": {
     "auto": {
       "name": "Automatique (d'après la leçon)",
-      "text": "Regarde la leçon et choisis les cartes les plus utiles pour la réviser :\n- vocabulaire d'une langue : une carte par mot ou expression, recto en français, verso dans la langue étudiée ;\n- leçon de cours (histoire, sciences, géographie…) : questions / réponses courtes, ou texte à trous pour les phrases à retenir ;\n- formules : une carte par formule (recto : ce qu'elle calcule, verso : la formule) ;\n- schéma avec des légendes : schéma à compléter, une carte par légende.\nMélange si la page contient plusieurs de ces choses.\nDis en une phrase ce que tu as choisi.",
+      "text": "Regarde la leçon et choisis les cartes les plus utiles pour la réviser :\n- vocabulaire d'une langue : une carte par mot ou expression, recto en français, verso dans la langue étudiée ;\n- leçon de cours (histoire, sciences, géographie…) : questions / réponses courtes, ou texte à trous pour les phrases à retenir ;\n- formules : une carte par formule (recto : ce qu'elle calcule, verso : la formule) ;\n- géométrie : des cartes avec une figure exacte quand elle aide ;\n- schéma avec des légendes : schéma à compléter, une carte par légende.\nMélange si la page contient plusieurs de ces choses.\nDis en une phrase ce que tu as choisi.",
       "deck": "{matière}::{titre de la leçon}",
       "voice": "auto"
     },
@@ -606,14 +606,20 @@
     },
     "formulas": {
       "name": "Formules (maths, physique…)",
-      "text": "Crée une carte par formule de la leçon. Recto : ce que la formule permet de calculer (ou son nom). Verso : la formule. Info : ce que représente chaque lettre.",
+      "text": "Crée une carte par formule de la leçon. Recto : ce que la formule permet de calculer (ou son nom). Verso : la formule. Info : ce que représente chaque lettre. Quand la formule porte sur une figure (aire du disque, Pythagore…), mets cette figure, avec ses lettres.",
       "deck": "{matière}::Formules",
       "voice": ""
     },
     "school_formulas": {
       "name": "Formules de maths du collège",
-      "text": "Crée des cartes pour les principales formules de maths du collège (6e à 3e) : aires et périmètres (carré, rectangle, triangle, disque), volumes (cube, pavé, cylindre, cône, sphère), Pythagore, Thalès, trigonométrie (cos, sin, tan), identités remarquables, puissances, proportionnalité et pourcentages, vitesse moyenne. Recto : ce que la formule permet de calculer. Verso : la formule. Info : ce que représente chaque lettre, avec l'unité si besoin.",
+      "text": "Crée des cartes pour les principales formules de maths du collège (6e à 3e) : aires et périmètres (carré, rectangle, triangle, disque), volumes (cube, pavé, cylindre, cône, sphère), Pythagore, Thalès, trigonométrie (cos, sin, tan), identités remarquables, puissances, proportionnalité et pourcentages, vitesse moyenne. Recto : ce que la formule permet de calculer. Verso : la formule. Info : ce que représente chaque lettre, avec l'unité si besoin. Quand la formule porte sur une figure (aire du disque, Pythagore…), mets cette figure, avec ses lettres.",
       "deck": "Maths::Formules du collège",
+      "voice": ""
+    },
+    "geometry": {
+      "name": "Géométrie (avec figures)",
+      "text": "Crée des cartes pour réviser la géométrie de la leçon (ou du thème ci-dessous) : figures, propriétés, vocabulaire (hypoténuse, rayon, médiatrice…). Mets une figure exacte quand elle aide à répondre, sans jamais y écrire la réponse.",
+      "deck": "Maths::{titre de la leçon}",
       "voice": ""
     },
     "diagram": {

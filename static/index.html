@@ -126,6 +126,13 @@
       <p class="hint" x-show="isModified()" x-text="$t('app.prompt.modified')"></p>
       <p class="hint" x-show="selectedId === null" x-text="$t('app.prompt.freeNote')"></p>
 
+      <!-- Off by default: only then is the AI asked for them -->
+      <label class="switch fun-facts">
+        <input type="checkbox" x-model="funFacts">
+        <span class="track"><span class="knob"></span></span>
+        <span x-text="$t('app.prompt.funFacts')"></span>
+      </label>
+
       <div class="prompt-actions">
         <button class="link-btn" x-show="selectedId" @click="openEditor('edit')" x-text="$t('app.prompt.edit')"></button>
         <button class="link-btn strong" x-show="canSaveAsNew()" @click="openEditor('copy')"
@@ -257,6 +264,11 @@
                 <input class="subdeck" x-model="card.subdeck" :readonly="readOnly()" :placeholder="$t('app.review.subdeck')"
                        :aria-label="$t('app.review.subdeckLabel')"
                        list="subdecks" :size="Math.max(card.subdeck.length, 10)">
+              </div>
+              <!-- Shown under the info on the back, in Anki; cleared, it's gone -->
+              <div class="fun-fact" x-show="card.fun_fact">
+                <span aria-hidden="true">💡</span>
+                <input x-model="card.fun_fact" :readonly="readOnly()" :aria-label="$t('app.review.funFact')">
               </div>
             </div>
             <div class="flash-actions">

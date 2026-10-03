@@ -9,6 +9,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Added
 
+- Optional “Did you know?” facts (a switch under the prompt, off by default, kept on the device): the AI adds a short, well-known fact to some cards, shown on the back in Anki under the info, and editable in the review.
 - The lesson's photos open in full screen with a tap (‹ › or a swipe between pages, a tap on the photo for its real size); the cards' pictures and figures too.
 
 - Figures on cards: when a card is about a figure (a geometry formula, a theorem, a notion, a figure with measures, a simple labelled diagram), the AI describes it and Notosaurus has it drawn as SVG by the cards' own AI (thinking as little as possible: about 0.2 US¢ each with Gemini Flash), exact and with clean labels, where image models draw text and measures badly. The SVG is cleaned to shapes and text only and served so that nothing in it can run; it shows in the review and goes to Anki like the pictures. The 🖼️ panel edits the figure's description and draws it again. A picture or figure that belongs to the answer ("What is a tangent to a circle?") goes on the back, shown with the answer only (note type "Notosaurus image au verso"); the panel moves it. New Notosaurus prompt ⭐ "Geometry (with figures)"; "Automatic" makes geometry cards with figures, and the formula prompts add a figure when the formula is about one.

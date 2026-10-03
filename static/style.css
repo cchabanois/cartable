@@ -419,6 +419,9 @@ h2 {
 .flash .back { font-weight: 700; color: var(--accent); }
 .flash .meta { display: flex; gap: .4rem; align-items: center; margin-top: .15rem; }
 .flash .info { flex: 1; min-width: 0; font-size: .85rem; color: var(--muted); }
+.flash .fun-fact { display: flex; gap: .3rem; align-items: center; font-size: .85rem; }
+.flash .fun-fact input { flex: 1; min-width: 0; font-style: italic; color: var(--muted); }
+.switch.fun-facts { margin: .5rem 0 .25rem; }
 .flash .subdeck {
   width: auto;
   flex: 0 1 auto;

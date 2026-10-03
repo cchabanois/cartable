@@ -36,6 +36,11 @@ class Card(BaseModel):
         description="Only when the card needs an exact figure (see the rules): what to draw, every label "
         "with its exact text. Empty otherwise.",
     )
+    fun_fact: str = Field(
+        default="",
+        description='Only when fun facts are asked for (see the request): one short "did you know" sentence. '
+        "Empty otherwise.",
+    )
     picture_on_back: bool = Field(
         default=False,
         description="True when the picture or figure belongs to the answer (see the rules); false when it is "

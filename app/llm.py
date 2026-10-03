@@ -112,6 +112,15 @@ is still the one you start reading with.
 """
 
 
+# Asked for with a switch, never by default: only then is the AI told about them.
+FUN_FACTS = """\
+Fun facts are asked for: on the cards where one truly fits (one card in three at most, \
+fewer is fine), fill "fun_fact" with one short "did you know" sentence, in the language \
+of the instructions, related to the card (history, etymology, nature, how things \
+work…). Only well-known, established facts: no invented details, no precise figure \
+you aren't sure of, no legend told as true. When unsure, leave it empty."""
+
+
 # The AI calls of the request being handled (kind, list), set by `recording`.
 _recording: ContextVar[tuple[str, list[AiCall]] | None] = ContextVar("notosaurus_ai_calls", default=None)
 
@@ -192,8 +201,11 @@ def _user_text(
     sizes: list[tuple[int, int] | None] = (),
     fmt: str = "",
     decks: list[str] = (),
+    fun_facts: bool = False,
 ) -> str:
     text = f"Instructions: {prompt.strip()}"
+    if fun_facts:
+        text += "\n" + FUN_FACTS
     if deck.strip():
         text += f"\nDeck name template: {deck.strip()}"
     if decks:
@@ -228,7 +240,12 @@ class Extracted:
 
 
 async def extract_cards(
-    images: list[Image], prompt: str, deck: str = "", profile: str | None = None, decks: list[str] = ()
+    images: list[Image],
+    prompt: str,
+    deck: str = "",
+    profile: str | None = None,
+    decks: list[str] = (),
+    fun_facts: bool = False,
 ) -> Extracted:
     """`profile`: the open Anki profile, for its standing instructions; `decks`: the
     decks that already exist, to reuse their names."""
@@ -236,10 +253,13 @@ async def extract_cards(
     if s.llm == "fake":
         await record(s, "fake", "fake", 0, 0, cost=0.0)
         choice = "Vocabulaire d'espagnol : français → espagnol" if _lets_choose(prompt) else ""
-        return Extracted(_fake(images, prompt, deck), [0] * len(images), [], "es-ES", choice)
+        found = _fake(images, prompt, deck)
+        if fun_facts:  # the demo's "did you know" on its first card
+            found.cards[0].fun_fact = "Le savais-tu ? Ce mot vient du latin."
+        return Extracted(found, [0] * len(images), [], "es-ES", choice)
     fmt = diagrams.box_format(s.model_for_provider())
     images, sizes = _prepare(images)
-    text = standing_instructions(s, profile) + _user_text(prompt, deck, len(images), sizes, fmt, decks)
+    text = standing_instructions(s, profile) + _user_text(prompt, deck, len(images), sizes, fmt, decks, fun_facts)
     result = await _generate(s, images, text, Extraction)
     diagrams.normalize(result.cards, sizes, fmt)
     return Extracted(

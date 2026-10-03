@@ -1465,7 +1465,7 @@ def test_existing_decks_given_to_the_ai(anki, client, monkeypatch):
 
     seen = {}
 
-    async def extract_cards(images, prompt, deck="", profile=None, decks=()):
+    async def extract_cards(images, prompt, deck="", profile=None, decks=(), fun_facts=False):
         seen["decks"] = decks
         return await llm.extract_cards(images, prompt, deck, profile, decks)
 
@@ -1737,3 +1737,24 @@ def test_each_lesson_has_a_deck_of_its_own(anki, client):
     client.post("/api/anki/send", json={"deck": first["deck"], "cards": first["cards"], "lesson_id": first["id"]})
     again = client.post(f"/api/lessons/{first['id']}/regenerate", data={"prompt": "FR → ES"}).json()
     assert again["deck"] == "Espagnol::Leçon 5 - La famille"
+
+
+def test_fun_facts_only_when_asked(client, tmp_path):
+    from app import llm
+
+    # Off by default: the AI isn't told about them
+    assert llm.FUN_FACTS not in llm._user_text("Vocabulary", "", photos=1)
+    assert llm.FUN_FACTS in llm._user_text("Vocabulary", "", photos=1, fun_facts=True)
+    files = [("images", ("p.png", b"img", "image/png"))]
+    plain = client.post("/api/extract", files=files, data={"prompt": "FR → ES"}).json()
+    assert not any(c["fun_fact"] for c in plain["cards"])
+    asked = client.post("/api/extract", files=files, data={"prompt": "FR → ES", "fun_facts": "true"}).json()
+    assert asked["cards"][0]["fun_fact"]
+    again = client.post(f"/api/lessons/{plain['id']}/regenerate", data={"prompt": "FR → ES", "fun_facts": "true"})
+    assert again.json()["cards"][0]["fun_fact"]  # generated again with them
+
+    # In Anki: under the info, on the back; escaped like the other fields
+    cards = [{"front": "la mère", "back": "la madre", "info": "f.", "fun_fact": "Vient du latin <mater>."}]
+    notes, *_ = _notes(client.post("/api/export", json={"deck": "D", "cards": cards}).content, tmp_path)
+    info = notes[0][1].split("\x1f")[2]
+    assert info == 'f.<div style="margin-top:8px;font-style:italic">💡 Vient du latin &lt;mater&gt;.</div>'

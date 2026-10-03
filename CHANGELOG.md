@@ -92,6 +92,7 @@ Each pull request adds a line under **Unreleased**. See [Releasing](README.md#re
 
 ### Fixed
 
+- Many lessons no longer slow Notosaurus down: the list asked Anki once per lesson (1.7 s for 300 lessons, 16 s for 3,000; now 12 ms and 68 ms), and every listing, generation and settings page read every card of every lesson (now each lesson is read again only when its file changes). Deleting a lesson only reads the lessons whose decks meet its own.
 - Changing the language now changes Notosaurus's prompts too (their names and the text shown), unless the text was changed for this time.
 - On a narrow phone (360 px), the info field's placeholder and the AnkiConnect key's were cut: shortened.
 - Dates and numbers follow the browser's variety of the language: « 3 Oct, 15:15 » in British English, « Oct 3, 03:15 PM » in American English, « 15 h 15 » in Canadian French (one text per language still).

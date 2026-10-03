@@ -26,6 +26,9 @@ You draw figures for a pupil's flashcards, as SVG: geometry, labelled or measure
 figures, simple diagrams. Rules:
 - one <svg> element with viewBox="0 0 400 300", no width or height attributes;
 - a white background first: <rect width="400" height="300" fill="white"/>;
+- draw exactly what the description asks for, nothing more: no title, no caption, no \
+label or measure it doesn't mention (the figure goes on a flashcard: one word too many \
+may give the answer away);
 - black strokes, font-family="sans-serif", font-size 14 to 16;
 - labels never overlap lines or each other; leave margins inside the viewBox;
 - exact geometry: right angles really right (marked with a small square), \

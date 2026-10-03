@@ -120,7 +120,10 @@ a.brand { color: inherit; text-decoration: none; }
 a { color: var(--primary); }
 .appbar-actions { display: flex; flex: 0 0 auto; gap: .4rem; }
 /* Small phones: the lessons button keeps its icon and count, the brand keeps its room */
-@media (max-width: 440px) { .appbar .wide-only { display: none; } }
+@media (max-width: 440px) {
+  .appbar .wide-only { display: none; }
+  .appbar .brand-name { display: none; }  /* the logo says it; the home screen shows the name in full */
+}
 @media (max-width: 370px) {
   .appbar { padding-left: .75rem; padding-right: .75rem; }
   .brand { font-size: 1.15rem; gap: .4rem; }
@@ -760,3 +763,10 @@ h2 {
 /* A figure (SVG drawn by the AI): white like a textbook figure, in light and dark mode */
 .card-picture.figure img { background: #fff; width: min(100%, 400px); height: auto; }
 .card-picture.on-back { margin-top: .5rem; }
+
+/* The logo: drawn on white, so shown on a white card (readable in dark mode too) */
+.brand .brand-logo { border-radius: 12px; background: #fff; box-shadow: var(--shadow); }
+.hero-logo {
+  display: block; width: min(78%, 320px); height: auto; margin: .25rem auto .5rem;
+  border-radius: var(--radius); background: #fff; box-shadow: var(--shadow);
+}

@@ -28,9 +28,9 @@
   <!-- App bar -->
   <header class="appbar">
     <div class="brand">
-      <img src="icon.svg" alt="" width="32" height="32">
+      <img class="brand-logo" src="logo-mark.webp" alt="" width="44" height="44">
       <span class="brand-text">
-        <span>Cartable</span>
+        <span class="brand-name">Cartable</span>
         <!-- Anki profile the lessons and cards go to -->
         <small class="brand-profile" x-cloak x-show="anki.available"
                :title="anki.profile ? $t('app.profile.open') : $t('app.profile.none')"
@@ -71,6 +71,8 @@
   </main>
 
   <main x-show="!unpaired">
+    <!-- The mascot, large, until a lesson is started -->
+    <img class="hero-logo" x-show="!lessonId && !photos.length" src="logo.webp" alt="Notosaurus" width="511" height="465">
     <p class="tagline" x-show="!lessonId && !photos.length" x-text="$t('app.tagline')"></p>
 
     <!-- 1. Photos -->

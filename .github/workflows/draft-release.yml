@@ -49,8 +49,8 @@ jobs:
             if [ "$other" != "$TAG" ]; then gh release delete "$other" --yes; fi
           done
           if gh release view "$TAG" > /dev/null 2>&1; then
-            gh release edit "$TAG" --draft --target "$GITHUB_SHA" --title "Cartable $VERSION" --notes-file notes.md
+            gh release edit "$TAG" --draft --target "$GITHUB_SHA" --title "Notosaurus $VERSION" --notes-file notes.md
             gh release upload "$TAG" dist/*.ankiaddon --clobber
           else
-            gh release create "$TAG" dist/*.ankiaddon --draft --target "$GITHUB_SHA" --title "Cartable $VERSION" --notes-file notes.md
+            gh release create "$TAG" dist/*.ankiaddon --draft --target "$GITHUB_SHA" --title "Notosaurus $VERSION" --notes-file notes.md
           fi

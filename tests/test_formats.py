@@ -1,5 +1,5 @@
 """Data formats: files carry the format they are written in; older ones are brought up
-to date when read; a newer one (from a newer Cartable) is never read nor damaged."""
+to date when read; a newer one (from a newer Notosaurus) is never read nor damaged."""
 
 import json
 

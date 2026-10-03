@@ -1,6 +1,6 @@
 {
-  "name": "Cartable",
-  "short_name": "Cartable",
+  "name": "Notosaurus",
+  "short_name": "Notosaurus",
   "description": "Snap a lesson, get an Anki deck.",
   "start_url": "/",
   "display": "standalone",
@@ -9,28 +9,22 @@
   "lang": "en",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "notosaurus-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "notosaurus-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-maskable-512.png",
+      "src": "notosaurus-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    },
-    {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
     }
   ]
 }

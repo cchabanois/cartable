@@ -43,18 +43,18 @@ SECRET_FIELDS = (
 
 # Settings field → environment variable giving its default value.
 ENV = {
-    "llm": "CARTABLE_LLM",
-    "model": "CARTABLE_MODEL",
-    "fallback_models": "CARTABLE_FALLBACK_MODEL",
+    "llm": "NOTOSAURUS_LLM",
+    "model": "NOTOSAURUS_MODEL",
+    "fallback_models": "NOTOSAURUS_FALLBACK_MODEL",
     "gemini_api_key": "GEMINI_API_KEY",
     "anthropic_api_key": "ANTHROPIC_API_KEY",
     "openai_api_key": "OPENAI_API_KEY",
     "openrouter_api_key": "OPENROUTER_API_KEY",
-    "compatible_base_url": "CARTABLE_COMPATIBLE_BASE_URL",
-    "compatible_api_key": "CARTABLE_COMPATIBLE_API_KEY",
-    "tts_rate": "CARTABLE_TTS_RATE",
-    "ankiconnect_url": "CARTABLE_ANKICONNECT_URL",
-    "ankiconnect_key": "CARTABLE_ANKICONNECT_KEY",
+    "compatible_base_url": "NOTOSAURUS_COMPATIBLE_BASE_URL",
+    "compatible_api_key": "NOTOSAURUS_COMPATIBLE_API_KEY",
+    "tts_rate": "NOTOSAURUS_TTS_RATE",
+    "ankiconnect_url": "NOTOSAURUS_ANKICONNECT_URL",
+    "ankiconnect_key": "NOTOSAURUS_ANKICONNECT_KEY",
 }
 
 
@@ -165,11 +165,11 @@ def _picture_service_of(model: str) -> str:
 
 def _environment() -> dict:
     values = {field: os.environ[var] for field, var in ENV.items() if var in os.environ}
-    # Before the split: CARTABLE_OPENAI_BASE_URL and CARTABLE_OPENAI_API_KEY (.env)
-    url = os.environ.get("CARTABLE_OPENAI_BASE_URL")
-    if url or "CARTABLE_OPENAI_API_KEY" in os.environ:
+    # Before the split: NOTOSAURUS_OPENAI_BASE_URL and NOTOSAURUS_OPENAI_API_KEY (.env)
+    url = os.environ.get("NOTOSAURUS_OPENAI_BASE_URL")
+    if url or "NOTOSAURUS_OPENAI_API_KEY" in os.environ:
         url = url or OPENAI_URL
-        key = os.environ.get("CARTABLE_OPENAI_API_KEY")
+        key = os.environ.get("NOTOSAURUS_OPENAI_API_KEY")
         _split_openai(values, url, {url: key} if key else {})
     return values
 
@@ -180,7 +180,7 @@ EMBEDDED_FIELDS = ("ankiconnect_url", "ankiconnect_key")
 
 
 def embedded() -> bool:
-    return os.environ.get("CARTABLE_EMBEDDED") == "1"
+    return os.environ.get("NOTOSAURUS_EMBEDDED") == "1"
 
 
 def current() -> Settings:
@@ -246,7 +246,7 @@ def check_password(password: str | None) -> bool:
 
 
 # --- Paired devices -----------------------------------------------------------
-# Phones and other computers reach Cartable over the Wi-Fi: only those given this
+# Phones and other computers reach Notosaurus over the Wi-Fi: only those given this
 # token (the QR code in Anki or in the settings) can use it. Changing it unpairs them.
 
 

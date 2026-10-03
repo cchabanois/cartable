@@ -1,5 +1,5 @@
 [project]
-name = "cartable"
+name = "notosaurus"
 version = "0.1.0"  # the only place to change it (see CHANGELOG.md)
 description = "Snap a lesson, get an Anki deck"
 license = "AGPL-3.0-only"

@@ -92,12 +92,14 @@ def test_picture_cards_in_anki(client, drawn, tmp_path):
     notes, models, media = export(cards)
     names = {int(i): m["name"] for i, m in models.items()}
     assert sorted(names[mid] for _, mid, _ in notes) == [
-        "Cartable image (audio)",
-        "Cartable image (audio)",
-        "Cartable recto/verso (audio)",  # the umbrella without its picture: a text card
-        "Cartable recto/verso (audio)",  # "tomorrow"
+        "Notosaurus image (audio)",
+        "Notosaurus image (audio)",
+        "Notosaurus recto/verso (audio)",  # the umbrella without its picture: a text card
+        "Notosaurus recto/verso (audio)",  # "tomorrow"
     ]
-    picture_fields = [html.unescape(f).split("\x1f") for _, mid, f in notes if names[mid].startswith("Cartable image")]
+    picture_fields = [
+        html.unescape(f).split("\x1f") for _, mid, f in notes if names[mid].startswith("Notosaurus image")
+    ]
     assert picture_fields[0][0] == "Comment dit-on en anglais ?"
     assert picture_fields[0][-2] == f'<img src="{cards[0]["picture"]}">' and picture_fields[0][-1] == cards[0]["id"]
     assert media == sorted([cards[0]["picture"], cards[1]["picture"]])

@@ -17,7 +17,7 @@ from pathlib import Path
 from . import storage
 from .models import AiCall, Card, Frame, Lesson, LessonIn, LessonSummary
 
-log = logging.getLogger("cartable")
+log = logging.getLogger("notosaurus")
 
 ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")  # folder names we create; blocks "../"
 
@@ -138,7 +138,7 @@ def list_all() -> list[LessonSummary]:
     for path in (p for p in root.iterdir() if (p / "lesson.json").is_file()):
         try:
             lesson = _read(path)
-        except storage.DataTooNew as e:  # saved by a newer Cartable: left alone
+        except storage.DataTooNew as e:  # saved by a newer Notosaurus: left alone
             log.warning("Lesson %s not listed: %s", path.name, e.detail_text)
             continue
         summaries.append(LessonSummary(card_count=len(lesson.cards), **lesson.model_dump(exclude={"cards"})))

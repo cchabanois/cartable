@@ -36,8 +36,8 @@ def anki_unreachable(request):
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    monkeypatch.setenv("CARTABLE_DATA", str(tmp_path / "data"))
-    monkeypatch.setenv("CARTABLE_LLM", "fake")
+    monkeypatch.setenv("NOTOSAURUS_DATA", str(tmp_path / "data"))
+    monkeypatch.setenv("NOTOSAURUS_LLM", "fake")
     monkeypatch.setattr(tts, "_synthesize", fake_synthesize)
     # Never reach a real Anki from the tests: AnkiConnect is "unreachable" unless a test fakes it.
     monkeypatch.setattr(ankiconnect, "_transport", httpx.MockTransport(anki_unreachable))

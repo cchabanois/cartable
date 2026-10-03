@@ -1,10 +1,10 @@
-# Cartable
+# Notosaurus
 
 > From school bag to flashcards: snap a lesson, get an Anki deck.
 
 Take photos of a lesson with your phone. A vision AI reads the pages and drafts Anki cards. You review and fix them, then send them straight into Anki or download a `.apkg`.
 
-Cartable was built for learning languages (French → Spanish vocabulary and sentences, with audio), but a prompt can ask for any kind of question/answer card.
+Notosaurus was built for learning languages (French → Spanish vocabulary and sentences, with audio), but a prompt can ask for any kind of question/answer card.
 
 - **Phone first**: a web page, not an app. It opens the phone's own camera, and you can add it to the home screen.
 - **Several pages per lesson**, with a saved prompt that says what to extract ("one word per card, gender and plural in the notes").
@@ -26,21 +26,21 @@ Cartable was built for learning languages (French → Spanish vocabulary and sen
 
 ### As an Anki add-on (recommended)
 
-Cartable starts and stops with Anki desktop and writes cards directly into the open profile. You don't need AnkiConnect.
+Notosaurus starts and stops with Anki desktop and writes cards directly into the open profile. You don't need AnkiConnect.
 
-1. Download `cartable-<version>.ankiaddon` from the [latest release](https://github.com/cchabanois/cartable/releases/latest), or build it: `python3 tools/build_addon.py` → `dist/cartable-<version>.ankiaddon`.
+1. Download `notosaurus-<version>.ankiaddon` from the [latest release](https://github.com/cchabanois/notosaurus/releases/latest), or build it: `python3 tools/build_addon.py` → `dist/notosaurus-<version>.ankiaddon`.
 2. Double-click the file (or *Tools → Add-ons → Install from file*) and restart Anki.
-3. On first start, the add-on asks before installing its components into `Anki2/cartable-runtime/`, next to the add-ons (about 300 MB, kept by add-on updates, removed with the add-on; outside the add-on's own folder, so that Anki can update it while Cartable runs, Windows included): [uv](https://docs.astral.sh/uv/), Python 3.13 and the Python libraries. It uses the uv shipped with Anki 25.07 to 26.05 or one already installed; otherwise it downloads a pinned uv release from GitHub and checks its SHA-256.
+3. On first start, the add-on asks before installing its components into `Anki2/notosaurus-runtime/`, next to the add-ons (about 300 MB, kept by add-on updates, removed with the add-on; outside the add-on's own folder, so that Anki can update it while Notosaurus runs, Windows included): [uv](https://docs.astral.sh/uv/), Python 3.13 and the Python libraries. It uses the uv shipped with Anki 25.07 to 26.05 or one already installed; otherwise it downloads a pinned uv release from GitHub and checks its SHA-256.
 4. A QR code appears: scan it with the phone (same Wi-Fi) and add the page to the home screen.
 
-Everything else is in the **Tools → Cartable** menu: open, open on the phone (QR code), settings, server status, restart and log.
+Everything else is in the **Tools → Notosaurus** menu: open, open on the phone (QR code), settings, server status, restart and log.
 
 - **Settings** (AI provider, API keys…) only open on the computer, without a password. Phones are refused, so API keys never travel over the Wi-Fi and children can't change them.
-- The server listens on port 8000 by default. The port and other options are in the add-on's config (*Tools → Add-ons → Cartable → Config*).
+- The server listens on port 8000 by default. The port and other options are in the add-on's config (*Tools → Add-ons → Notosaurus → Config*).
 
 ### Standalone
 
-Cartable runs on its own, even when Anki is closed. The `.apkg` download always works. "Add to Anki" needs Anki desktop open with the [AnkiConnect](https://ankiweb.net/shared/info/2055492159) add-on.
+Notosaurus runs on its own, even when Anki is closed. The `.apkg` download always works. "Add to Anki" needs Anki desktop open with the [AnkiConnect](https://ankiweb.net/shared/info/2055492159) add-on.
 
 ```sh
 python3 -m venv .venv
@@ -53,11 +53,11 @@ Then open http://localhost:8000 on the computer. For the phone (same Wi-Fi): ⚙
 Or with Docker:
 
 ```sh
-docker build -t cartable .
-docker run -p 8000:8000 -v cartable-data:/data --env-file .env -e CARTABLE_PUBLIC_URL=http://<computer-ip>:8000 cartable
+docker build -t notosaurus .
+docker run -p 8000:8000 -v notosaurus-data:/data --env-file .env -e NOTOSAURUS_PUBLIC_URL=http://<computer-ip>:8000 notosaurus
 ```
 
-Inside Docker, Cartable can't see the computer's address: `CARTABLE_PUBLIC_URL` puts it in the phones' QR code. The computer itself goes through Docker's network too: open ⚙️ → **Phones** and use the link under the QR code once.
+Inside Docker, Notosaurus can't see the computer's address: `NOTOSAURUS_PUBLIC_URL` puts it in the phones' QR code. The computer itself goes through Docker's network too: open ⚙️ → **Phones** and use the link under the QR code once.
 
 The ⚙️ page (`/admin.html`) is reachable from the network in this mode. It is protected by an admin password, created on the first visit.
 
@@ -83,17 +83,17 @@ Environment variables (see `.env.example`) provide defaults. Whatever is saved o
 | **OpenAI** | GPT models, with an OpenAI key. |
 | **OpenRouter** | One key for Gemini, Claude, GPT, Mistral…; the exact cost of each call. ⚙️ suggests its `~…-latest` models (always the latest version of a family), the latest Gemini Flash by default. |
 | **Other OpenAI-compatible service** | Any address: Ollama or LM Studio at home, Mistral… |
-| **Demo** (`fake`) | Canned cards whatever the photo, no key and no cost: for the tests and for working on the interface. Not offered in ⚙️; set `CARTABLE_LLM=fake` in `.env`. |
+| **Demo** (`fake`) | Canned cards whatever the photo, no key and no cost: for the tests and for working on the interface. Not offered in ⚙️; set `NOTOSAURUS_LLM=fake` in `.env`. |
 
 For the last three, *Load models* lists only models that accept images (and structured output, when the service says so). *Test* sends a small image to check that the model can read it and answer in JSON. The output format is always forced with a JSON schema. The user's prompt only says *what* to extract.
 
 Local models (Ollama, LM Studio) work, but they read handwritten pages much less reliably.
 
-Settings saved before OpenAI, OpenRouter and the other services were separate providers (`CARTABLE_OPENAI_BASE_URL`, `CARTABLE_OPENAI_API_KEY`…) still work: they are read as the matching provider.
+Settings saved before OpenAI, OpenRouter and the other services were separate providers (`NOTOSAURUS_OPENAI_BASE_URL`, `NOTOSAURUS_OPENAI_API_KEY`…) still work: they are read as the matching provider.
 
 ## Data
 
-There is no database. Everything is plain files under `data/` (or `CARTABLE_DATA`), so backing up Cartable means copying that folder.
+There is no database. Everything is plain files under `data/` (or `NOTOSAURUS_DATA`), so backing up Notosaurus means copying that folder.
 
 ```
 data/
@@ -141,14 +141,14 @@ The server never builds sentences: its errors are codes (`llm.overloaded`, `less
 uv pip compile requirements.in --universal --python-version 3.13 -o requirements.txt --upgrade
 ```
 
-`tests/test_page.py` drives the pages in a real browser (Playwright, headless Chromium): the page saving as it goes, generating again and undoing, deleting a lesson, the settings. It is skipped unless Playwright is installed: `.venv/bin/pip install -r requirements-page.txt`, then `.venv/bin/python -m playwright install chromium` (or set `CARTABLE_TEST_CHROMIUM=/usr/bin/chromium` to use the system's Chromium).
+`tests/test_page.py` drives the pages in a real browser (Playwright, headless Chromium): the page saving as it goes, generating again and undoing, deleting a lesson, the settings. It is skipped unless Playwright is installed: `.venv/bin/pip install -r requirements-page.txt`, then `.venv/bin/python -m playwright install chromium` (or set `NOTOSAURUS_TEST_CHROMIUM=/usr/bin/chromium` to use the system's Chromium).
 
 `tests/test_real_anki.py` runs the add-on's bridge and the `.apkg` import against Anki's real engine (the `anki` package, no Anki window). It is skipped unless that package is installed: `.venv/bin/pip install -r requirements-anki.txt`.
 
 To develop the add-on against this checkout, link it into Anki's add-ons folder and restart Anki:
 
 ```sh
-ln -s "$PWD/anki_addon" ~/.local/share/Anki2/addons21/cartable
+ln -s "$PWD/anki_addon" ~/.local/share/Anki2/addons21/notosaurus
 ```
 
 The add-on then runs the server from this repository, with its `.venv` and its `data/` folder.
@@ -177,17 +177,17 @@ Stack:
 | `app/storage.py` | data folder, atomic JSON writes, readable file names |
 | `static/` | the phone page and the settings page |
 | `anki_addon/` | the Anki add-on: server launcher and an AnkiConnect-compatible bridge |
-| `tools/build_addon.py` | builds `dist/cartable-<version>.ankiaddon` |
+| `tools/build_addon.py` | builds `dist/notosaurus-<version>.ankiaddon` |
 | `tools/changelog_section.py` | release notes of a version, from `CHANGELOG.md` |
-| `tools/make_icons.py` | the PNG icons for phones' home screens, from `static/icon.svg` |
+| `tools/make_icons.py` | the logo images and the icons (home screen, browser), from `assets/notosaurus-logo.png` |
 
 ## Good to know
 
 - **Always review the cards.** Even good models misread a word now and then.
 - **Children's schoolwork is private data.** Photos go to the AI provider you choose. A local model keeps them at home, at the cost of accuracy.
-- **Only paired devices.** On the Wi-Fi, only the computer itself and the devices that scanned Cartable's QR code (Tools → Cartable → Open on the phone, or ⚙️ → Phones) can use it: the others can't spend your AI credits or delete lessons. "Disconnect every phone" in ⚙️ → Phones unpairs them all (a phone lost or lent).
-- **Plain HTTP on the local network.** The camera works over plain HTTP, and the page can be added to the home screen as a shortcut. Pairing stops the curious and other websites, not someone spying on the Wi-Fi traffic: keep your Wi-Fi protected (WPA2/WPA3). For HTTPS, and to use Cartable away from home, [Tailscale](https://tailscale.com) works: `tailscale serve 8000` on the computer, the Tailscale app on the phone, and set `CARTABLE_PUBLIC_URL` to the `https://….ts.net` address.
-- **Never expose AnkiConnect or Cartable to the Internet.** Keep them on your local network.
+- **Only paired devices.** On the Wi-Fi, only the computer itself and the devices that scanned Notosaurus's QR code (Tools → Notosaurus → Open on the phone, or ⚙️ → Phones) can use it: the others can't spend your AI credits or delete lessons. "Disconnect every phone" in ⚙️ → Phones unpairs them all (a phone lost or lent).
+- **Plain HTTP on the local network.** The camera works over plain HTTP, and the page can be added to the home screen as a shortcut. Pairing stops the curious and other websites, not someone spying on the Wi-Fi traffic: keep your Wi-Fi protected (WPA2/WPA3). For HTTPS, and to use Notosaurus away from home, [Tailscale](https://tailscale.com) works: `tailscale serve 8000` on the computer, the Tailscale app on the phone, and set `NOTOSAURUS_PUBLIC_URL` to the `https://….ts.net` address.
+- **Never expose AnkiConnect or Notosaurus to the Internet.** Keep them on your local network.
 - **edge-tts is unofficial.** Microsoft could shut it down.
 
 ## Releasing

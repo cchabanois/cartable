@@ -1,7 +1,7 @@
 """Install the packaged add-on as Anki would, outside Anki, and start its server.
 
 Usage: python tools/check_addon_install.py
-Builds dist/cartable-<version>.ankiaddon, unpacks it into a numbered folder
+Builds dist/notosaurus-<version>.ankiaddon, unpacks it into a numbered folder
 (like an add-on installed from AnkiWeb), then lets the launcher download uv,
 install Python and the dependencies, and start the server. Then updates the add-on
 the way Anki does while the server runs (Windows refuses to move or delete files in

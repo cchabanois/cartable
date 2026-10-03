@@ -27,8 +27,8 @@ def test_sent_with_the_request_for_the_profile(admin, monkeypatch):
             "profile_instructions": {"Léa": "Léa is in year 8", "Paul": "year 6"},
         },
     )
-    monkeypatch.setenv("CARTABLE_LLM", "openai")
-    monkeypatch.setenv("CARTABLE_MODEL", "gpt-6.1-sol")
+    monkeypatch.setenv("NOTOSAURUS_LLM", "openai")
+    monkeypatch.setenv("NOTOSAURUS_MODEL", "gpt-6.1-sol")
     sent = []
 
     class Completions:

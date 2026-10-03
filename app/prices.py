@@ -14,7 +14,7 @@ import httpx
 
 from . import storage
 
-log = logging.getLogger("cartable")
+log = logging.getLogger("notosaurus")
 
 MODELS_URL = "https://openrouter.ai/api/v1/models"
 MAX_AGE = 24 * 3600

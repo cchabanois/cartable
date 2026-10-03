@@ -1,21 +1,21 @@
-"""Prompts: Cartable's own, and the user's.
+"""Prompts: Notosaurus's own, and the user's.
 
-- Cartable's prompts ("builtinPrompts" in static/i18n/<lang>.json): in the page's
+- Notosaurus's prompts ("builtinPrompts" in static/i18n/<lang>.json): in the page's
   language, read-only, never deleted, improved with the app. Their ids are
-  "cartable:<key>".
+  "notosaurus:<key>".
 - The user's prompts, in data/prompts.json: added, changed, deleted, or copied from
   any prompt ("Duplicate") to be adapted.
 
 data/prompts.json: {"user": [prompts], "builtin_used": {key: date}}. Before, it was
 a list seeded once with the default prompts: read as the user's prompts, without the
-old defaults left unchanged that a Cartable prompt now replaces.
+old defaults left unchanged that a Notosaurus prompt now replaces.
 """
 
 from . import i18n, storage
 from .errors import AppError
 from .models import Prompt, PromptIn
 
-PREFIX = "cartable:"
+PREFIX = "notosaurus:"
 BUILTIN = (
     "auto",
     "vocabulary",
@@ -31,7 +31,7 @@ BUILTIN = (
     "dictation",
 )
 
-# Old default prompts that a Cartable prompt covers: dropped when left unchanged.
+# Old default prompts that a Notosaurus prompt covers: dropped when left unchanged.
 # (The old "FR → ES" ones carry a Spanish voice and deck name: kept as the user's.)
 REPLACED = {
     "Crée des cartes question → réponse pour réviser le contenu de la leçon (dates, définitions, notions clés). "
@@ -57,7 +57,7 @@ FORMAT = 1
 
 
 def _format_1(data: dict) -> dict:
-    """Format 0 → 1: before Cartable's prompts, the file was a list, seeded once with the
+    """Format 0 → 1: before Notosaurus's prompts, the file was a list, seeded once with the
     default prompts: read as the user's prompts, without the old defaults left unchanged."""
     if "list" not in data:  # already {"user", "builtin_used"}, before formats
         return data
@@ -96,7 +96,7 @@ def get(id: int | str, lang: str = i18n.DEFAULT) -> Prompt | None:
 
 
 def _user_id(id: int | str) -> int:
-    """The id of a user prompt; Cartable's prompts can't be changed or deleted."""
+    """The id of a user prompt; Notosaurus's prompts can't be changed or deleted."""
     if str(id).startswith(PREFIX):
         raise BuiltinPrompt("prompt.builtin")
     try:
@@ -126,7 +126,7 @@ def update(id: int | str, p: PromptIn) -> Prompt | None:
 
 
 def duplicate(id: int | str, lang: str = i18n.DEFAULT) -> Prompt | None:
-    """A copy of any prompt (Cartable's or the user's), as a new user prompt to adapt."""
+    """A copy of any prompt (Notosaurus's or the user's), as a new user prompt to adapt."""
     source = get(id, lang)
     if source is None:
         return None

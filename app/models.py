@@ -41,7 +41,7 @@ class Card(BaseModel):
         description="True when the picture or figure belongs to the answer (see the rules); false when it is "
         "needed to answer.",
     )
-    # Set by Cartable, not by the AI:
+    # Set by Notosaurus, not by the AI:
     picture: str = Field(default="", description="Leave empty.")  # file in the lesson's images/ folder
     id: str = Field(default="", description="Leave empty.")  # stable: tells Anki which note a card is
 
@@ -178,8 +178,8 @@ class PromptIn(BaseModel):
 
 
 class Prompt(PromptIn):
-    id: int | str  # the user's: a number; Cartable's: "cartable:<key>"
-    builtin: bool = False  # Cartable's own: read-only, can be duplicated
+    id: int | str  # the user's: a number; Notosaurus's: "notosaurus:<key>"
+    builtin: bool = False  # Notosaurus's own: read-only, can be duplicated
     used_at: str | None = None  # last generation that used this prompt
 
 

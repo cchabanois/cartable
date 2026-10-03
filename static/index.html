@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f5f2ea" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#16181d" media="(prefers-color-scheme: dark)">
-  <title>Cartable</title>
+  <title>Notosaurus</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="notosaurus-64.png" type="image/png" sizes="64x64">
   <!-- Home screen: phones want PNG (Chrome over plain HTTP makes a shortcut with these) -->
-  <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" href="notosaurus-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="notosaurus-touch-180.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
@@ -23,14 +23,14 @@
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 </head>
 <body>
-<div class="app" x-data="cartable" :class="{ 'has-bar': bottomBar() }">
+<div class="app" x-data="notosaurus" :class="{ 'has-bar': bottomBar() }">
 
   <!-- App bar -->
   <header class="appbar">
     <div class="brand">
-      <img src="icon.svg" alt="" width="32" height="32">
+      <img class="brand-logo" src="logo-mark.webp" alt="" width="44" height="44">
       <span class="brand-text">
-        <span>Cartable</span>
+        <span class="brand-name">Notosaurus</span>
         <!-- Anki profile the lessons and cards go to -->
         <small class="brand-profile" x-cloak x-show="anki.available"
                :title="anki.profile ? $t('app.profile.open') : $t('app.profile.none')"
@@ -71,6 +71,8 @@
   </main>
 
   <main x-show="!unpaired">
+    <!-- The mascot, large, until a lesson is started -->
+    <img class="hero-logo" x-show="!lessonId && !photos.length" src="logo.webp" alt="Notosaurus" width="511" height="465">
     <p class="tagline" x-show="!lessonId && !photos.length" x-text="$t('app.tagline')"></p>
 
     <!-- 1. Photos -->

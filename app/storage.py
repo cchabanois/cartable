@@ -1,4 +1,4 @@
-"""Plain-file storage: everything lives under CARTABLE_DATA (default ./data).
+"""Plain-file storage: everything lives under NOTOSAURUS_DATA (default ./data).
 
 data/
   prompts.json
@@ -23,7 +23,7 @@ lock = threading.RLock()
 
 
 def data_dir() -> Path:
-    path = Path(os.environ.get("CARTABLE_DATA", "data"))
+    path = Path(os.environ.get("NOTOSAURUS_DATA", "data"))
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -47,13 +47,13 @@ def read_json(path: Path, default=None):
 
 
 class DataTooNew(AppError):
-    """Data written by a newer Cartable: not read, so this older one can't damage it."""
+    """Data written by a newer Notosaurus: not read, so this older one can't damage it."""
 
     status = 409
 
     def __init__(self, what: str, version: int, known: int):
         super().__init__("data.too_new", what=what)
-        self.detail_text = f"{what}: format {version}, this Cartable knows up to {known}"
+        self.detail_text = f"{what}: format {version}, this Notosaurus knows up to {known}"
 
 
 def migrate(data: dict, what: str, current: int, steps: dict[int, Callable[[dict], dict]]) -> dict:

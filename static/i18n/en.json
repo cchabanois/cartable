@@ -62,7 +62,7 @@
       "fromPromptHint": "No photo? The AI creates the cards from your prompt: put the words in it, or ask for a topic. Check the cards carefully.",
       "regenerateHint": "(replaces the cards)",
       "unavailable": "Instructions unavailable: {message}",
-      "builtin": "Cartable's prompt: read-only, improved with the app",
+      "builtin": "Notosaurus's prompt: read-only, improved with the app",
       "regenerateNewHint": "(new lesson)",
       "regenerateExported": "Already sent to Anki: the cards sent stay there, the new ones are added at the next send.",
       "regenerated": "✨ Cards generated again."
@@ -163,7 +163,7 @@
         "one": "{count} of them moved to the new options (history kept)",
         "other": "{count} of them moved to the new options (history kept)"
       },
-      "oldAnkiConnect": "AnkiConnect is too old to change the options of cards already sent: they stay next to the new ones (update AnkiConnect, or use the Cartable add-on)"
+      "oldAnkiConnect": "AnkiConnect is too old to change the options of cards already sent: they stay next to the new ones (update AnkiConnect, or use the Notosaurus add-on)"
     },
     "export": {
       "noSound": "Deck exported, but {count} card(s) without sound (text-to-speech unavailable).",
@@ -218,8 +218,8 @@
       "required": "A name and a text are required.",
       "confirmDelete": "Delete the instructions “{name}”?",
       "copyName": "{name} (copy)",
-      "builtin": "⭐ Cartable's prompt",
-      "builtinHint": "This prompt is part of Cartable and is improved with it: duplicate it to adapt it (language, voice, deck…).",
+      "builtin": "⭐ Notosaurus's prompt",
+      "builtinHint": "This prompt is part of Notosaurus and is improved with it: duplicate it to adapt it (language, voice, deck…).",
       "duplicate": "⧉ Duplicate",
       "duplicateToChange": "⧉ Duplicate to change",
       "voiceMode": {
@@ -229,7 +229,7 @@
       },
       "voiceModeHint": {
         "none": "The backs aren't read aloud.",
-        "auto": "The AI recognises the language of the backs and Cartable takes a voice of that language (Spanish → Elvira, British English → Sonia…).",
+        "auto": "The AI recognises the language of the backs and Notosaurus takes a voice of that language (Spanish → Elvira, British English → Sonia…).",
         "pick": "Type the start of the language (“fr-FR”, “es-ES”…) to see the voices; ▶ to listen."
       }
     },
@@ -300,7 +300,7 @@
       "fake": {
         "name": "Demo",
         "description": "Canned cards, for tests and development.",
-        "warning": "Demo mode: the cards don't come from your photos, they are always the same. Choose another provider to use Cartable."
+        "warning": "Demo mode: the cards don't come from your photos, they are always the same. Choose another provider to use Notosaurus."
       },
       "model": "Model",
       "default": "{model} (default)",
@@ -340,10 +340,10 @@
     },
     "anki": {
       "title": "📥 Send straight to Anki",
-      "embedded": "✓ Cartable runs inside the <strong>Anki add-on</strong>: “Add to Anki” writes straight into the open profile, no AnkiConnect needed.",
-      "howTo": "To add cards without an <code>.apkg</code> file: in Anki on the computer, <em>Tools → Add-ons → Get Add-ons</em>, code <code>2055492159</code> (AnkiConnect), then restart Anki. Anki must be open while sending. Or install the Cartable add-on, which runs Cartable inside Anki.",
+      "embedded": "✓ Notosaurus runs inside the <strong>Anki add-on</strong>: “Add to Anki” writes straight into the open profile, no AnkiConnect needed.",
+      "howTo": "To add cards without an <code>.apkg</code> file: in Anki on the computer, <em>Tools → Add-ons → Get Add-ons</em>, code <code>2055492159</code> (AnkiConnect), then restart Anki. Anki must be open while sending. Or install the Notosaurus add-on, which runs Notosaurus inside Anki.",
       "address": "AnkiConnect address",
-      "addressHint": "Anki on the same computer as Cartable: <code>http://localhost:8765</code>.",
+      "addressHint": "Anki on the same computer as Notosaurus: <code>http://localhost:8765</code>.",
       "key": "AnkiConnect key",
       "keyPlaceholder": "Only if “apiKey” is set in AnkiConnect",
       "clearKey": "Delete the AnkiConnect key",
@@ -351,7 +351,7 @@
       "syncHint": "(to get the cards on the phone)",
       "test": "🔌 Test the connection with Anki",
       "testOk": "✓ Anki answers (AnkiConnect version {version}, profile “{profile}”).",
-      "testOkAddon": "✓ Anki answers (Cartable add-on, profile “{profile}”).",
+      "testOkAddon": "✓ Anki answers (Notosaurus add-on, profile “{profile}”).",
       "testNoProfile": "Anki answers, but no profile is open: open one in Anki.",
       "syncOn": "✓ “{profile}” is logged in to AnkiWeb.",
       "syncOff": "“{profile}” isn't logged in to AnkiWeb: no sync after sending. To sync, log in in Anki (Sync button)."
@@ -453,9 +453,9 @@
     },
     "phones": {
       "title": "📱 Phones",
-      "hint": "Scan this QR code with the phone: it opens Cartable and allows this phone. Then add the page to the home screen.",
-      "qr": "QR code to open Cartable on the phone",
-      "security": "Only devices that scanned this QR code can use Cartable over the Wi-Fi (the computer itself, always). Without HTTPS this stops the curious and other websites, not someone spying on the Wi-Fi.",
+      "hint": "Scan this QR code with the phone: it opens Notosaurus and allows this phone. Then add the page to the home screen.",
+      "qr": "QR code to open Notosaurus on the phone",
+      "security": "Only devices that scanned this QR code can use Notosaurus over the Wi-Fi (the computer itself, always). Without HTTPS this stops the curious and other websites, not someone spying on the Wi-Fi.",
       "unpair": "Disconnect every phone",
       "confirmUnpair": "Disconnect every phone? Each one will have to scan the QR code again (useful if a phone was lost or lent).",
       "unpaired": "Phones disconnected: scan the new QR code on each one.",
@@ -471,7 +471,7 @@
     "unreachable": "Server unreachable.",
     "prompt": {
       "not_found": "Instructions not found.",
-      "builtin": "This prompt is part of Cartable: duplicate it to change it."
+      "builtin": "This prompt is part of Notosaurus: duplicate it to change it."
     },
     "lesson": {
       "not_found": "Lesson not found.",
@@ -518,13 +518,13 @@
     "admin": {
       "password_required": "Admin password required.",
       "wrong_password": "Wrong password.",
-      "local_only": "Settings open from Anki, on the computer: Tools → Cartable → Settings."
+      "local_only": "Settings open from Anki, on the computer: Tools → Notosaurus → Settings."
     },
     "addon": {
-      "source_not_found": "Cartable server code not found.",
+      "source_not_found": "Notosaurus server code not found.",
       "uv_unsupported": "This computer isn't supported (no uv for it): install uv yourself (https://docs.astral.sh/uv/), then restart Anki.",
-      "uv_download_failed": "Couldn't download uv from GitHub (see the log). Check the Internet connection, then Tools → Cartable → Restart the server.",
-      "install_failed": "Couldn't install Cartable's dependencies (see the log)."
+      "uv_download_failed": "Couldn't download uv from GitHub (see the log). Check the Internet connection, then Tools → Notosaurus → Restart the server.",
+      "install_failed": "Couldn't install Notosaurus's dependencies (see the log)."
     },
     "picture": {
       "no_model": "No image model: set one in the settings (or a Gemini or OpenRouter key).",
@@ -539,13 +539,13 @@
       "not_found": "This card no longer exists: reload the lesson."
     },
     "device": {
-      "not_paired": "This device isn't allowed yet: scan Cartable's QR code (in Anki: Tools → Cartable → Open on the phone; otherwise in the settings, on the computer)."
+      "not_paired": "This device isn't allowed yet: scan Notosaurus's QR code (in Anki: Tools → Notosaurus → Open on the phone; otherwise in the settings, on the computer)."
     },
     "figure": {
       "invalid": "The figure drawn by the AI can't be read: draw it again."
     },
     "data": {
-      "too_new": "This data ({what}) comes from a newer version of Cartable: update Cartable to use it."
+      "too_new": "This data ({what}) comes from a newer version of Notosaurus: update Notosaurus to use it."
     }
   },
   "demo": {
@@ -554,29 +554,29 @@
     "addedFront": "(demo addition)"
   },
   "addon": {
-    "menuOpen": "Open Cartable",
+    "menuOpen": "Open Notosaurus",
     "menuAddress": "Server status…",
     "menuRestart": "Restart the server",
     "menuLog": "Server log",
-    "startFailed": "Cartable couldn't start:",
-    "stoppedAtStart": "The Cartable server stopped while starting.",
-    "ready": "Cartable is ready: {url}",
+    "startFailed": "Notosaurus couldn't start:",
+    "stoppedAtStart": "The Notosaurus server stopped while starting.",
+    "ready": "Notosaurus is ready: {url}",
     "running": "running",
     "stopped": "stopped",
-    "address": "Cartable server: {state}.\n\nOn the phone (same Wi-Fi): {lan}\nOn this computer: {local}",
+    "address": "Notosaurus server: {state}.\n\nOn the phone (same Wi-Fi): {lan}\nOn this computer: {local}",
     "where": "Code: {source}\nData: {data}",
     "dev": " (development)",
-    "restarting": "Cartable is restarting…",
+    "restarting": "Notosaurus is restarting…",
     "emptyLog": "(empty log)",
-    "logTitle": "Cartable — log",
+    "logTitle": "Notosaurus — log",
     "menuPhone": "Open on the phone…",
     "menuSettings": "Settings",
-    "phoneTitle": "Open Cartable on the phone",
-    "phoneSteps": "1. Connect the phone to the same Wi-Fi as this computer.\n2. Scan this QR code with the phone's camera.\n3. In the browser: menu → “Add to Home screen”, to use it like an app.\n\nSettings (AI keys…) open here, on the computer: Tools → Cartable → Settings.",
+    "phoneTitle": "Open Notosaurus on the phone",
+    "phoneSteps": "1. Connect the phone to the same Wi-Fi as this computer.\n2. Scan this QR code with the phone's camera.\n3. In the browser: menu → “Add to Home screen”, to use it like an app.\n\nSettings (AI keys…) open here, on the computer: Tools → Notosaurus → Settings.",
     "localOnly": "⚠ The server only listens on this computer (“host” set to 127.0.0.1): set “0.0.0.0” in the add-on config to reach it from the phone.",
-    "notRunningYet": "Cartable is starting: try again in a few seconds.",
-    "installConfirm": "Before it can start, Cartable must install its components:\n\n• uv (from GitHub), Python 3.13 and its Python libraries (from PyPI): about 300 MB on disk;\n• only in Anki's folder (Anki2/cartable-runtime): nothing changes on the rest of the computer, and removing the add-on removes them.\n\nThis takes a minute or two, the first time and after some updates. Install now?",
-    "installDeclined": "Cartable isn't started. To install it later: Tools → Cartable → Open Cartable."
+    "notRunningYet": "Notosaurus is starting: try again in a few seconds.",
+    "installConfirm": "Before it can start, Notosaurus must install its components:\n\n• uv (from GitHub), Python 3.13 and its Python libraries (from PyPI): about 300 MB on disk;\n• only in Anki's folder (Anki2/notosaurus-runtime): nothing changes on the rest of the computer, and removing the add-on removes them.\n\nThis takes a minute or two, the first time and after some updates. Install now?",
+    "installDeclined": "Notosaurus isn't started. To install it later: Tools → Notosaurus → Open Notosaurus."
   },
   "builtinPrompts": {
     "auto": {

@@ -1,4 +1,4 @@
-"""Cartable's version, read from pyproject.toml (packaged with the server)."""
+"""Notosaurus's version, read from pyproject.toml (packaged with the server)."""
 
 import tomllib
 from pathlib import Path

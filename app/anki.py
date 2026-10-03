@@ -23,15 +23,15 @@ CSS = """\
 
 # Diagram cards: the masks are HTML over the image, placed in % of its size.
 DIAGRAM_CSS = """\
-.cartable-diagram { position: relative; display: inline-block; max-width: 100%; line-height: 0; }
-.cartable-diagram img { display: block; }
-.cartable-mask {
+.notosaurus-diagram { position: relative; display: inline-block; max-width: 100%; line-height: 0; }
+.notosaurus-diagram img { display: block; }
+.notosaurus-mask {
   position: absolute; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
   overflow: hidden; line-height: 1; font-size: 13px; font-weight: 700;
   background: #ffe08a; border: 2px solid #c77700; border-radius: 3px; color: #3d2b00;
 }
-.cartable-mask.target { background: #ff7a59; border-color: #b3261e; color: #fff; }
-.cartable-mask.revealed { background: transparent; border: 3px solid #1b873f; }
+.notosaurus-mask.target { background: #ff7a59; border-color: #b3261e; color: #fff; }
+.notosaurus-mask.revealed { background: transparent; border: 3px solid #1b873f; }
 """
 
 CLOZE_CSS = """\
@@ -49,7 +49,7 @@ def is_cloze(text: str) -> bool:
 
 
 PICTURE_CSS = """\
-.cartable-picture img { max-width: min(100%, 320px); max-height: 50vh; border-radius: 12px; }
+.notosaurus-picture img { max-width: min(100%, 320px); max-height: 50vh; border-radius: 12px; }
 """
 
 
@@ -82,15 +82,15 @@ class NoteType:
 # Note types of a family hold the same kind of card; their options (voice, reverse,
 # typed answer, dictation) differ. A note can change type within its family.
 FAMILIES = {
-    "Cartable recto/verso": "text",
-    "Cartable légendes": "diagram",
-    "Cartable image": "picture",
-    "Cartable texte à trous": "cloze",
+    "Notosaurus recto/verso": "text",
+    "Notosaurus légendes": "diagram",
+    "Notosaurus image": "picture",
+    "Notosaurus texte à trous": "cloze",
 }
 
 
 def family(note_type_name: str) -> str:
-    """ "text", "diagram", "picture", "cloze", or "" for a note type not Cartable's."""
+    """ "text", "diagram", "picture", "cloze", or "" for a note type not Notosaurus's."""
     return next((f for prefix, f in FAMILIES.items() if note_type_name.startswith(prefix)), "")
 
 
@@ -147,7 +147,7 @@ def note_type(voice: str, reverse: bool, typing: bool = False, dictation: bool =
     else:
         fields.append("Audio")
         kind = "audio"
-    name, variant = _variant("Cartable recto/verso" + (" + inverse" if reverse else ""), typing, dictation)
+    name, variant = _variant("Notosaurus recto/verso" + (" + inverse" if reverse else ""), typing, dictation)
     return NoteType(f"{name} ({kind})", kind, tuple(fields), tuple(templates), variant=variant, reverse=reverse)
 
 
@@ -162,8 +162,8 @@ def diagram_note_type(voice: str, typing: bool = False) -> NoteType:
     templates = (
         {
             "name": "Schéma",
-            "qfmt": '<div class="cartable-diagram">{{Image}}{{Masks}}</div><div>{{Front}}</div>',
-            "afmt": '<div class="cartable-diagram">{{Image}}{{AnswerMasks}}</div><div>{{Front}}</div>'
+            "qfmt": '<div class="notosaurus-diagram">{{Image}}{{Masks}}</div><div>{{Front}}</div>',
+            "afmt": '<div class="notosaurus-diagram">{{Image}}{{AnswerMasks}}</div><div>{{Front}}</div>'
             f'<hr id="answer">{{{{Back}}}}{sound}{info}',
         },
     )
@@ -171,7 +171,7 @@ def diagram_note_type(voice: str, typing: bool = False) -> NoteType:
         templates = (_typed(templates[0], "Back"),)
     fields = ["Front", "Back", "Info"] + ([] if anki_tts else ["Audio"]) + ["Image", "Masks", "AnswerMasks", "Id"]
     kind = f"labels TTS Anki {voice}" if anki_tts else "labels audio"
-    name, variant = _variant("Cartable légendes", typing, False)
+    name, variant = _variant("Notosaurus légendes", typing, False)
     name = f"{name} ({kind.removeprefix('labels ')})"
     return NoteType(name, kind, tuple(fields), templates, css=CSS + DIAGRAM_CSS, key="Id", variant=variant)
 
@@ -185,7 +185,7 @@ def picture_note_type(voice: str, typing: bool = False, on_back: bool = False) -
     anki_tts = tts.is_anki_locale(voice)
     sound = f"{{{{tts {voice}:Back}}}}" if anki_tts else "{{Audio}}"
     info = '{{#Info}}<div class="info">{{Info}}</div>{{/Info}}'
-    picture = '<div class="cartable-picture">{{Picture}}</div>'
+    picture = '<div class="notosaurus-picture">{{Picture}}</div>'
     if on_back:
         question, answer = "{{Front}}", f'{{{{FrontSide}}}}<hr id="answer">{{{{Back}}}}{sound}{picture}{info}'
     else:
@@ -196,7 +196,7 @@ def picture_note_type(voice: str, typing: bool = False, on_back: bool = False) -
         templates = (_typed(templates[0], "Back"),)
     fields = ["Front", "Back", "Info"] + ([] if anki_tts else ["Audio"]) + ["Picture", "Id"]
     kind = f"picture TTS Anki {voice}" if anki_tts else "picture audio"
-    name, variant = _variant("Cartable image au verso" if on_back else "Cartable image", typing, False)
+    name, variant = _variant("Notosaurus image au verso" if on_back else "Notosaurus image", typing, False)
     variant = "+".join(filter(None, ["back" if on_back else "", variant]))
     name = f"{name} ({kind.removeprefix('picture ')})"
     return NoteType(name, kind, tuple(fields), templates, css=CSS + PICTURE_CSS, key="Id", variant=variant)
@@ -216,7 +216,7 @@ def cloze_note_type() -> NoteType:
         },
     )
     fields = ("Text", "Extra", "Info", "Id")
-    return NoteType("Cartable texte à trous", "cloze", fields, templates, css=CSS + CLOZE_CSS, key="Id", cloze=True)
+    return NoteType("Notosaurus texte à trous", "cloze", fields, templates, css=CSS + CLOZE_CSS, key="Id", cloze=True)
 
 
 @dataclass
@@ -306,7 +306,7 @@ def notes(
     return result
 
 
-TAG_PREFIX = "cartable::"
+TAG_PREFIX = "notosaurus::"
 
 
 def lesson_tag(lesson_id: str) -> str:

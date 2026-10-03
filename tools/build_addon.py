@@ -1,4 +1,4 @@
-"""Build dist/cartable-<version>.ankiaddon: the Anki add-on with the Cartable server inside.
+"""Build dist/notosaurus-<version>.ankiaddon: the Anki add-on with the Notosaurus server inside.
 
 Usage: .venv/bin/python tools/build_addon.py
 The add-on installs the server's dependencies with uv on first start (see
@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
-OUT = ROOT / "dist" / f"cartable-{VERSION}.ankiaddon"
+OUT = ROOT / "dist" / f"notosaurus-{VERSION}.ankiaddon"
 SKIP = {"__pycache__", "user_files", "meta.json"}  # meta.json: the user's own config, written by Anki
 
 

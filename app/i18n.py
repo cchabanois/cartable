@@ -33,7 +33,7 @@ def resolve(*candidates: str | None) -> str | None:
 
 def anki_language() -> str | None:
     """Language of the Anki window, when the server runs inside the Anki add-on."""
-    return resolve(os.environ.get("CARTABLE_LANG")) or (DEFAULT if os.environ.get("CARTABLE_LANG") else None)
+    return resolve(os.environ.get("NOTOSAURUS_LANG")) or (DEFAULT if os.environ.get("NOTOSAURUS_LANG") else None)
 
 
 @cache

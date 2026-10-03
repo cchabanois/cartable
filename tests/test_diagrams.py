@@ -83,11 +83,12 @@ def test_masks_as_html():
     masks = [Mask(page=1, n=2, box=[0.6, 0.6, 0.8, 0.7]), Mask(page=1, n=1, box=[0.1, 0.1, 0.3, 0.25])]
     question = diagrams.masks_html(masks, target=2, reveal=False)
     assert question == (
-        '<div class="cartable-mask" style="left:10.0%;top:10.0%;width:20.0%;height:15.0%">(1)</div>'
-        '<div class="cartable-mask target" style="left:60.0%;top:60.0%;width:20.0%;height:10.0%">(2)</div>'
+        '<div class="notosaurus-mask" style="left:10.0%;top:10.0%;width:20.0%;height:15.0%">(1)</div>'
+        '<div class="notosaurus-mask target" style="left:60.0%;top:60.0%;width:20.0%;height:10.0%">(2)</div>'
     )
     answer = diagrams.masks_html(masks, target=2, reveal=True)
-    assert '<div class="cartable-mask revealed" style="left:60.0%;top:60.0%;width:20.0%;height:10.0%"></div>' in answer
+    revealed = '<div class="notosaurus-mask revealed" style="left:60.0%;top:60.0%;width:20.0%;height:10.0%"></div>'
+    assert revealed in answer
     assert ">(1)</div>" in answer  # the other labels stay hidden
 
 
@@ -127,12 +128,12 @@ def test_diagram_lesson_exported(client, tmp_path):
 
     notes, models, media = export(cards)
     (model,) = models.values()
-    assert model["name"] == "Cartable légendes (audio)"
+    assert model["name"] == "Notosaurus légendes (audio)"
     names = [f["name"] for f in model["flds"]]
     fields = dict(zip(names, (html.unescape(f) for f in notes[0][1].split("\x1f")), strict=True))
     assert (fields["Front"], fields["Back"]) == ("Qu'est-ce que (1) ?", "la bouche")
     assert fields["Id"] == f"{lesson['id']}:1:1"  # lesson, photo, label number
-    assert fields["Masks"].count("cartable-mask") == 3 and 'class="cartable-mask target"' in fields["Masks"]
+    assert fields["Masks"].count("notosaurus-mask") == 3 and 'class="notosaurus-mask target"' in fields["Masks"]
     assert len(media) == 1 and fields["Image"] == f'<img src="{media[0]}">'  # one image for the whole diagram
 
     # Mask moved and answer corrected: same notes (GUID from the Id), same image, new masks

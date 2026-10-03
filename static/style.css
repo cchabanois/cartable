@@ -677,6 +677,17 @@ h2 {
 .toast.ok { background: var(--ok); }
 
 /* ---- Language picker ------------------------------------------------------ */
+.owner-group { margin-top: .8rem; }
+.owner-group > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; padding: .4rem 0; cursor: pointer; }
+.owner-group > summary { list-style: none; }
+.owner-group > summary::-webkit-details-marker { display: none; }
+.owner-group > summary::before { content: "▸"; width: 1em; color: var(--muted); }  /* folds: shown as such */
+.owner-group[open] > summary::before { content: "▾"; }
+.owner-group > summary strong { font-size: 1.05rem; }
+.owner-group > summary strong.warn { color: #c77700; }
+.subject-group h3 {
+  margin: .7rem 0 0; color: var(--muted); font-size: .8rem; letter-spacing: .04em; text-transform: uppercase;
+}
 .admin-lesson-list { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .6rem; }
 .admin-lesson-list li { border: 1px solid var(--border); border-radius: 14px; padding: .7rem .8rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: .35rem; min-width: 0; }
 .admin-lesson-list li.orphan { border-color: #c77700; }
